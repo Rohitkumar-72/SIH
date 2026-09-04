@@ -326,3 +326,133 @@ ros2 topic list | grep '^/robot_1/'
 ```
 
 Then validate one TurtleBot in `custom_warehouse.sdf`, then add the other two, then launch `sih_amr_fleet fleet.launch.py`.
+
+## Detailed warehouse-world troubleshooting handoff
+
+This section records the exact warehouse-world failures and fixes so another Codex instance does not repeat the Gazebo Classic workflow.
+
+### Error 1: `colcon build` could not find `gazebo_ros`
+
+The initial build of the cloned AWS package failed with:
+
+```text
+CMake Error at CMakeLists.txt:11 (find_package):
+Could not find a package configuration file provided by "gazebo_ros"
+```
+
+Cause: the AWS package's ROS 2 branch still depends on `gazebo_ros`, which belongs to the Gazebo Classic integration. The active environment uses ROS 2 Jazzy with modern Gazebo Harmonic (`gz sim` 8.11.0), whose integration uses `ros_gz` instead.
+
+Resolution: the legacy package was not built as a normal Jazzy package. This marker was added:
+
+```bash
+touch ~/amr_ws/src/warehouse_world/COLCON_IGNORE
+```
+
+The world is launched directly with `gz sim`; do not try to fix this by adding the old `gazebo_ros` dependency to the Jazzy/Harmonic project.
+
+### Error 2: mesh URI resolution failures
+
+The first direct launch used only the `models` directory and produced errors like:
+
+```text
+uri [file://models/aws_robomaker_warehouse_RoofB_01/meshes/...DAE]
+could not be resolved
+```
+
+The next attempt used only the package directory and produced errors like:
+
+```text
+Unable to find uri[model://aws_robomaker_warehouse_RoofB_01]
+```
+
+Cause: the legacy world uses both `model://...` references and internal `file://models/...` mesh references.
+
+Resolution: both directories must be in `GZ_SIM_RESOURCE_PATH`, in this form:
+
+```bash
+export GZ_SIM_RESOURCE_PATH="$HOME/amr_ws/src/warehouse_world/models:$HOME/amr_ws/src/warehouse_world"
+```
+
+The same two paths are used by the `warehouse` alias.
+
+### Error 3: invalid inertia during world loading
+
+After the resource paths were corrected, Gazebo Harmonic reported:
+
+```text
+Error Code 19: Msg: A link named link has invalid inertia.
+Error Code 9: Msg: Failed to load a world.
+```
+
+The invalid-inertia message appeared twice and was caused by legacy inertial data in the static roof and ground models. The affected files were:
+
+```text
+~/amr_ws/src/warehouse_world/models/aws_robomaker_warehouse_RoofB_01/model.sdf
+~/amr_ws/src/warehouse_world/models/aws_robomaker_warehouse_GroundB_01/model.sdf
+```
+
+The following tag was inserted immediately inside each model, before its `<link>` tag:
+
+```xml
+<model name="aws_robomaker_warehouse_RoofB_01">
+  <static>true</static>
+```
+
+```xml
+<model name="aws_robomaker_warehouse_GroundB_01">
+  <static>true</static>
+```
+
+The old `<inertial>...</inertial>` block was then removed from each of those two `model.sdf` files. Static environment geometry does not need dynamic inertial properties, and Harmonic rejected the legacy values before the world could load.
+
+Backups were made before editing:
+
+```text
+~/amr_ws/src/warehouse_world/models/aws_robomaker_warehouse_RoofB_01/model.sdf.backup
+~/amr_ws/src/warehouse_world/models/aws_robomaker_warehouse_GroundB_01/model.sdf.backup
+```
+
+Do not remove inertial blocks from the AMR, wheels, or any object that should move. The static/inertia change applies only to the roof and ground environment models unless a later error identifies another static asset with the same problem.
+
+### Successful final warehouse launch
+
+The warehouse then loaded successfully with:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+
+GZ_SIM_RESOURCE_PATH="$HOME/amr_ws/src/warehouse_world/models:$HOME/amr_ws/src/warehouse_world" \
+gz sim -r \
+"$HOME/amr_ws/src/warehouse_world/worlds/small_warehouse/custom_warehouse.sdf"
+```
+
+The saved custom world was visible in Gazebo's Component Inspector under `Source File Path`, confirming that `custom_warehouse.sdf` was the loaded world.
+
+### GUI and save behavior
+
+`Save client configuration` saves Gazebo's GUI layout, not object positions. To save warehouse edits, use the world-save action and save an SDF file such as:
+
+```text
+/home/rtsws/amr_ws/src/warehouse_world/worlds/small_warehouse/custom_warehouse.sdf
+```
+
+The `warehouse` alias must load `custom_warehouse.sdf`; if it loads the original `small_warehouse.world`, GUI edits will appear to have been lost.
+
+### Remaining warnings and limitations
+
+The VM printed:
+
+```text
+VMware: No 3D enabled
+libEGL warning: egl: failed to create dri2 screen
+```
+
+These are VMware graphics-acceleration warnings. They did not prevent the warehouse from loading, but they can reduce GUI performance or stability. Enable VMware Fusion 3D acceleration if available.
+
+The following messages were also observed while manipulating entities:
+
+```text
+Internal error: A physics entity ptr with an ID ... does not exist.
+```
+
+These occurred during GUI manipulation of the legacy world and are not the startup fix. They should be treated as a possible Harmonic/legacy-world GUI limitation until reproduced in a clean saved SDF.
