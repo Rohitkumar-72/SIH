@@ -30,6 +30,7 @@ The dashboard bridge only publishes `/fleet/dashboard_telemetry`; it has no comm
 | `blockage_detector_node` | `state`, `local_costmap` | `/fleet/blockage_observation` |
 | `peer_tracker_node` | `/fleet/robot_state` | `peer_tracks` |
 | `health_node` | `peer_tracks`, `/fleet/safety_state` | `/fleet/health` |
+| `charging_pad_node` | `odom` | `charging/is_docked`, `charging/battery_percent`, `charging/battery_state` |
 | `cbba_node` | task announcements, consensus, state | task consensus, `task_assignment` |
 | `whca_planner_node` | state, assignment, intents, blockages | `planned_route` |
 | `reservation_manager_node` | `planned_route` | `/fleet/trajectory_intent` |
@@ -71,6 +72,20 @@ Launch the fleet stack after three Gazebo AMRs exist with matching namespaces an
 ```bash
 ros2 launch sih_amr_fleet fleet.launch.py
 ```
+
+For a clean warehouse world without an embedded AMR, use this project launch after
+starting Gazebo in another terminal:
+
+```bash
+ros2 launch sih_amr_fleet spawn_robot_1.launch.py namespace:=robot_1 x:=2.0 y:=2.0 z:=0.05 yaw:=0.0
+```
+
+`charging_pad_node` uses the current pad pose (`x=0.513707`, `y=-9.859080`,
+`yaw=1.5708`) by default. It only raises its project-owned battery estimate after
+the robot has remained aligned, stationary, and inside the docking zone for two
+seconds. It deliberately does not overwrite TurtleBot's simulator-owned
+`/robot_N/battery_state`; use `/robot_N/charging/battery_state` for the charging
+simulation.
 
 The launch does not start `gz sim` or spawn robot models. That keeps it compatible with the current legacy warehouse resource workflow. The next Gazebo task is to add three differential-drive AMR models with LiDAR and then start the existing warehouse command from `agents.md` in a separate terminal.
 

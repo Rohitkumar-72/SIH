@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sih_amr_interfaces.msg import FleetHealth, PeerTrackArray, SafetyState
+from std_msgs.msg import Float32
 
 from .common import FLEET_STATE_QOS, header, new_session_id
 
@@ -15,11 +16,13 @@ class HealthNode(Node):
         self.pub = self.create_publisher(FleetHealth, '/fleet/health', FLEET_STATE_QOS)
         self.create_subscription(SafetyState, '/fleet/safety_state', self.on_safety, FLEET_STATE_QOS)
         self.create_subscription(PeerTrackArray, 'peer_tracks', self.on_tracks, FLEET_STATE_QOS)
+        self.create_subscription(Float32, 'charging/battery_percent', self.on_battery, 10)
         self.create_timer(0.5, self.publish_health)
 
     def on_safety(self, msg):
         if msg.fleet_header.robot_id == self.robot_id: self.safety = msg.level
     def on_tracks(self, msg): self.peer_state = max([track.freshness for track in msg.tracks], default=0)
+    def on_battery(self, msg): self.battery = max(0.0, min(100.0, msg.data))
     def publish_health(self):
         self.sequence += 1; msg = FleetHealth()
         msg.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, 1.5)

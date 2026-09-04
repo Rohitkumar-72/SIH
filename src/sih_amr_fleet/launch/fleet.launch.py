@@ -7,10 +7,10 @@ import os
 
 
 def robot_group(robot_id, map_file):
-    params = {'robot_id': robot_id, 'map_file': map_file}
+    params = {'robot_id': robot_id, 'map_file': map_file, 'use_sim_time': True}
     nodes = [
         'localization_node', 'local_costmap_node', 'blockage_detector_node', 'peer_tracker_node',
-        'health_node', 'cbba_node', 'whca_planner_node', 'reservation_manager_node',
+        'health_node', 'charging_pad_node', 'cbba_node', 'whca_planner_node', 'reservation_manager_node',
         'corridor_mutex_node', 'path_follower_node', 'orca_node', 'safety_supervisor_node',
     ]
     return GroupAction([PushRosNamespace(robot_id)] + [Node(package='sih_amr_fleet', executable=name, name=name, parameters=[params], output='screen') for name in nodes])
