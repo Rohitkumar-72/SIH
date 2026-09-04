@@ -90,3 +90,239 @@ The `warehouse` alias should point to the same custom SDF file and resource path
 5. Drive the AMR manually with a ROS 2 teleoperation node.
 6. Generate a map and test SLAM Toolbox and Nav2.
 7. Add charging detection and battery behavior as ROS 2 logic.
+
+---
+
+# Cross-device handoff and current ROS 2 implementation
+
+This section is the current handoff for moving development from the Mac/VM to the Windows PC. It supersedes older “not completed” notes above where they conflict.
+
+## Project repository and workspace
+
+- The Git repository is the SIH root directory.
+- The ROS 2 source overlay is now in `src/` in this repository.
+- ROS package source names:
+  - `src/sih_amr_interfaces` — custom ROS 2 message definitions.
+  - `src/sih_amr_fleet` — Python `rclpy` fleet nodes, launch file, map, scenario, and pure algorithm tests.
+- The legacy warehouse package is external to this repository in the simulation workspace:
+
+  ```text
+  /home/rtsws/amr_ws/src/warehouse_world
+  ```
+
+- The current saved warehouse world is:
+
+  ```text
+  /home/rtsws/amr_ws/src/warehouse_world/worlds/small_warehouse/custom_warehouse.sdf
+  ```
+
+- The warehouse world needs this runtime resource path:
+
+  ```text
+  /home/rtsws/amr_ws/src/warehouse_world/models:/home/rtsws/amr_ws/src/warehouse_world
+  ```
+
+- The repository contains `ROS2_FLEET_IMPLEMENTATION.md`, which documents package contents, node responsibilities, topics, QoS, build steps, and known limitations.
+
+## ROS 2 fleet code already added
+
+The per-AMR nodes are namespaced as `/robot_1`, `/robot_2`, `/robot_3` and communicate through shared `/fleet/*` topics where coordination is required.
+
+| Node | Main responsibility |
+|---|---|
+| `localization_node` | Converts simulator `odom` into validated fleet state. |
+| `local_costmap_node` | Converts `scan` into a local occupancy grid and nearest-obstacle distance. |
+| `blockage_detector_node` | Publishes persistent, TTL-bound LiDAR blockage observations. |
+| `peer_tracker_node` | Rejects stale/session-old state and predicts peer motion with uncertainty. |
+| `health_node` | Publishes battery/safety/communication health. |
+| `cbba_node` | Bounded one-task CBBA/CBAA-style bidding, winner claims, leases, and assignment epochs. |
+| `whca_planner_node` | Rolling time-indexed grid A* using peer trajectory reservations. |
+| `reservation_manager_node` | Publishes expiring `/fleet/trajectory_intent` messages. |
+| `corridor_mutex_node` | Ricart–Agrawala-style REQUEST/GRANT/DEFER/ENTER/EXIT protocol. |
+| `path_follower_node` | Simple waypoint-to-velocity controller for the simulator. |
+| `orca_node` | Lightweight uncertainty-inflated reciprocal velocity avoidance candidate. |
+| `safety_supervisor_node` | Final local LiDAR/braking/E-stop veto before `cmd_vel`. |
+| `task_scenario_node` | Reproducible task announcements; not a fleet manager. |
+| `dashboard_bridge_node` | Read-only JSON telemetry on `/fleet/dashboard_telemetry`. |
+
+ML and DL are intentionally not implemented in this overlay. Future ML route-cost estimates remain optional soft planning costs and must never command motors.
+
+## Recommended simulator model
+
+Use TurtleBot 4 Standard for the first integration. The official Jazzy branch targets Ubuntu 24.04 + Gazebo Harmonic and its spawn launch includes a compatible simulated standard dock, ROS bridges, LiDAR, camera, IMU-related interfaces, odometry, TF, battery state, and differential-drive control.
+
+Install on Ubuntu Jazzy:
+
+```bash
+sudo apt install ros-jazzy-turtlebot4-simulator
+```
+
+Do not edit installed files under `/opt/ros`. Add project-specific payload/tray, bumper, battery, or dock behavior in a project-owned description package later.
+
+## New Windows machine recommendation
+
+The selected setup is a Windows PC with Ryzen 6000-series CPU, RTX 3070 8 GB, and 16 GB RAM, running Ubuntu 24.04 in VirtualBox. Keep only Codex/background applications open while simulating.
+
+Suggested VirtualBox settings:
+
+- 6 virtual CPU cores;
+- 8 GB guest RAM (6 GB if Windows becomes memory pressured);
+- 128 MB video memory;
+- Enable 3D acceleration;
+- at least 60 GB virtual disk;
+- NAT networking is sufficient for a single-machine simulation.
+
+The RTX 3070 is more than adequate, but VirtualBox does not normally pass the physical GPU directly to the guest. If `glxinfo -B` reports `llvmpipe`, Gazebo is software-rendered. Use Gazebo headless mode for tests or correct VirtualBox 3D acceleration before adding multiple robots.
+
+## Windows Ubuntu VM installation sequence
+
+Use Ubuntu 24.04 LTS Desktop. In the VM:
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y curl git build-essential mesa-utils
+source /etc/os-release
+echo "$PRETTY_NAME"
+glxinfo -B
+```
+
+Install ROS 2 Jazzy using the official ROS 2 Ubuntu deb instructions, then:
+
+```bash
+sudo apt install -y ros-jazzy-desktop ros-dev-tools
+echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+
+Install the supported Gazebo/ROS pair and control/simulator packages:
+
+```bash
+sudo apt install -y ros-jazzy-ros-gz ros-jazzy-gz-ros2-control
+sudo apt install -y ros-jazzy-turtlebot4-simulator ros-jazzy-teleop-twist-keyboard
+```
+
+Verify before copying the project:
+
+```bash
+ros2 doctor --report
+gz sim --version
+ros2 pkg prefix ros_gz_bridge
+gz sim shapes.sdf
+```
+
+The `shapes.sdf` GUI test must work before testing the warehouse. If rendering is unstable, use:
+
+```bash
+gz sim -s -r /home/rtsws/amr_ws/src/warehouse_world/worlds/small_warehouse/custom_warehouse.sdf
+```
+
+## Copy/build this repository on the Windows Ubuntu VM
+
+Clone or copy this Git repository into Linux storage, then build:
+
+```bash
+mkdir -p ~/amr_ws/src
+cd ~/amr_ws
+# copy/clone the SIH repository here so its src/ directory is ~/amr_ws/src/
+source /opt/ros/jazzy/setup.bash
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --symlink-install
+source install/setup.bash
+```
+
+The legacy `warehouse_world` directory must also be copied into `~/amr_ws/src/warehouse_world`. It is not built as a normal Jazzy package because it depends on Gazebo Classic `gazebo_ros`; launch its SDF directly.
+
+## Current correct launch order
+
+Use one terminal per stage and set the same domain in every ROS terminal:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+export ROS_DOMAIN_ID=42
+```
+
+Terminal 1 — start the custom warehouse:
+
+```bash
+export GZ_SIM_RESOURCE_PATH=/home/rtsws/amr_ws/src/warehouse_world/models:/home/rtsws/amr_ws/src/warehouse_world
+gz sim -r /home/rtsws/amr_ws/src/warehouse_world/worlds/small_warehouse/custom_warehouse.sdf
+```
+
+Terminal 2 — spawn one TurtleBot 4 into the already-running world:
+
+```bash
+ros2 launch turtlebot4_gz_bringup turtlebot4_spawn.launch.py \
+  namespace:=robot_1 model:=standard \
+  x:=2.0 y:=2.0 z:=0.05 yaw:=0.0
+```
+
+The `turtlebot4_gz.launch.py` command starts the TurtleBot example world; it is not the command for inserting a robot into `custom_warehouse.sdf`. The spawn launch is the correct command after the custom world is running.
+
+Verify:
+
+```bash
+gz model --list
+ros2 node list | grep robot_1
+ros2 topic list | grep '^/robot_1/'
+```
+
+Expected interfaces include `/robot_1/cmd_vel`, `/robot_1/odom`, `/robot_1/scan`, `/robot_1/battery_state`, `/robot_1/tf`, and `/robot_1/tf_static`.
+
+Test carefully:
+
+```bash
+ros2 topic pub --rate 10 /robot_1/cmd_vel \
+  geometry_msgs/msg/Twist \
+  "{linear: {x: 0.1}, angular: {z: 0.0}}"
+```
+
+Only after one robot works should robots 2 and 3 be spawned with unique namespaces and clear poses.
+
+## Previous launch failure and recovery
+
+The TurtleBot package was found at `/opt/ros/jazzy`, so installation was successful. The failed run showed many processes exiting with:
+
+```text
+Failed to find a free participant index for domain 0
+```
+
+This is a Cyclone DDS participant/resource collision, commonly caused by stale or repeated ROS launch processes. Recovery:
+
+1. Press `Ctrl+C` in the launch terminal.
+2. Inspect remaining processes:
+
+   ```bash
+   pgrep -af 'turtlebot4|parameter_bridge|ros_gz_sim|gz sim|robot_state_publisher'
+   ```
+
+3. Terminate only stale PIDs from that failed launch with `kill PID_NUMBER`.
+4. Run `ros2 daemon stop`.
+5. Use `ROS_DOMAIN_ID=42` consistently for the new run.
+
+The KDL root-link inertia warnings and Qt binding-loop warnings were not the main failure. The previous command also started the bundled TurtleBot world, proven by `/world/warehouse/model/turtlebot4`, rather than the project’s saved custom warehouse.
+
+## Charging station plan
+
+For the first demo, keep the TurtleBot 4 standard dock spawned with each robot. It is already compatible with the TurtleBot model and exposes dock/battery-related interfaces. Later add a project-owned shared charging bay with:
+
+- a static SDF dock visual and collision geometry;
+- a marked approach pose;
+- a camera-visible fiducial or contact/charging-zone sensor;
+- a battery node that increases charge only while correctly docked;
+- no direct motor-control authority outside the normal Safety Supervisor path.
+
+## Immediate next checkpoint
+
+On the Windows Ubuntu VM, do not launch the full fleet yet. First collect and record successful output from:
+
+```bash
+glxinfo -B
+gz sim --version
+ros2 doctor --report
+gz model --list
+ros2 topic list | grep '^/robot_1/'
+```
+
+Then validate one TurtleBot in `custom_warehouse.sdf`, then add the other two, then launch `sih_amr_fleet fleet.launch.py`.
