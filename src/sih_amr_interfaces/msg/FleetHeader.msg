@@ -1,0 +1,5 @@
+string robot_id
+string session_id
+uint64 sequence_no
+builtin_interfaces/Time sent_at
+builtin_interfaces/Time valid_until

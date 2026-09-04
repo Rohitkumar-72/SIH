@@ -1,0 +1,6 @@
+FleetHeader fleet_header
+float32 battery_percent
+uint8 communication_state
+bool task_feasible
+bool safety_ok
+string active_task_id

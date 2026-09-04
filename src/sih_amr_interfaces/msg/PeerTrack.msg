@@ -1,0 +1,9 @@
+string robot_id
+string session_id
+geometry_msgs/Pose2D pose
+geometry_msgs/Twist twist
+float32 covariance_trace
+uint8 freshness
+uint8 NORMAL=0
+uint8 COMM_DEGRADED=1
+uint8 PEER_UNREACHABLE=2

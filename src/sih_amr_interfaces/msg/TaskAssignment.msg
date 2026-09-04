@@ -1,0 +1,7 @@
+FleetHeader fleet_header
+Task task
+string owner_robot_id
+string owner_session_id
+uint64 assignment_epoch
+builtin_interfaces/Time lease_until
+bool active

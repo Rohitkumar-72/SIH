@@ -1,0 +1,14 @@
+FleetHeader fleet_header
+string corridor_id
+string request_id
+string target_robot_id
+uint64 lamport_time
+uint64 occupancy_epoch
+uint8 event
+uint8 REQUEST=0
+uint8 GRANT=1
+uint8 DEFER=2
+uint8 ENTER=3
+uint8 EXIT=4
+uint8 RELEASE=5
+uint8 CANCEL=6

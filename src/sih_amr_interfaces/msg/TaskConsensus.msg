@@ -1,0 +1,12 @@
+FleetHeader fleet_header
+string task_id
+string winner_robot_id
+string winner_session_id
+float32 winning_bid
+uint64 assignment_epoch
+builtin_interfaces/Time lease_until
+uint8 event
+uint8 BID=0
+uint8 CLAIM=1
+uint8 RELEASE=2
+uint8 COMPLETE=3

@@ -1,0 +1,19 @@
+tasks:
+  - id: pick_01
+    at_s: 2.0
+    pickup: [2.0, 2.0]
+    dropoff: [12.0, 9.0]
+    priority: 100
+    ttl_s: 180.0
+  - id: pick_02
+    at_s: 4.0
+    pickup: [12.5, 2.5]
+    dropoff: [3.0, 9.5]
+    priority: 90
+    ttl_s: 180.0
+  - id: pick_03
+    at_s: 6.0
+    pickup: [4.0, 10.0]
+    dropoff: [12.5, 4.0]
+    priority: 80
+    ttl_s: 180.0

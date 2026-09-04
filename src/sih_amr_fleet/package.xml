@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>sih_amr_fleet</name>
+  <version>0.1.0</version>
+  <description>Decentralized ROS 2 coordination nodes for the SIH AMR fleet.</description>
+  <maintainer email="team@example.invalid">SIH AMR Team</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <depend>rclpy</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>sih_amr_interfaces</depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <test_depend>ament_pytest</test_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>
