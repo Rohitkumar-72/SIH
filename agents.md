@@ -529,3 +529,281 @@ Running `warehouse` now shows the TurtleBot because the world was saved after a 
 2. Relaunch the clean warehouse, spawn exactly one TurtleBot, and inspect the Gazebo server output for `gz_ros2_control` or `controller_manager` errors.
 3. Confirm an active joint-state broadcaster, active diff-drive controller, `/robot_1/odom` publisher, and safe `/robot_1/cmd_vel` movement.
 4. Only then continue with warehouse aisle/layout cleanup, the charging dock, and robots 2 and 3.
+
+---
+
+# Latest charging-pad and TurtleBot handoff (September 2026)
+
+This section supersedes older Windows VM notes where they conflict.
+
+## Windows-to-VM SSH access
+
+- The Ubuntu VM is reachable from the Windows host through the forwarded SSH port:
+
+  ```bash
+  ssh -p 8322 rtsws@127.0.0.1
+  ```
+
+- Files can be copied between the Windows host and the VM with `scp` using the same host and port, for example:
+
+  ```bash
+  scp -P 8322 path/to/file rtsws@127.0.0.1:/home/rtsws/amr_ws/src/SIH/
+  ```
+
+- SSH keys for GitHub are configured inside the VM. GitHub CLI is available on the Windows host. Prefer the SSH connection above for VM diagnostics and ROS/Gazebo commands; use `scp` when the VM workspace needs a file from this repository.
+
+- For Fast DDS shared-memory lock collisions in multi-robot launches, this Jazzy installation accepts `UDPv4`, not `UDP`:
+
+  ```bash
+  export FASTDDS_BUILTIN_TRANSPORTS=UDPv4
+  ```
+
+  Set it before starting the warehouse ROS/Gazebo process, the `/clock` bridge, and every robot launch. `UDP` is rejected and causes Fast DDS to fall back to its default transport configuration.
+
+## Current working state
+
+- The Windows VirtualBox Ubuntu VM is running ROS 2 Jazzy and Gazebo Harmonic.
+- The active legacy world copy is `~/amr_ws/src/warehouse_world_custom`.
+- The intended clean world alias target is:
+
+  ```text
+  ~/amr_ws/src/warehouse_world_custom/worlds/small_warehouse/warehouse_clean.sdf
+  ```
+
+- Gazebo needs Ogre in this VM: `QT_QPA_PLATFORM=xcb` and `--render-engine ogre`.
+- The earlier fatal startup error is fixed:
+
+  ```text
+  Failed to load system plugin [libgz_ros2_control-system.so]
+  ```
+
+  Fix: include `/opt/ros/jazzy/lib` in `GZ_SIM_SYSTEM_PLUGIN_PATH`.
+- `/robot_1/odom` now has one publisher and produces odometry messages.
+- Gazebo simulation time is bridged successfully to ROS 2 with `ros_gz_bridge`; this resolves the repeated controller-manager `No clock received` warning.
+
+## Required aliases
+
+Add these to `~/.bashrc`, then reload with `source ~/.bashrc`.
+
+```bash
+alias warehouse='source /opt/ros/jazzy/setup.bash && GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/lib${GZ_SIM_SYSTEM_PLUGIN_PATH:+:$GZ_SIM_SYSTEM_PLUGIN_PATH}" ROS_DOMAIN_ID=42 QT_QPA_PLATFORM=xcb GZ_SIM_RESOURCE_PATH="$HOME/amr_ws/src/sih_amr_fleet/models:$HOME/amr_ws/src/warehouse_world_custom/models:$HOME/amr_ws/src/warehouse_world_custom:/opt/ros/jazzy/share" gz sim -r --render-engine ogre "$HOME/amr_ws/src/warehouse_world_custom/worlds/small_warehouse/warehouse_clean.sdf"'
+
+alias bridge_clock='source /opt/ros/jazzy/setup.bash && ROS_DOMAIN_ID=42 ros2 run ros_gz_bridge parameter_bridge "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock"'
+
+alias spawn_turtlebot='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && ROS_DOMAIN_ID=42 ros2 launch sih_amr_fleet spawn_robot_1.launch.py namespace:=robot_1 model:=standard x:=2.0 y:=2.0 z:=0.05 yaw:=0.0'
+
+alias start_charging='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && ROS_DOMAIN_ID=42 ros2 run sih_amr_fleet charging_pad_node --ros-args -r __ns:=/robot_1 -p initial_battery_percent:=50.0'
+```
+
+Alias purpose:
+
+- `warehouse` — starts Gazebo server and GUI with the correct world, paths, renderer, control-plugin path, and ROS domain.
+- `bridge_clock` — starts the Gazebo-to-ROS `/clock` bridge. Leave it running.
+- `spawn_turtlebot` — spawns exactly one `robot_1`; run only when Gazebo has no TurtleBot already.
+- `start_charging` — starts the project charging detector/battery simulation for `/robot_1`.
+
+Normal one-AMR launch order:
+
+1. Terminal 1: `warehouse`
+2. Terminal 2: `bridge_clock`
+3. Terminal 3: `spawn_turtlebot` only if Entity Tree and `gz model --list` show no existing TurtleBot.
+4. Terminal 4: `start_charging`
+5. Terminal 5: inspect topics, e.g. `ros2 topic echo /robot_1/charging/is_docked`.
+
+Never spawn another robot while `robot_1` / `robot_1/turtlebot4` already exists. It can duplicate models inside shelves or other geometry.
+
+## SIH ROS package changes
+
+The repository clone lives at `~/amr_ws/src/SIH`; build from `~/amr_ws` with:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd ~/amr_ws
+colcon build --packages-select sih_amr_fleet --symlink-install
+source install/setup.bash
+```
+
+Key added project files/features:
+
+- `src/sih_amr_fleet/sih_amr_fleet/charging_pad_node.py`
+  - subscribes to namespaced `odom`;
+  - publishes `charging/is_docked`, `charging/battery_percent`, `charging/battery_state`, and `charging/docking_status`;
+  - charges only after the AMR is in the configured pad zone, aligned to the rear stop, stationary, and stable for two seconds;
+  - uses a project-owned battery estimate and deliberately does not overwrite TurtleBot's simulator-owned `/robot_N/battery_state`;
+  - rejects stale odometry so charging stops when odometry ceases;
+  - converts TurtleBot's local odometry frame to warehouse coordinates with `odom_origin_x`, `odom_origin_y`, and `odom_origin_yaw`.
+- `src/sih_amr_fleet/launch/spawn_robot_1.launch.py` wraps the official TurtleBot 4 spawn launch.
+- `README.md` contains the full build, aliases, launch order, and diagnostics runbook.
+
+### Crucial odometry behavior
+
+TurtleBot odometry starts at `(0, 0, 0)` at its spawn pose. Moving a robot by dragging it in the Gazebo GUI changes the visual/world pose but **does not update wheel odometry**. Therefore GUI placement cannot be used as a real docking test with the default detector.
+
+For production-style tests: spawn the robot at a known world pose, launch the charging node with matching `odom_origin_*` parameters, and drive the robot to the pad with teleoperation or navigation.
+
+The manual visual-placement test was confirmed with:
+
+```bash
+ros2 run sih_amr_fleet charging_pad_node \
+  --ros-args -r __ns:=/robot_1 \
+  -p initial_battery_percent:=50.0 \
+  -p odom_origin_x:=0.513707 \
+  -p odom_origin_y:=-10.059080 \
+  -p odom_origin_yaw:=-1.5708
+```
+
+This caused `/robot_1/charging/is_docked` to publish `data: true`; it is only a calibration proof, not the preferred runtime workflow.
+
+Read docking diagnostics with:
+
+```bash
+ros2 topic echo /robot_1/charging/docking_status
+```
+
+It prints world pose, pad-relative pose, heading error, speed, and which individual dock condition is false.
+
+## Charging-pad world state
+
+Four static custom charging pads now exist and are visually verified in the warehouse:
+
+| Model name | World pose: `x y z roll pitch yaw` |
+|---|---|
+| `charging_pad_1` | `0.513707 -9.859080 0.02 0 0 1.5708` |
+| `charging_pad_2` | `-0.813955 -9.910516 0.02 0 0 1.5708` |
+| `charging_pad_3` | `-2.121722 -9.907508 0.02 0 0 1.5708` |
+| `charging_pad_4` | `-3.372902 -9.910568 0.02 0 0 1.5708` |
+
+The first pad is the original. The three copied pads were renamed from Gazebo's auto-generated names (`charging_pad_1_1`, etc.) to `charging_pad_2`, `charging_pad_3`, and `charging_pad_4`.
+
+Each pad has a `0.9 x 0.65 x 0.04 m` base, model Z pose `0.02 m` (so its lower surface sits exactly on the floor), a yellow centre stripe, and a rear stop. The models are static; no inertial block is necessary.
+
+## TurtleBot standard dock
+
+`robot_1/standard_dock` is TurtleBot 4's vendor-supplied simulated dock, separate from the black/yellow project charging pads. It supports future TurtleBot-native docking/battery experiments. The current SIH charger uses the custom pads and the project charging node instead.
+
+For now, keep each standard dock in a safe unused area; do not overlap it with a custom pad or leave it in an aisle. Do not delete it until deciding whether TurtleBot-native docking will be used in the final demo.
+
+## Next work
+
+1. Decide distinct safe spawn/parking poses for `robot_2` and `robot_3`; do not guess positions that may overlap shelves.
+2. Add `spawn_turtlebot_2` and `spawn_turtlebot_3` aliases/launch arguments with unique namespaces and known spawn poses.
+3. Launch one charging node per robot, passing that robot's corresponding pad pose and matching odometry-origin pose:
+   - robot 1 → pad 1;
+   - robot 2 → pad 2;
+   - robot 3 → pad 3;
+   - pad 4 remains available as a spare/shared bay.
+4. Verify each AMR has `/robot_N/odom`, `/robot_N/cmd_vel`, and only one TurtleBot model in Gazebo before launching the full `fleet.launch.py`.
+
+---
+
+# Latest multi-AMR implementation handoff (September 2026)
+
+The lightweight implementation from the previous Codex instance is now in the
+repository:
+
+- `src/sih_amr_fleet/launch/spawn_minimal_amr.launch.py`
+- `src/sih_amr_fleet/sih_amr_fleet/twist_stamper_node.py`
+- `tools/launch_four_amrs.sh`
+- `tools/launch_four_lite.sh`
+- `tools/fastdds_udp_only.xml`
+
+The VM copy was rebuilt successfully with:
+
+```bash
+cd ~/amr_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select sih_amr_fleet --symlink-install
+```
+
+The short command is:
+
+```bash
+source ~/.bashrc
+launch_four_lite
+```
+
+The VM pose file is `~/.config/sih_amr_poses.env` and currently contains:
+
+```text
+robot_1 = (2.0, 2.0, 0.0)
+robot_2 = (-0.8140, -8.5, 1.5708)
+robot_3 = (-0.8140, -7.5, 1.5708)
+robot_4 = (-0.8140, -6.5, 1.5708)
+```
+
+## Latest verified failure
+
+Run directory:
+
+```text
+~/amr_ws/log/four_amr_runs/20260905_182753
+```
+
+The minimal launcher successfully inserted the robot body:
+
+```text
+[robot_1.create_robot]: Entity creation successful.
+```
+
+The failure occurred afterward when the minimal launch tried to activate the
+diff-drive controller:
+
+```text
+Could not contact service /controller_manager/list_controllers
+```
+
+The spawner was looking for the global service, not the expected namespaced
+service `/robot_1/controller_manager/list_controllers`. No Gazebo server crash
+was reported in this latest run, and no simulation processes remain after the
+run.
+
+This is now the primary issue. Do not treat robot insertion alone as a working
+AMR: the controller manager, diff-drive controller, odometry, LiDAR, and command
+adapter must all pass.
+
+## Next debugging actions
+
+1. Inspect the generated `robot_1/turtlebot4` SDF and the installed TurtleBot
+   control configuration to determine how `gz_ros2_control` derives its ROS
+   namespace.
+2. Compare the minimal launch with the official launch, especially the
+   `PushRosNamespace`, `robot_description`, `ros_gz_bridge`, and control-plugin
+   parameters.
+3. Verify with:
+
+   ```bash
+   ros2 node list | grep -E 'controller_manager|robot_1'
+   ros2 service list | grep controller_manager
+   ros2 control list_controllers -c /robot_1/controller_manager
+   ros2 control list_controllers -c /controller_manager
+   ```
+
+4. Correct the minimal launch or model/plugin namespace so the controller
+   manager is created under `/robot_N/controller_manager`.
+5. Do not solve this by blindly changing the spawner to the global service:
+   each AMR requires an isolated controller manager and isolated command path.
+6. After robot 1 passes, test robot 2, then all four. Keep charging and fleet
+   nodes disabled until the four interface gates pass.
+
+## Renderer and DDS notes
+
+The previous Ogre1 server run crashed in the sensor-rendering thread with an
+Ogre duplicate scene-node exception for `Warehouse_CeilingLight_003`. The
+launcher therefore defaults to `RENDER_ENGINE=ogre2`. Ogre2 kept Gazebo alive in
+the later test.
+
+The launcher also sets `FASTDDS_BUILTIN_TRANSPORTS=UDPv4` and uses a project
+Fast DDS UDP-only profile. Earlier runs had stale detached launches and shared
+memory lock errors; the current launcher isolates process groups and refuses to
+start over an existing simulation.
+
+## Model recommendation for the next Codex instance
+
+Use `gpt-5.6-sol` with `high` reasoning for the next implementation/debugging
+turn. Luna High is suitable for routine, cost-sensitive work, but this task now
+requires reading several ROS launch files, comparing installed vendor launch
+behavior, inspecting live VM logs, and making a coordinated launch/control
+fix. Official OpenAI model guidance describes GPT-5.6 Sol as the flagship model
+for complex professional work and Luna as optimized for cost-sensitive,
+high-volume workloads. If Sol is unavailable, use `gpt-5.6-luna` with `high` and
+give it this entire handoff plus the latest run directory.

@@ -35,16 +35,18 @@ Add these aliases to `~/.bashrc`, then reload it with `source ~/.bashrc`.
 ```bash
 alias warehouse='source /opt/ros/jazzy/setup.bash && GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/lib${GZ_SIM_SYSTEM_PLUGIN_PATH:+:$GZ_SIM_SYSTEM_PLUGIN_PATH}" ROS_DOMAIN_ID=42 QT_QPA_PLATFORM=xcb GZ_SIM_RESOURCE_PATH="$HOME/amr_ws/src/sih_amr_fleet/models:$HOME/amr_ws/src/warehouse_world_custom/models:$HOME/amr_ws/src/warehouse_world_custom:/opt/ros/jazzy/share" gz sim -r --render-engine ogre "$HOME/amr_ws/src/warehouse_world_custom/worlds/small_warehouse/warehouse_clean.sdf"'
 alias bridge_clock='source /opt/ros/jazzy/setup.bash && ROS_DOMAIN_ID=42 ros2 run ros_gz_bridge parameter_bridge "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock"'
-alias spawn_turtlebot='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && ROS_DOMAIN_ID=42 ros2 launch sih_amr_fleet spawn_robot_1.launch.py namespace:=robot_1 model:=standard x:=2.0 y:=2.0 z:=0.05 yaw:=0.0'
+alias spawn_turtlebot='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && ROS_DOMAIN_ID=42 ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py namespace:=robot_1 model:=lite world:=warehouse x:=2.0 y:=2.0 z:=0.05 yaw:=0.0'
 alias start_charging='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && ROS_DOMAIN_ID=42 ros2 run sih_amr_fleet charging_pad_node --ros-args -r __ns:=/robot_1 -p initial_battery_percent:=50.0'
+alias launch_four_lite='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && source "$HOME/.config/sih_amr_poses.env" && MODEL=lite RENDER_ENGINE=ogre2 START_CHARGING=false "$HOME/amr_ws/launch_four_amrs.sh"'
 ```
 
 Use the aliases as follows:
 
 - `warehouse` — starts the clean warehouse and Gazebo GUI.
 - `bridge_clock` — starts the Gazebo-to-ROS simulation clock bridge.
-- `spawn_turtlebot` — creates one `robot_1`; run it only when no TurtleBot is already in Gazebo.
+- `spawn_turtlebot` — creates one lightweight `robot_1`; run it only when no TurtleBot is already in Gazebo.
 - `start_charging` — starts the docking and project-battery detector.
+- `launch_four_lite` — runs the four-AMR lightweight baseline using the verified pose file and Ogre2 headless rendering; charging remains off until the robot baseline passes.
 
 ## Start one AMR safely
 
@@ -90,8 +92,8 @@ source /opt/ros/jazzy/setup.bash
 source ~/amr_ws/install/setup.bash
 export ROS_DOMAIN_ID=42
 
-ros2 launch sih_amr_fleet spawn_robot_1.launch.py \
-  namespace:=robot_1 model:=standard \
+ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py \
+  namespace:=robot_1 model:=lite world:=warehouse \
   x:=2.0 y:=2.0 z:=0.05 yaw:=0.0
 ```
 
@@ -171,3 +173,44 @@ echo "$GZ_SIM_SYSTEM_PLUGIN_PATH"
 Do not run another spawn command until the existing robot has been removed or a
 clean warehouse world has been launched; duplicate TurtleBots can overlap shelves
 and make the simulation look corrupted.
+
+## Automated four-AMR headless launch
+
+The repository includes `tools/launch_four_amrs.sh`. Copy it into the VM once:
+
+```bash
+scp -P 8322 tools/launch_four_amrs.sh rtsws@127.0.0.1:~/amr_ws/launch_four_amrs.sh
+ssh -p 8322 rtsws@127.0.0.1 'chmod +x ~/amr_ws/launch_four_amrs.sh'
+```
+
+Copy the pose template and fill it only with parking locations you have verified
+as clear in `warehouse_clean.sdf`. The project intentionally does not guess
+robot 2–4 poses.
+
+```bash
+scp -P 8322 tools/four_amr_poses.env.example rtsws@127.0.0.1:~/.config/sih_amr_poses.env
+nano ~/.config/sih_amr_poses.env
+source ~/.config/sih_amr_poses.env
+```
+
+Start it from an SSH session or a VM terminal after confirming that no Gazebo
+server or TurtleBot is already running:
+
+```bash
+MODEL=lite ~/amr_ws/launch_four_amrs.sh
+```
+
+The script starts the headless warehouse and `/clock` bridge, then launches
+`robot_1` through `robot_4` in order with the minimal launch. Before starting
+the next robot it requires the exact Gazebo body, `robot_description`, active
+diff-drive controller, odometry, LiDAR, and command adapter. It then starts one
+charging node per robot and writes complete, timestamped logs under:
+
+```text
+~/amr_ws/log/four_amr_runs/<timestamp>/
+```
+
+The directory contains `gazebo_server.log`, `clock_bridge.log`, a log per robot,
+and charging logs. Use `MODEL=standard` only after the lite baseline is stable,
+or increase the per-robot wait with `SPAWN_WAIT_SECONDS=240`. Set
+`START_FLEET=true` only after the four independent-AMR baseline is repeatable.

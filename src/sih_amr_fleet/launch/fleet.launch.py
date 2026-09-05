@@ -24,7 +24,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('map_file', default_value=default_map),
         DeclareLaunchArgument('scenario_file', default_value=default_scenario),
-        robot_group('robot_1', map_file), robot_group('robot_2', map_file), robot_group('robot_3', map_file),
+        robot_group('robot_1', map_file), robot_group('robot_2', map_file),
+        robot_group('robot_3', map_file), robot_group('robot_4', map_file),
         Node(package='sih_amr_fleet', executable='task_scenario_node', name='task_scenario_node', parameters=[{'scenario_file': LaunchConfiguration('scenario_file')}], output='screen'),
         Node(package='sih_amr_fleet', executable='dashboard_bridge_node', name='dashboard_bridge_node', output='screen'),
     ])

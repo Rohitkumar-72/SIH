@@ -27,6 +27,8 @@ setup(
         'blockage_detector_node = sih_amr_fleet.blockage_detector_node:main',
         'peer_tracker_node = sih_amr_fleet.peer_tracker_node:main',
         'health_node = sih_amr_fleet.health_node:main',
+        'twist_stamper_node = sih_amr_fleet.twist_stamper_node:main',
+        'interface_readiness_node = sih_amr_fleet.interface_readiness_node:main',
         'charging_pad_node = sih_amr_fleet.charging_pad_node:main',
         'cbba_node = sih_amr_fleet.cbba_node:main',
         'whca_planner_node = sih_amr_fleet.whca_planner_node:main',
