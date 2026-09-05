@@ -83,7 +83,8 @@ ros2 launch sih_amr_fleet spawn_robot_1.launch.py namespace:=robot_1 x:=2.0 y:=2
 `charging_pad_node` uses the current pad pose (`x=0.513707`, `y=-9.859080`,
 `yaw=1.5708`) by default. It only raises its project-owned battery estimate after
 the robot has remained aligned, stationary, and inside the docking zone for two
-seconds. It deliberately does not overwrite TurtleBot's simulator-owned
+seconds. It rejects stale odometry, so charging stops when Gazebo is paused or
+the robot's odometry stream disappears. It deliberately does not overwrite TurtleBot's simulator-owned
 `/robot_N/battery_state`; use `/robot_N/charging/battery_state` for the charging
 simulation.
 

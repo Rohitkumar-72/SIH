@@ -456,3 +456,76 @@ Internal error: A physics entity ptr with an ID ... does not exist.
 ```
 
 These occurred during GUI manipulation of the legacy world and are not the startup fix. They should be treated as a possible Harmonic/legacy-world GUI limitation until reproduced in a clean saved SDF.
+
+---
+
+# Latest Windows VM handoff
+
+This section records the current state after the Windows-PC setup session. It supersedes older path examples where they differ.
+
+## VM and rendering
+
+- Host: Windows PC with Ryzen 6000-series CPU, RTX 3070, and 16 GB RAM.
+- Guest: Ubuntu 24.04.4 LTS x86_64 in VirtualBox; Linux user is `rtsws`.
+- VirtualBox settings: VMSVGA, 128 MB video memory, 4–6 CPUs, about 8 GB RAM when Windows has sufficient memory, and 3D acceleration enabled.
+- Guest Additions packages were installed with `virtualbox-guest-utils` and `virtualbox-guest-x11`; this enables clipboard sharing and automatic display resizing. VirtualBox Shared Clipboard is set to Bidirectional.
+- Gazebo's default Ogre2 renderer produces a black viewport in this VM. Launch Gazebo with `--render-engine ogre`; `QT_QPA_PLATFORM=xcb` is also useful for the Ubuntu Wayland/Qt issue.
+
+## Installed software
+
+- ROS 2 Jazzy Desktop and `ros-dev-tools` are installed and sourced from `/opt/ros/jazzy/setup.bash`.
+- Gazebo Sim Harmonic 8.x is installed through the Jazzy vendor packages, including `ros-jazzy-ros-gz`, `ros-jazzy-ros-gz-bridge`, `ros-jazzy-ros-gz-image`, `ros-jazzy-ros-gz-sim`, and `ros-jazzy-gz-ros2-control`.
+- TurtleBot 4 simulator, teleoperation, Nav2, SLAM Toolbox, RViz, ROS 2 control, and controller packages are installed.
+- `gz-tools` and `gz-tools2` were not available as apt package names in this setup and are not needed; `gz sim` is already available.
+- All ROS terminals must use `export ROS_DOMAIN_ID=42`.
+
+## Warehouse copies and fixes
+
+- The AWS repository was cloned from its `ros2` branch into:
+  - `~/amr_ws/src/warehouse_world_original` — preserved reference copy; do not edit.
+  - `~/amr_ws/src/warehouse_world_custom` — working copy.
+- Both legacy copies have `COLCON_IGNORE`; they are launched directly with `gz sim`, not built with `colcon`, because the package depends on Gazebo Classic `gazebo_ros`.
+- The custom copy uses both resource roots:
+
+  ```bash
+  export GZ_SIM_RESOURCE_PATH="$HOME/amr_ws/src/warehouse_world_custom/models:$HOME/amr_ws/src/warehouse_world_custom:/opt/ros/jazzy/share"
+  ```
+
+  `/opt/ros/jazzy/share` is required after TurtleBot meshes are included because the SDF references `model://turtlebot4_description` and `model://irobot_create_description`.
+- In the custom copy only, the roof and ground models were made static and their legacy `<inertial>` blocks removed. Backups named `model.sdf.backup` exist beside the edited files. Do not remove inertia from moving models.
+- The edited custom warehouse was saved as:
+
+  ```text
+  ~/amr_ws/src/warehouse_world_custom/worlds/small_warehouse/custom_warehouse.sdf
+  ```
+
+- Gazebo `Ctrl+S` saves client/GUI configuration, not the world. Save world changes through the top-left menu's `Save world as...`, overwriting the intended SDF, then close and relaunch it to verify persistence.
+
+## Current warehouse alias
+
+The working `warehouse` alias should launch the saved custom SDF with the correct paths and Ogre renderer. The equivalent command is:
+
+```bash
+ROS_DOMAIN_ID=42 QT_QPA_PLATFORM=xcb \
+GZ_SIM_RESOURCE_PATH="$HOME/amr_ws/src/warehouse_world_custom/models:$HOME/amr_ws/src/warehouse_world_custom:/opt/ros/jazzy/share" \
+gz sim -r --render-engine ogre \
+"$HOME/amr_ws/src/warehouse_world_custom/worlds/small_warehouse/custom_warehouse.sdf"
+```
+
+Running `warehouse` now shows the TurtleBot because the world was saved after a TurtleBot spawn; the robot is therefore embedded in `custom_warehouse.sdf`. Do not spawn another `robot_1` until a clean warehouse-only baseline is restored or the embedded robot is removed.
+
+## TurtleBot integration status
+
+- `turtlebot4_gz_bringup` and `turtlebot4_spawn.launch.py` were found and launched successfully.
+- The spawn output reported `Entity creation successful` for the robot and standard dock. Gazebo lists the models as `robot_1/turtlebot4` and `robot_1/standard_dock`.
+- ROS topics under `/robot_1/` exist, including `/robot_1/scan`, `/robot_1/odom`, `/robot_1/cmd_vel`, `/robot_1/battery_state`, and TF topics.
+- The standalone TurtleBot example world initialized the TurtleBot, bridges, and controllers, but its GUI became unresponsive while downloading Fuel models when run with the default renderer. The example world is not required for future work.
+- In the custom warehouse test, `/robot_1/odom` had zero publishers and the controller manager was intermittently unavailable. The `gz_ros2_control` package and shared library are installed under `/opt/ros/jazzy`, so the remaining issue is to inspect the Gazebo server output and ensure the warehouse server, GUI, and spawn launch all use ROS domain 42. Do not add robots 2 or 3 yet.
+- A useful low-load arrangement is: Terminal 1 runs `gz sim -s -r` on the custom SDF, Terminal 2 runs `gz sim -g --render-engine ogre`, and Terminal 3 runs the TurtleBot spawn launch. The server must be started after explicitly setting `ROS_DOMAIN_ID=42`.
+
+## Next actions
+
+1. Keep the original warehouse copy untouched and decide whether to remove the embedded TurtleBot from `custom_warehouse.sdf` or restore a warehouse-only saved baseline.
+2. Relaunch the clean warehouse, spawn exactly one TurtleBot, and inspect the Gazebo server output for `gz_ros2_control` or `controller_manager` errors.
+3. Confirm an active joint-state broadcaster, active diff-drive controller, `/robot_1/odom` publisher, and safe `/robot_1/cmd_vel` movement.
+4. Only then continue with warehouse aisle/layout cleanup, the charging dock, and robots 2 and 3.

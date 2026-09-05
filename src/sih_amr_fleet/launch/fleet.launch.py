@@ -7,7 +7,7 @@ import os
 
 
 def robot_group(robot_id, map_file):
-    params = {'robot_id': robot_id, 'map_file': map_file, 'use_sim_time': True}
+    params = {'robot_id': robot_id, 'map_file': map_file}
     nodes = [
         'localization_node', 'local_costmap_node', 'blockage_detector_node', 'peer_tracker_node',
         'health_node', 'charging_pad_node', 'cbba_node', 'whca_planner_node', 'reservation_manager_node',
