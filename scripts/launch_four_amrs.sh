@@ -2,7 +2,7 @@
 # Start a clean warehouse, then insert four TurtleBot 4 AMRs sequentially.
 # Ctrl+C from this terminal stops every process started by this script.
 
-set -u -o pipefail
+set -o pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SIH_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -15,6 +15,7 @@ WORLD_NAME="${WORLD_NAME:-default}"
 MODEL="${MODEL:-lite}"
 RENDER_ENGINE="${RENDER_ENGINE:-ogre2}"
 GUI_RENDER_ENGINE="${GUI_RENDER_ENGINE:-ogre2}"
+GUI_CONFIG="${GZ_GUI_CONFIG:-/opt/ros/jazzy/opt/gz_sim_vendor/share/gz/gz-sim8/gui/gui.config}"
 START_GUI="${START_GUI:-true}"
 START_CHARGING="${START_CHARGING:-false}"
 START_FLEET="${START_FLEET:-false}"
@@ -32,10 +33,12 @@ for robot in 1 2 3 4; do
   done
 done
 [[ -f "$WORLD_FILE" ]] || { echo "ERROR: world not found: $WORLD_FILE" >&2; exit 2; }
+[[ -f "$GUI_CONFIG" ]] || { echo "ERROR: GUI config not found: $GUI_CONFIG" >&2; exit 2; }
 mkdir -p "$LOG_DIR" || { echo "ERROR: cannot create $LOG_DIR" >&2; exit 1; }
 
 source /opt/ros/jazzy/setup.bash
 source "$OVERLAY/setup.bash"
+set -u
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 export FASTDDS_BUILTIN_TRANSPORTS=UDPv4
@@ -135,10 +138,18 @@ if [[ "$START_FLEET" == true ]]; then
   FLEET_PID="$STARTED_PID"
 fi
 if [[ "$START_GUI" == true ]]; then
-  start_group "$LOG_DIR/gazebo_gui.log" gz sim -g --render-engine "$GUI_RENDER_ENGINE"
-  GUI_PID="$STARTED_PID"
-  sleep 3
-  kill -0 "$GUI_PID" 2>/dev/null || fail 'Gazebo GUI exited during startup'
+  # Always use a known-good config rather than the mutable ~/.gz GUI layout.
+  # A short retry recovers from a transient EGL / Qt startup failure.
+  for attempt in 1 2; do
+    start_group "$LOG_DIR/gazebo_gui_attempt_${attempt}.log" gz sim -g \
+      --render-engine "$GUI_RENDER_ENGINE" --gui-config "$GUI_CONFIG"
+    GUI_PID="$STARTED_PID"
+    sleep 4
+    kill -0 "$GUI_PID" 2>/dev/null && break
+    echo "WARNING: Gazebo GUI exited during attempt $attempt; retrying..." >&2
+    GUI_PID=""
+  done
+  [[ -n "$GUI_PID" ]] || fail 'Gazebo GUI could not start after two attempts'
 fi
 
 echo 'All four AMRs passed. Keep this terminal open; Ctrl+C stops the whole run.'

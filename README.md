@@ -53,6 +53,11 @@ amr4_standard
 amr4_headless
 ```
 
+`warehouse` starts a managed warehouse-only session. It uses a clean packaged
+GUI configuration instead of the mutable `~/.gz` layout. Closing the GUI or
+pressing `Ctrl+C` in its terminal shuts down both GUI and server. Do not press
+`Ctrl+C` after the prompt has returned: the session has already stopped.
+
 - `amr4` starts the verified Lite baseline, the clock bridge, four sequential
   AMR spawns, and finally attaches the Gazebo GUI.
 - `amr4_standard` uses the full TurtleBot 4 Standard body. Its upper sensor
@@ -63,6 +68,11 @@ amr4_headless
 The verified renderer is `ogre2` for both the server and GUI. The RTX 3070 was
 active during the four-AMR run. Legacy `ogre` remains available as the fallback
 through `gzogre` if a future driver or GUI regression requires it.
+
+`amr4` uses the same clean GUI configuration and retries one GUI startup if a
+transient Qt / EGL initialization failure occurs. The recurring `libEGL ...
+driver (null)` / `failed to create dri2 screen` lines are Mesa's failed probe;
+confirm the actual renderer with `glxinfo -B`, which should report the RTX 3070.
 
 The command advances only after each robot has passed its own gate; it never
 starts robot N+1 after a failed robot N. It prints a per-run log directory under
