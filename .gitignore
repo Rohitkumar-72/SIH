@@ -1,2 +1,9 @@
+AGENTS.md
 implementation.md
 tools/four_amr_poses.env.local
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+install/
+log/

@@ -1,216 +1,144 @@
 # SIH AMR Warehouse Simulation
 
-This repository contains the ROS 2 Jazzy fleet overlay. The legacy warehouse is a
-separate Gazebo resource at `~/amr_ws/src/warehouse_world_custom` and is launched
-directly with `gz sim`.
+This repository is the ROS 2 Jazzy fleet overlay for the custom Gazebo Harmonic
+warehouse at `~/amr_ws/src/warehouse_world_custom`.
 
-## One-time Ubuntu setup
+## Current verified baseline
 
-Clone this repository beside the warehouse source, build it, and source the overlay:
+On this bare-metal Ubuntu dual-boot installation, the clean warehouse was started headlessly and four TurtleBot
+4 Lite AMRs were inserted sequentially. Each robot passed entity creation,
+namespaced controller activation, odometry, LiDAR, and Twist-command gates.
+All four `/robot_N/turtlebot4` entities were present simultaneously, and robot 4
+was moved successfully through `/robot_4/cmd_vel`.
+
+The launcher avoids Harmonic's second-robot renderer crash by loading Gazebo's
+shared Sensors system only with robot 1. Robots 2–4 keep their own camera and
+LiDAR definitions, but do not instantiate a duplicate renderer.
+
+## One-time build
 
 ```bash
-mkdir -p ~/amr_ws/src
-cd ~/amr_ws/src
-git clone https://github.com/adityaadep2008/SIH.git SIH
-
 source /opt/ros/jazzy/setup.bash
 cd ~/amr_ws
-rosdep install --from-paths src --ignore-src -r -y
-colcon build --packages-select sih_amr_interfaces sih_amr_fleet --symlink-install
+colcon build --symlink-install --packages-select sih_amr_interfaces sih_amr_fleet
 source install/setup.bash
 ```
 
-Every ROS terminal below must use ROS domain 42:
+Create a local pose file from the tracked, verified example:
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-source ~/amr_ws/install/setup.bash
-export ROS_DOMAIN_ID=42
+mkdir -p ~/.config
+cp ~/amr_ws/src/SIH/scripts/sih_amr_poses.env.example \
+  ~/.config/sih_amr_poses.env
 ```
 
-## Shell aliases
+Do not change those poses without first checking clearance in
+`warehouse_clean.sdf`.
 
-Add these aliases to `~/.bashrc`, then reload it with `source ~/.bashrc`.
+## One-command four-AMR launch
+
+Install the local aliases once after cloning or pulling this repository:
 
 ```bash
-alias warehouse='source /opt/ros/jazzy/setup.bash && GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/lib${GZ_SIM_SYSTEM_PLUGIN_PATH:+:$GZ_SIM_SYSTEM_PLUGIN_PATH}" ROS_DOMAIN_ID=42 QT_QPA_PLATFORM=xcb GZ_SIM_RESOURCE_PATH="$HOME/amr_ws/src/sih_amr_fleet/models:$HOME/amr_ws/src/warehouse_world_custom/models:$HOME/amr_ws/src/warehouse_world_custom:/opt/ros/jazzy/share" gz sim -r --render-engine ogre "$HOME/amr_ws/src/warehouse_world_custom/worlds/small_warehouse/warehouse_clean.sdf"'
-alias bridge_clock='source /opt/ros/jazzy/setup.bash && ROS_DOMAIN_ID=42 ros2 run ros_gz_bridge parameter_bridge "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock"'
-alias spawn_turtlebot='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && ROS_DOMAIN_ID=42 ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py namespace:=robot_1 model:=lite world:=warehouse x:=2.0 y:=2.0 z:=0.05 yaw:=0.0'
-alias start_charging='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && ROS_DOMAIN_ID=42 ros2 run sih_amr_fleet charging_pad_node --ros-args -r __ns:=/robot_1 -p initial_battery_percent:=50.0'
-alias launch_four_lite='source /opt/ros/jazzy/setup.bash && source "$HOME/amr_ws/install/setup.bash" && source "$HOME/.config/sih_amr_poses.env" && MODEL=lite RENDER_ENGINE=ogre2 START_CHARGING=false "$HOME/amr_ws/launch_four_amrs.sh"'
+alias_source='source "$HOME/amr_ws/src/SIH/scripts/sih_amr_aliases.sh"'
+grep -qxF "$alias_source" ~/.bashrc || printf '\n%s\n' "$alias_source" >> ~/.bashrc
+source ~/.bashrc
 ```
 
-Use the aliases as follows:
-
-- `warehouse` — starts the clean warehouse and Gazebo GUI.
-- `bridge_clock` — starts the Gazebo-to-ROS simulation clock bridge.
-- `spawn_turtlebot` — creates one lightweight `robot_1`; run it only when no TurtleBot is already in Gazebo.
-- `start_charging` — starts the docking and project-battery detector.
-- `launch_four_lite` — runs the four-AMR lightweight baseline using the verified pose file and Ogre2 headless rendering; charging remains off until the robot baseline passes.
-
-## Start one AMR safely
-
-Use four terminals. Do not spawn a second robot if Gazebo's Entity Tree or
-`gz model --list` already shows `robot_1` / `turtlebot4`.
-
-### Terminal 1 — warehouse
+Then use one of these commands from a fresh terminal:
 
 ```bash
-warehouse
+amr4
+amr4_standard
+amr4_headless
 ```
 
-The errors below must **not** appear:
+- `amr4` starts the verified Lite baseline, the clock bridge, four sequential
+  AMR spawns, and finally attaches the Gazebo GUI.
+- `amr4_standard` uses the full TurtleBot 4 Standard body. Its upper sensor
+  plate and four tower standoffs are the parts absent from the Lite model.
+- `amr4_headless` is the Lite baseline with no GUI, intended for sustained
+  automated runs.
 
-```text
-Failed to load system plugin [libgz_ros2_control-system.so]
-```
+The verified renderer is `ogre2` for both the server and GUI. The RTX 3070 was
+active during the four-AMR run. Legacy `ogre` remains available as the fallback
+through `gzogre` if a future driver or GUI regression requires it.
 
-The warning below means the controller has no ROS `/clock` stream and is using its
-time argument instead. It is not the missing-plugin failure, but it should be
-resolved by starting the clock bridge below:
+The command advances only after each robot has passed its own gate; it never
+starts robot N+1 after a failed robot N. It prints a per-run log directory under
+`~/amr_ws/log/four_amr_runs/` and the process-group PIDs. The GUI is deliberately
+attached only after all four spawn gates have passed.
 
-```text
-No clock received, using time argument instead
-```
+Do not start a second run while a previous server or AMR launch is running. The
+launcher detects that condition and refuses to overlap simulations.
 
-### Terminal 2 — simulation clock bridge
+## Manual command
+
+The one-command launcher is preferred. For diagnosis, the underlying command is:
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-export ROS_DOMAIN_ID=42
-
-ros2 run ros_gz_bridge parameter_bridge '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'
-```
-
-Leave this bridge running. It sends Gazebo simulation time to ROS 2 and should
-stop the controller-manager clock warning.
-
-### Terminal 3 — spawn only if there is no robot in the world
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source ~/amr_ws/install/setup.bash
-export ROS_DOMAIN_ID=42
-
-ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py \
-  namespace:=robot_1 model:=lite world:=warehouse \
-  x:=2.0 y:=2.0 z:=0.05 yaw:=0.0
-```
-
-Do not save the world after spawning. The preferred workflow is a clean warehouse
-SDF with the charging pad but without a robot, followed by one runtime spawn.
-
-### Terminal 4 — charging detector
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source ~/amr_ws/install/setup.bash
-export ROS_DOMAIN_ID=42
-
-ros2 run sih_amr_fleet charging_pad_node \
-  --ros-args -r __ns:=/robot_1 \
-  -p initial_battery_percent:=50.0
-```
-
-Leave this command running. It normally produces no terminal text.
-
-### Terminal 5 — verify interfaces
-
-```bash
-source /opt/ros/jazzy/setup.bash
-export ROS_DOMAIN_ID=42
-
-ros2 topic list | grep '^/robot_1/'
-ros2 topic info /robot_1/odom -v
-ros2 topic echo /robot_1/odom --once
-```
-
-Use `/robot_1/odom`, not `/odom`. The robot is namespaced, so the global `/odom`
-topic does not exist.
-
-When odometry works, observe the dock detector and battery:
-
-```bash
-ros2 topic echo /robot_1/charging/is_docked
-ros2 topic echo /robot_1/charging/battery_percent
-```
-
-`is_docked` is initially `false`. It becomes `true` only when the robot is in the
-pad zone, aligned with the rear stop, and stationary for two seconds. The project
-battery estimate starts at 50 percent and rises only while docked.
-
-TurtleBot odometry is local to its spawn point. Do not drag the robot onto the pad
-in the Gazebo GUI when testing docking: GUI repositioning does not update wheel
-odometry. Spawn at a known pose and drive it using `cmd_vel` or teleoperation. The
-charging node converts odometry into warehouse coordinates using
-`odom_origin_x`, `odom_origin_y`, and `odom_origin_yaw`; these must match the
-spawn `x`, `y`, and `yaw` arguments.
-
-For a readable explanation of a false docking result:
-
-```bash
-ros2 topic echo /robot_1/charging/docking_status
-```
-
-## If `/robot_1/odom` has zero publishers
-
-Check the controller and Gazebo transport topics:
-
-```bash
-ros2 node list | grep -E 'robot_1|controller_manager|parameter_bridge|robot_state_publisher'
-ros2 control list_controllers -c /robot_1/controller_manager
-gz topic -l | grep -Ei 'odom|joint|cmd_vel'
-```
-
-If Gazebo logs the missing `libgz_ros2_control-system.so` error, verify that the
-plugin exists and that `GZ_SIM_SYSTEM_PLUGIN_PATH` contains its directory:
-
-```bash
-find /opt/ros/jazzy -name 'libgz_ros2_control-system.so' -print
-echo "$GZ_SIM_SYSTEM_PLUGIN_PATH"
-```
-
-Do not run another spawn command until the existing robot has been removed or a
-clean warehouse world has been launched; duplicate TurtleBots can overlap shelves
-and make the simulation look corrupted.
-
-## Automated four-AMR headless launch
-
-The repository includes `tools/launch_four_amrs.sh`. Copy it into the VM once:
-
-```bash
-scp -P 8322 tools/launch_four_amrs.sh rtsws@127.0.0.1:~/amr_ws/launch_four_amrs.sh
-ssh -p 8322 rtsws@127.0.0.1 'chmod +x ~/amr_ws/launch_four_amrs.sh'
-```
-
-Copy the pose template and fill it only with parking locations you have verified
-as clear in `warehouse_clean.sdf`. The project intentionally does not guess
-robot 2–4 poses.
-
-```bash
-scp -P 8322 tools/four_amr_poses.env.example rtsws@127.0.0.1:~/.config/sih_amr_poses.env
-nano ~/.config/sih_amr_poses.env
 source ~/.config/sih_amr_poses.env
+MODEL=lite START_CHARGING=false START_FLEET=false START_GUI=true \
+  bash ~/amr_ws/src/SIH/scripts/launch_four_amrs.sh
 ```
 
-Start it from an SSH session or a VM terminal after confirming that no Gazebo
-server or TurtleBot is already running:
+It performs this ordered workflow:
+
+1. Starts server-only Gazebo with `warehouse_clean.sdf`.
+2. Starts the Gazebo-to-ROS `/clock` bridge.
+3. Spawns and validates `robot_1`, `robot_2`, `robot_3`, then `robot_4`.
+4. Starts the Ogre2 GUI client only after success, then keeps this terminal
+   attached. Press `Ctrl+C` in that terminal to shut down the GUI, server,
+   clock bridge, and all AMRs together.
+
+Use the following checks while it runs:
 
 ```bash
-MODEL=lite ~/amr_ws/launch_four_amrs.sh
+gz model --list | grep 'robot_[1-4]/turtlebot4'
+ros2 control list_controllers -c /robot_1/controller_manager
+ros2 topic echo --once /robot_4/scan
 ```
 
-The script starts the headless warehouse and `/clock` bridge, then launches
-`robot_1` through `robot_4` in order with the minimal launch. Before starting
-the next robot it requires the exact Gazebo body, `robot_description`, active
-diff-drive controller, odometry, LiDAR, and command adapter. It then starts one
-charging node per robot and writes complete, timestamped logs under:
+Each robot should show active `joint_state_broadcaster` and
+`diffdrive_controller`.
 
-```text
-~/amr_ws/log/four_amr_runs/<timestamp>/
-```
+## Lite versus Standard visual model
 
-The directory contains `gazebo_server.log`, `clock_bridge.log`, a log per robot,
-and charging logs. Use `MODEL=standard` only after the lite baseline is stable,
-or increase the per-robot wait with `SPAWN_WAIT_SECONDS=240`. Set
-`START_FLEET=true` only after the four independent-AMR baseline is repeatable.
+The verified multi-AMR test used `MODEL=lite` to reduce rendering load. Lite
+is a low-profile TurtleBot and intentionally has no Standard tower standoffs or
+upper sensor plate. It is not a partially spawned robot. Use
+`amr4_standard` when the full upper assembly is required visually.
+
+## Sustained simulation and dataset collection
+
+This is a bare-metal Ubuntu installation with a Ryzen 5 5600X (6 cores / 12
+threads), 16 GiB RAM, and an RTX 3070, so all of that hardware is available to
+Gazebo. The NVIDIA 595.84 driver was verified with `nvidia-smi`, and a four-AMR
+Ogre2 run used about 1 GiB of RTX memory at a real-time factor of about `0.78`.
+Before a long visual run, recheck the stack with `nvidia-smi` and the actual
+OpenGL renderer with `glxinfo -B` after a driver or desktop update.
+
+The verified four-lite run with the GUI attached measured a real-time factor of
+about `0.78`. At that rate, 1,000 simulated hours takes roughly 1,280 wall-clock
+hours (about 53 days). Headless mode should be used for long runs and may be
+faster, but measure its real-time factor first; do not assume it will be faster
+than real time.
+
+Long runs are feasible, but split them into restartable chunks, record seeds and
+scenario metadata, monitor disk and system memory, and disable the GUI. A
+single 1,000-hour uninterrupted run is fragile against host sleep, system
+updates, driver resets, and disk exhaustion.
+
+Each TurtleBot OAK-D camera is configured at 320×240 and 30 Hz. Four cameras at
+full rate produce 432,000 images per simulated hour. Even JPEG-compressed to an
+optimistic 30–100 KiB per image, that is about 13–43 GB per simulated hour;
+the current free disk cannot hold an unrestricted collection. For an object or
+obstacle classifier, capture at 1–5 Hz, JPEG-compress, save labels and poses,
+randomize lighting/clutter/robot poses, and use short dataset episodes. For
+path planning, store compact state/action/occupancy data rather than camera
+frames unless vision is part of the planner.
+
+The cameras are present in Gazebo, but the current minimal four-AMR launch
+bridges LiDAR only. Add a namespaced image bridge and a bounded recorder before
+attempting visual dataset collection; do not expect `/robot_N/camera/...` ROS
+topics or automatic image files from the current baseline.

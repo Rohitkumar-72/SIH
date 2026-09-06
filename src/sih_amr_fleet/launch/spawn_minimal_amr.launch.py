@@ -28,10 +28,12 @@ ARGUMENTS = [
     DeclareLaunchArgument('y', description='Robot world y position.'),
     DeclareLaunchArgument('z', default_value='0.05', description='Robot world z position.'),
     DeclareLaunchArgument('yaw', default_value='0.0', description='Robot world yaw in radians.'),
-    DeclareLaunchArgument('world', default_value='warehouse',
+    DeclareLaunchArgument('world', default_value='default',
                           description='Gazebo world name used by the LiDAR bridge.'),
     DeclareLaunchArgument('spawn_dock', default_value='false', choices=['true', 'false'],
                           description='Also spawn the vendor dock; disabled for the fleet baseline.'),
+    DeclareLaunchArgument('keep_sensors_system', default_value='false', choices=['true', 'false'],
+                          description='Only the first AMR may load Gazebo\'s shared Sensors system.'),
     DeclareLaunchArgument('description_wait_s', default_value='5.0',
                           description='Delay insertion so the transient robot description is available.'),
     DeclareLaunchArgument('controller_wait_s', default_value='10.0',
@@ -48,6 +50,7 @@ def generate_launch_description():
     model = LaunchConfiguration('model')
     x, y, z, yaw = (LaunchConfiguration(name) for name in ('x', 'y', 'z', 'yaw'))
     world = LaunchConfiguration('world')
+    keep_sensors_system = LaunchConfiguration('keep_sensors_system')
     robot_name = GetNamespacedName(namespace, 'turtlebot4')
     dock_name = GetNamespacedName(namespace, 'standard_dock')
 
@@ -67,8 +70,10 @@ def generate_launch_description():
         parameters=[{
             'use_sim_time': True,
             'robot_description': Command([
-                'xacro', ' ', xacro_file, ' ', 'gazebo:=ignition', ' ',
-                'namespace:=', namespace]),
+                'python3', ' ', '-m', ' ',
+                'sih_amr_fleet.fleet_robot_description', ' ', xacro_file, ' ',
+                'gazebo:=ignition', ' ', 'namespace:=', namespace, ' ',
+                '--keep-sensors-system', ' ', keep_sensors_system]),
         }],
         remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')])
 

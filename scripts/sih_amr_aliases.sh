@@ -1,0 +1,6 @@
+# Source this file from ~/.bashrc after cloning SIH into ~/amr_ws/src/SIH.
+alias amr4='bash "$HOME/amr_ws/src/SIH/scripts/launch_four_lite.sh"'
+alias amr4_standard='bash "$HOME/amr_ws/src/SIH/scripts/launch_four_standard.sh"'
+alias amr4_headless='START_GUI=false bash "$HOME/amr_ws/src/SIH/scripts/launch_four_lite.sh"'
+alias gzogre='gz sim --render-engine ogre'
+alias gzogre2='gz sim --render-engine ogre2'
