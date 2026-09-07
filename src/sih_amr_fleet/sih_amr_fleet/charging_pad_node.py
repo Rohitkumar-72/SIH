@@ -26,14 +26,15 @@ class ChargingPadNode(Node):
     def __init__(self):
         super().__init__('charging_pad_node')
         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
-        self.pad_x = self.declare_parameter('pad_x', 0.513707).value
-        self.pad_y = self.declare_parameter('pad_y', -9.859080).value
+        # Pad 1 is the leftmost dock in the redesigned south-wall charging bay.
+        self.pad_x = self.declare_parameter('pad_x', -3.6).value
+        self.pad_y = self.declare_parameter('pad_y', -29.55).value
         self.pad_yaw = self.declare_parameter('pad_yaw', 1.5708).value
         # TurtleBot odometry starts at (0, 0, 0) at spawn.  These parameters map
         # that local odom frame back into the warehouse/world frame.
-        self.odom_origin_x = self.declare_parameter('odom_origin_x', 2.0).value
-        self.odom_origin_y = self.declare_parameter('odom_origin_y', 2.0).value
-        self.odom_origin_yaw = self.declare_parameter('odom_origin_yaw', 0.0).value
+        self.odom_origin_x = self.declare_parameter('odom_origin_x', -3.6).value
+        self.odom_origin_y = self.declare_parameter('odom_origin_y', -29.55).value
+        self.odom_origin_yaw = self.declare_parameter('odom_origin_yaw', -1.5708).value
         self.dock_x_min = self.declare_parameter('dock_x_min', -0.42).value
         self.dock_x_max = self.declare_parameter('dock_x_max', 0.05).value
         self.dock_half_width = self.declare_parameter('dock_half_width', 0.18).value

@@ -23,6 +23,7 @@ setup(
     license='Apache-2.0',
     entry_points={'console_scripts': [
         'localization_node = sih_amr_fleet.localization_node:main',
+        'warehouse_map_node = sih_amr_fleet.warehouse_map_node:main',
         'local_costmap_node = sih_amr_fleet.local_costmap_node:main',
         'blockage_detector_node = sih_amr_fleet.blockage_detector_node:main',
         'peer_tracker_node = sih_amr_fleet.peer_tracker_node:main',
@@ -38,6 +39,9 @@ setup(
         'orca_node = sih_amr_fleet.orca_node:main',
         'safety_supervisor_node = sih_amr_fleet.safety_supervisor_node:main',
         'task_scenario_node = sih_amr_fleet.task_scenario_node:main',
+        'random_task_generator_node = sih_amr_fleet.random_task_generator_node:main',
+        'task_execution_node = sih_amr_fleet.task_execution_node:main',
+        'data_collection_node = sih_amr_fleet.data_collection_node:main',
         'dashboard_bridge_node = sih_amr_fleet.dashboard_bridge_node:main',
     ]},
 )

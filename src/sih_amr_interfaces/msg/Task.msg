@@ -2,5 +2,7 @@ string task_id
 geometry_msgs/Pose2D pickup
 geometry_msgs/Pose2D dropoff
 uint8 priority
+float32 pickup_wait_s
+float32 dropoff_wait_s
 builtin_interfaces/Time created_at
 builtin_interfaces/Time expires_at

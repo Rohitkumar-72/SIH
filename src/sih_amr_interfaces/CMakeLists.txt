@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TaskAnnouncement.msg"
   "msg/TaskConsensus.msg"
   "msg/TaskAssignment.msg"
+  "msg/TaskExecutionStatus.msg"
   "msg/CorridorProtocol.msg"
   "msg/BlockageObservation.msg"
   "msg/FleetHealth.msg"

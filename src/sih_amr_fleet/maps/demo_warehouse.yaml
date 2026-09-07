@@ -1,59 +1,23 @@
-# Grid coordinates use a 0.5 m resolution and the origin is the world origin.
-width: 30
-height: 24
+# Locked 45 m x 60 m warehouse. Grid cells are world coordinates offset by origin.
+resolution_m: 0.5
+origin: [-22.5, -30.0]
+width: 90
+height: 120
 corridors:
-  aisle_crossing:
-    - [8, 10]
-    - [8, 11]
-    - [8, 12]
-blocked_cells:
-  - [0, 0]
-  - [1, 0]
-  - [2, 0]
-  - [3, 0]
-  - [4, 0]
-  - [5, 0]
-  - [6, 0]
-  - [7, 0]
-  - [8, 0]
-  - [9, 0]
-  - [10, 0]
-  - [11, 0]
-  - [12, 0]
-  - [13, 0]
-  - [14, 0]
-  - [15, 0]
-  - [16, 0]
-  - [17, 0]
-  - [18, 0]
-  - [19, 0]
-  - [20, 0]
-  - [21, 0]
-  - [22, 0]
-  - [23, 0]
-  - [24, 0]
-  - [25, 0]
-  - [26, 0]
-  - [27, 0]
-  - [28, 0]
-  - [29, 0]
-  - [8, 5]
-  - [8, 6]
-  - [8, 7]
-  - [8, 8]
-  - [8, 9]
-  - [8, 13]
-  - [8, 14]
-  - [8, 15]
-  - [8, 16]
-  - [8, 17]
-  - [18, 5]
-  - [18, 6]
-  - [18, 7]
-  - [18, 8]
-  - [18, 9]
-  - [18, 13]
-  - [18, 14]
-  - [18, 15]
-  - [18, 16]
-  - [18, 17]
+  main_vertical_west: [[27, 0], [27, 119]]
+  main_vertical_east: [[63, 0], [63, 119]]
+  main_horizontal_south: [[0, 40], [89, 40]]
+  main_horizontal_north: [[0, 80], [89, 80]]
+# The planner expands these shelf-centre arrays into collision cells. They match
+# warehouse_layout.lock.yaml; the centre/south zone stays empty for charging.
+shelf_layout:
+  footprint_m: [3.92, 0.90]
+  x_zones:
+    west: [-19.99, -15.67, -11.35]
+    center: [-2.5363, 2.5363]
+    east: [11.35, 15.67, 19.99]
+  y_zones:
+    south: [-28.79, -26.755, -24.72, -22.685, -20.65, -18.615, -16.58, -14.545, -12.51]
+    middle: [-7.1225, -5.0875, -3.0525, -1.0175, 1.0175, 3.0525, 5.0875, 7.1225]
+    north: [12.51, 14.545, 16.58, 18.615, 20.65, 22.685, 24.72, 26.755, 28.79]
+  excluded_zones: [[south, center]]

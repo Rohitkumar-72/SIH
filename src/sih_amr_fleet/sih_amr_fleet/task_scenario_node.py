@@ -27,6 +27,8 @@ class TaskScenarioNode(Node):
             task = Task(); task.task_id, task.priority = spec['id'], spec.get('priority', 100)
             task.pickup = Pose2D(x=spec['pickup'][0], y=spec['pickup'][1], theta=0.0)
             task.dropoff = Pose2D(x=spec['dropoff'][0], y=spec['dropoff'][1], theta=0.0)
+            task.pickup_wait_s = float(spec.get('pickup_wait_s', 0.0))
+            task.dropoff_wait_s = float(spec.get('dropoff_wait_s', 0.0))
             task.created_at, task.expires_at = msg.fleet_header.sent_at, msg.fleet_header.valid_until
             msg.task = task; self.pub.publish(msg); self.sent.add(spec['id'])
 

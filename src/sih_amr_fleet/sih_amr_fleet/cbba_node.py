@@ -1,7 +1,7 @@
 import math
 import rclpy
 from rclpy.node import Node
-from sih_amr_interfaces.msg import RobotState, Task, TaskAnnouncement, TaskAssignment, TaskConsensus
+from sih_amr_interfaces.msg import RobotState, Task, TaskAnnouncement, TaskAssignment, TaskConsensus, TaskExecutionStatus
 
 from .common import FLEET_STATE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
 
@@ -18,10 +18,15 @@ class CbbaNode(Node):
         self.create_subscription(TaskAnnouncement, '/fleet/task_announcement', self.on_task, PROTOCOL_QOS)
         self.create_subscription(TaskConsensus, '/fleet/task_consensus', self.on_consensus, PROTOCOL_QOS)
         self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_timer(0.5, self.run_round)
 
     def on_state(self, msg): self.pose = msg.pose
     def on_task(self, msg): self.tasks[msg.task.task_id] = msg.task
+    def on_execution(self, msg):
+        if msg.phase == TaskExecutionStatus.COMPLETED:
+            self.tasks.pop(msg.task_id, None)
+            self.winners.pop(msg.task_id, None)
 
     def on_consensus(self, msg):
         if msg.fleet_header.robot_id == self.robot_id or stamp_seconds(msg.lease_until) < now_seconds(self): return

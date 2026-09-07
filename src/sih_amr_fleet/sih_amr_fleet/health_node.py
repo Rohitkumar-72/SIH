@@ -1,7 +1,8 @@
+import json
 import rclpy
 from rclpy.node import Node
 from sih_amr_interfaces.msg import FleetHealth, PeerTrackArray, SafetyState
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, String
 
 from .common import FLEET_STATE_QOS, header, new_session_id
 
@@ -14,6 +15,7 @@ class HealthNode(Node):
         self.battery = self.declare_parameter('initial_battery_percent', 100.0).value
         self.session_id, self.sequence, self.safety, self.peer_state = new_session_id(), 0, SafetyState.CLEAR, 0
         self.pub = self.create_publisher(FleetHealth, '/fleet/health', FLEET_STATE_QOS)
+        self.status_pub = self.create_publisher(String, 'status', FLEET_STATE_QOS)
         self.create_subscription(SafetyState, '/fleet/safety_state', self.on_safety, FLEET_STATE_QOS)
         self.create_subscription(PeerTrackArray, 'peer_tracks', self.on_tracks, FLEET_STATE_QOS)
         self.create_subscription(Float32, 'charging/battery_percent', self.on_battery, 10)
@@ -29,6 +31,10 @@ class HealthNode(Node):
         msg.battery_percent, msg.communication_state = self.battery, self.peer_state
         msg.task_feasible, msg.safety_ok, msg.active_task_id = True, self.safety != SafetyState.STOP, ''
         self.pub.publish(msg)
+        self.status_pub.publish(String(data=json.dumps({
+            'robot_id': self.robot_id, 'battery_percent': self.battery,
+            'safety_ok': msg.safety_ok, 'communication_state': self.peer_state,
+        }, sort_keys=True)))
 
 
 def main():

@@ -32,8 +32,9 @@ cp ~/amr_ws/src/SIH/scripts/sih_amr_poses.env.example \
   ~/.config/sih_amr_poses.env
 ```
 
-Do not change those poses without first checking clearance in
-`warehouse_clean.sdf`.
+Those defaults place robots 1–4 on charging pads 1–4 respectively in the
+south-wall charging bay. Do not change them without first checking clearance
+in `warehouse_clean.sdf`.
 
 ## One-command four-AMR launch
 
@@ -111,6 +112,45 @@ ros2 topic echo --once /robot_4/scan
 
 Each robot should show active `joint_state_broadcaster` and
 `diffdrive_controller`.
+
+## Fleet interfaces and random warehouse tasks
+
+The fleet layer supplies namespaced `/robot_N/odom`, `/robot_N/cmd_vel`,
+`/robot_N/scan`, `/robot_N/tf`, `/robot_N/tf_static`, `/robot_N/amcl_pose`,
+`/robot_N/path`, `/robot_N/status`, local `/robot_N/state` (pose and velocity),
+the global static `/map`, charging battery/state topics, and fleet health/status
+telemetry. The project-specific battery is at
+`/robot_N/charging/battery_percent` and
+`/robot_N/charging/battery_state`; simulator-owned TurtleBot battery data stays
+at `/robot_N/battery_state`.
+
+Enable a repeatable live workload and the non-control JSONL recorder with:
+
+```bash
+ros2 launch sih_amr_fleet fleet.launch.py random_tasks:=true record_data:=true \
+  data_file:=/tmp/sih_amr_fleet_telemetry.jsonl
+```
+
+`random_task_generator_node` chooses both pickup and drop-off only from safe
+centreline points in narrow aisles between shelf rows (never shelves, green
+main corridors, or the charging bay). CBBA allocates each task; the assigned
+AMR pauses for independently sampled 2–5 second durations at pickup and
+drop-off. `task_execution_node` publishes the lifecycle on
+`/fleet/task_execution_status`, holds the controller during each wait, and
+retires completed tasks from all allocators. Use `seed:=...`,
+`min_interval_s:=...`, and `max_interval_s:=...` when launching the generator
+directly to reproduce or vary an experiment.
+
+`data_collection_node` records robot state/velocity, health and battery,
+trajectory reservations, task consensus/execution, corridor events, and safety
+decisions to JSON Lines. It is observational only: logging failure cannot
+influence robot control.
+
+`warehouse_map_node` produces `/map` from the locked shelf layout. The
+simulation localizer produces AMCL-compatible `/robot_N/amcl_pose` values from
+Gazebo odometry transformed into the map frame; it is not a replacement for a
+real LiDAR+AMCL localization stack on physical robots. `path` is the standard
+`nav_msgs/Path` view of the project `planned_route` contract.
 
 ## Lite versus Standard visual model
 
