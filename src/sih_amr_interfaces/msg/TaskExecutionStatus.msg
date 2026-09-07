@@ -1,0 +1,12 @@
+FleetHeader fleet_header
+string task_id
+string owner_robot_id
+uint8 phase
+uint8 EN_ROUTE_PICKUP=0
+uint8 PICKUP_WAIT=1
+uint8 EN_ROUTE_DROPOFF=2
+uint8 DROPOFF_WAIT=3
+uint8 COMPLETED=4
+uint8 FAILED=5
+geometry_msgs/Pose2D target
+float32 wait_time_remaining_s
