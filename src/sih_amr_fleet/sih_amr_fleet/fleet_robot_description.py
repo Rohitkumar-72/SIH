@@ -4,8 +4,10 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ElementTree
 
+from ament_index_python.packages import get_package_share_directory
 
 SENSORS_PLUGIN = 'libgz-sim-sensors-system.so'
+CONTROL_PLUGIN = 'gz_ros2_control::GazeboSimROS2ControlPlugin'
 
 
 def main() -> None:
@@ -31,6 +33,18 @@ def main() -> None:
         sys.stderr.write(result.stderr)
         raise SystemExit(result.returncode)
     root = ElementTree.fromstring(result.stdout)
+    # The vendor xacro hard-codes its 0.46 m/s controller YAML. Replace that
+    # plugin parameter with the project-owned 6.0 m/s Gazebo fleet profile
+    # before the robot description reaches Gazebo.
+    control_file = str(
+        get_package_share_directory('sih_amr_fleet') +
+        '/config/fleet_fast_control.yaml')
+    for plugin in root.iter('plugin'):
+        if plugin.get('name') == CONTROL_PLUGIN:
+            parameters = plugin.find('parameters')
+            if parameters is None:
+                raise RuntimeError('gz_ros2_control plugin has no parameters element')
+            parameters.text = control_file
     if not keep_sensors:
         for gazebo in list(root.findall('gazebo')):
             if any(plugin.get('filename') == SENSORS_PLUGIN

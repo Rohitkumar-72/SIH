@@ -33,7 +33,7 @@ ARGUMENTS = [
     DeclareLaunchArgument('spawn_dock', default_value='false', choices=['true', 'false'],
                           description='Also spawn the vendor dock; disabled for the fleet baseline.'),
     DeclareLaunchArgument('keep_sensors_system', default_value='false', choices=['true', 'false'],
-                          description='Only the first AMR may load Gazebo\'s shared Sensors system.'),
+                          description='Keep a model-local Sensors system (normally false: the warehouse loads one world-level system).'),
     DeclareLaunchArgument('description_wait_s', default_value='5.0',
                           description='Delay insertion so the transient robot description is available.'),
     DeclareLaunchArgument('controller_wait_s', default_value='10.0',
@@ -44,7 +44,7 @@ ARGUMENTS = [
 def generate_launch_description():
     turtlebot_description = get_package_share_directory('turtlebot4_description')
     create_bringup = get_package_share_directory('irobot_create_common_bringup')
-    create_control = get_package_share_directory('irobot_create_control')
+    fleet_share = get_package_share_directory('sih_amr_fleet')
 
     namespace = LaunchConfiguration('namespace')
     model = LaunchConfiguration('model')
@@ -60,7 +60,10 @@ def generate_launch_description():
     yaw_dock = OffsetParser(yaw, 3.1416)
     xacro_file = PathJoinSubstitution(
         [turtlebot_description, 'urdf', model, 'turtlebot4.urdf.xacro'])
-    control_params = PathJoinSubstitution([create_control, 'config', 'control.yaml'])
+    # Project-owned limits keep every simulated fleet member on the same
+    # 6.0 m/s baseline ceiling, rather than silently using the vendor's
+    # 0.46 m/s configuration.
+    control_params = PathJoinSubstitution([fleet_share, 'config', 'fleet_fast_control.yaml'])
     dock_description_launch = PathJoinSubstitution(
         [create_bringup, 'launch', 'dock_description.launch.py'])
 
@@ -130,6 +133,20 @@ def generate_launch_description():
         name='interface_readiness', output='screen',
         parameters=[{'use_sim_time': True}])
 
+    # Localization is part of robot bring-up, not delayed fleet orchestration.
+    # This means it subscribes before the controller starts publishing odometry
+    # and retains a valid local state for the later planning stack.
+    localization = Node(
+        package='sih_amr_fleet', executable='localization_node',
+        name='localization_node', output='screen',
+        parameters=[{
+            'use_sim_time': True,
+            'robot_id': namespace,
+            'odom_origin_x': x,
+            'odom_origin_y': y,
+            'odom_origin_yaw': yaw,
+        }])
+
     namespaced_odom_tf = Node(
         package='tf2_ros', executable='static_transform_publisher',
         name='tf_namespaced_odom_publisher', output='screen',
@@ -150,6 +167,7 @@ def generate_launch_description():
                     condition=IfCondition(LaunchConfiguration('spawn_dock'))),
         lidar_bridge,
         twist_stamper,
+        localization,
         interface_readiness,
         namespaced_odom_tf,
         namespaced_base_tf,

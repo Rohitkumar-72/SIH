@@ -5,7 +5,7 @@ from geometry_msgs.msg import Pose2D
 from rclpy.node import Node
 from sih_amr_interfaces.msg import RobotState, TaskAssignment, TaskExecutionStatus
 
-from .common import FLEET_STATE_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, header, new_session_id, now_seconds, stamp_seconds
 
 
 class TaskExecutionNode(Node):
@@ -31,7 +31,7 @@ class TaskExecutionNode(Node):
             TaskExecutionStatus, '/fleet/task_execution_status', FLEET_STATE_QOS
         )
         self.create_subscription(TaskAssignment, 'task_assignment', self.on_assignment, FLEET_STATE_QOS)
-        self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_timer(0.1, self.tick)
 
     def on_assignment(self, msg):
@@ -45,8 +45,15 @@ class TaskExecutionNode(Node):
         if stamp_seconds(msg.lease_until) < now:
             return
 
-        # New task assignment or epoch update
-        if self.current_assignment is None or self.current_assignment.task.task_id != msg.task.task_id:
+        # A robot executes one delivery at a time.  Keep its existing task
+        # until completion (or an explicit inactive withdrawal); otherwise a
+        # burst of consensus updates can make it oscillate between tasks.
+        if (self.current_assignment is not None and
+                self.current_assignment.task.task_id != msg.task.task_id):
+            return
+
+        # New task assignment or a lease/epoch refresh of the current task.
+        if self.current_assignment is None:
             self.current_assignment = msg
             self.phase = TaskExecutionStatus.EN_ROUTE_PICKUP
             self.wait_until = 0.0
@@ -54,8 +61,12 @@ class TaskExecutionNode(Node):
             self.get_logger().info(
                 f'[{self.robot_id}] Accepted new task {msg.task.task_id}: en route to pickup ({msg.task.pickup.x:.1f}, {msg.task.pickup.y:.1f})'
             )
+        else:
+            self.current_assignment = msg
 
     def on_state(self, msg):
+        if msg.fleet_header.robot_id != self.robot_id:
+            return
         self.current_pose = msg.pose
         self.current_speed = math.hypot(msg.twist.linear.x, msg.twist.linear.y)
 

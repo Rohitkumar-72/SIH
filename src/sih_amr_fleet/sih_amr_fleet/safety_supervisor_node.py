@@ -6,7 +6,7 @@ from sensor_msgs.msg import LaserScan
 from sih_amr_interfaces.msg import RobotState, SafetyState
 from std_msgs.msg import Bool
 
-from .common import FLEET_STATE_QOS, header, new_session_id, now_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, header, new_session_id, now_seconds
 
 
 class SafetySupervisorNode(Node):
@@ -21,13 +21,15 @@ class SafetySupervisorNode(Node):
         self.cmd_pub = self.create_publisher(Twist, 'cmd_vel', FLEET_STATE_QOS)
         self.state_pub = self.create_publisher(SafetyState, '/fleet/safety_state', FLEET_STATE_QOS)
         self.clear_pub = self.create_publisher(Bool, 'entrance_clear', FLEET_STATE_QOS)
-        self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
-        self.create_subscription(LaserScan, 'scan', self.on_scan, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(LaserScan, 'scan', self.on_scan, POSE_QOS)
         self.create_subscription(Twist, 'cmd_vel_candidate', lambda msg: setattr(self, 'candidate', msg), FLEET_STATE_QOS)
         self.create_subscription(Bool, 'emergency_stop', lambda msg: setattr(self, 'estop', msg.data), FLEET_STATE_QOS)
         self.create_timer(0.025, self.enforce)
 
-    def on_state(self, msg): self.pose_time = now_seconds(self) if msg.localization_valid else -math.inf
+    def on_state(self, msg):
+        if msg.fleet_header.robot_id == self.robot_id:
+            self.pose_time = now_seconds(self) if msg.localization_valid else -math.inf
     def on_scan(self, scan): self.nearest = min((value for value in scan.ranges if math.isfinite(value) and value >= scan.range_min), default=math.inf)
     def enforce(self):
         age = now_seconds(self) - self.pose_time; speed = abs(self.candidate.linear.x)

@@ -11,7 +11,7 @@ from sih_amr_interfaces.msg import (
 )
 
 from .algorithms import whca_star
-from .common import FLEET_STATE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
 
 
 class WhcaPlannerNode(Node):
@@ -30,7 +30,9 @@ class WhcaPlannerNode(Node):
         self.pose = None
         self.assignment = None
         self.peer_intents = {}
-        self.blockages = set()
+        # cell -> observation validity deadline.  A moved obstacle must not
+        # leave the warehouse permanently blocked in this robot's replica.
+        self.blockages = {}
         self.width = 90
         self.height = 120
         self.origin_x = -22.5
@@ -45,7 +47,7 @@ class WhcaPlannerNode(Node):
         self.pub = self.create_publisher(RoutePlan, 'planned_route', FLEET_STATE_QOS)
         self.path_pub = self.create_publisher(Path, 'path', FLEET_STATE_QOS)
 
-        self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_subscription(TaskAssignment, 'task_assignment', self.on_assignment, FLEET_STATE_QOS)
         self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_subscription(TrajectoryIntent, '/fleet/trajectory_intent', self.on_intent, PROTOCOL_QOS)
@@ -85,6 +87,8 @@ class WhcaPlannerNode(Node):
             self.get_logger().error(f'Failed loading map in WhcaPlannerNode: {e}')
 
     def on_state(self, msg):
+        if msg.fleet_header.robot_id != self.robot_id:
+            return
         self.pose = msg.pose
 
     def on_assignment(self, msg):
@@ -105,8 +109,11 @@ class WhcaPlannerNode(Node):
             self.execution_target = msg.target
 
     def on_blockage(self, msg):
-        if stamp_seconds(msg.fleet_header.valid_until) >= now_seconds(self):
-            self.blockages.update((cell.x, cell.y) for cell in msg.cells)
+        valid_until = stamp_seconds(msg.fleet_header.valid_until)
+        if valid_until >= now_seconds(self):
+            for cell in msg.cells:
+                key = (cell.x, cell.y)
+                self.blockages[key] = max(self.blockages.get(key, 0.0), valid_until)
 
     def on_intent(self, msg):
         if msg.fleet_header.robot_id != self.robot_id and stamp_seconds(msg.fleet_header.valid_until) >= now_seconds(self):
@@ -149,13 +156,17 @@ class WhcaPlannerNode(Node):
         goal = self.to_cell(target)
 
         now = now_seconds(self)
+        self.blockages = {
+            cell: valid_until for cell, valid_until in self.blockages.items()
+            if valid_until >= now
+        }
         reservations = set()
         for intent in list(self.peer_intents.values()):
             if stamp_seconds(intent.fleet_header.valid_until) >= now:
                 reservations.update((cell.x, cell.y, cell.time_slot) for cell in intent.reservations)
 
         path = whca_star(
-            start, goal, self.static_blocked | self.blockages, reservations,
+            start, goal, self.static_blocked | set(self.blockages), reservations,
             self.width, self.height, self.horizon
         )
 

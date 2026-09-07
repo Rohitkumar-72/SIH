@@ -1,28 +1,15 @@
 import random
-import uuid
 import rclpy
-from geometry_msgs.msg import Pose2D
 from rclpy.duration import Duration
 from rclpy.node import Node
-from sih_amr_interfaces.msg import FleetHeader, Task, TaskAnnouncement, TaskConsensus, TaskExecutionStatus
+from sih_amr_interfaces.msg import FleetHeader, Task, TaskAnnouncement, TaskExecutionStatus
 
 from .common import PROTOCOL_QOS, FLEET_STATE_QOS, new_session_id, now_seconds
+from .warehouse_tasks import aisle_points
 
 
 class RandomTaskGeneratorNode(Node):
     """Generates randomized warehouse delivery tasks with pickup/dropoff in safe aisle corridors."""
-
-    # Safe aisle centerline waypoints (between shelf rows in west, center, and east blocks)
-    SAFE_AISLE_POINTS = [
-        # West block aisles
-        (-17.8, -27.7), (-17.8, -21.6), (-17.8, -15.5), (-17.8, -4.0), (-17.8, 4.0), (-17.8, 15.5), (-17.8, 25.0),
-        (-13.5, -27.7), (-13.5, -21.6), (-13.5, -15.5), (-13.5, -4.0), (-13.5, 4.0), (-13.5, 15.5), (-13.5, 25.0),
-        # Center block aisles (north and middle)
-        (0.0, -5.0), (0.0, 0.0), (0.0, 5.0), (0.0, 15.5), (0.0, 25.0),
-        # East block aisles
-        (13.5, -27.7), (13.5, -21.6), (13.5, -15.5), (13.5, -4.0), (13.5, 4.0), (13.5, 15.5), (13.5, 25.0),
-        (17.8, -27.7), (17.8, -21.6), (17.8, -15.5), (17.8, -4.0), (17.8, 4.0), (17.8, 15.5), (17.8, 25.0),
-    ]
 
     def __init__(self):
         super().__init__('random_task_generator_node')
@@ -33,6 +20,9 @@ class RandomTaskGeneratorNode(Node):
         self.max_active_tasks = self.declare_parameter('max_active_tasks', 5).value
 
         random.seed(self.seed)
+        self.safe_aisle_points = aisle_points()
+        if len(self.safe_aisle_points) < 2:
+            raise RuntimeError('Warehouse lane network does not contain two task endpoints')
         self.session_id = new_session_id()
         self.sequence = 0
         self.task_count = 0
@@ -60,15 +50,15 @@ class RandomTaskGeneratorNode(Node):
         task_id = f'rnd_task_{self.task_count:03d}'
 
         # Pick two distinct locations from safe points
-        pick_pt, drop_pt = random.sample(self.SAFE_AISLE_POINTS, 2)
+        pick_pt, drop_pt = random.sample(self.safe_aisle_points, 2)
         p_wait = random.uniform(2.0, 5.0)
         d_wait = random.uniform(2.0, 5.0)
         priority = random.choice([50, 75, 100])
 
         task = Task()
         task.task_id = task_id
-        task.pickup = Pose2D(x=pick_pt[0], y=pick_pt[1], theta=0.0)
-        task.dropoff = Pose2D(x=drop_pt[0], y=drop_pt[1], theta=0.0)
+        task.pickup = pick_pt
+        task.dropoff = drop_pt
         task.priority = priority
         task.pickup_wait_s = float(p_wait)
         task.dropoff_wait_s = float(d_wait)
@@ -89,7 +79,7 @@ class RandomTaskGeneratorNode(Node):
         self.pub.publish(announcement)
         self.active_tasks.add(task_id)
         self.get_logger().info(
-            f'Announced {task_id}: pick ({pick_pt[0]:.1f}, {pick_pt[1]:.1f}) -> drop ({drop_pt[0]:.1f}, {drop_pt[1]:.1f})'
+            f'Announced {task_id}: pick ({pick_pt.x:.1f}, {pick_pt.y:.1f}) -> drop ({drop_pt.x:.1f}, {drop_pt.y:.1f})'
         )
 
         self.next_spawn_time = now + random.uniform(self.min_interval_s, self.max_interval_s)

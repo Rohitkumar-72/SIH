@@ -18,7 +18,10 @@ class LocalizationNode(Node):
         self.odom_origin_yaw = self.declare_parameter('odom_origin_yaw', 0.0).value
         self.session_id, self.sequence = new_session_id(), 0
         self.publisher = self.create_publisher(RobotState, '/fleet/robot_state', FLEET_STATE_QOS)
-        self.local_publisher = self.create_publisher(RobotState, 'state', POSE_QOS)
+        # Retain the latest local pose too: planners are intentionally started
+        # after the controller bring-up and must not wait for a DDS rediscovery
+        # cycle before they can bid on a task.
+        self.local_publisher = self.create_publisher(RobotState, 'state', FLEET_STATE_QOS)
         self.amcl_publisher = self.create_publisher(PoseWithCovarianceStamped, 'amcl_pose', POSE_QOS)
         self.create_subscription(Odometry, 'odom', self.on_odom, POSE_QOS)
 

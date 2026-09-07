@@ -46,6 +46,17 @@ grep -qxF "$alias_source" ~/.bashrc || printf '\n%s\n' "$alias_source" >> ~/.bas
 source ~/.bashrc
 ```
 
+For the complete static-algorithm baseline—Gazebo, four AMRs, every fleet
+node, reproducible random tasks, and passive telemetry—run:
+
+```bash
+bash ~/amr_ws/src/SIH/scripts/run_baseline_random_fleet.sh
+```
+
+It uses the same verified pose file as the four-AMR launcher and writes the
+JSONL run record beneath `~/amr_ws/log/four_amr_runs/`. Press `Ctrl+C` in that
+terminal to stop the entire run cleanly.
+
 Then use one of these commands from a fresh terminal:
 
 ```bash
@@ -146,11 +157,46 @@ trajectory reservations, task consensus/execution, corridor events, and safety
 decisions to JSON Lines. It is observational only: logging failure cannot
 influence robot control.
 
+`warehouse_tasks.py` is also the lane-network source of truth. It defines all
+48 narrow storage-lane centrelines: 46 horizontal lanes between shelf rows and
+the two widened vertical centre lanes. Random task endpoints lie exactly on
+those centrelines. The corridor sweep follows the same network, entering and
+exiting each storage lane only through its adjacent main corridor.
+
 `warehouse_map_node` produces `/map` from the locked shelf layout. The
 simulation localizer produces AMCL-compatible `/robot_N/amcl_pose` values from
 Gazebo odometry transformed into the map frame; it is not a replacement for a
 real LiDAR+AMCL localization stack on physical robots. `path` is the standard
 `nav_msgs/Path` view of the project `planned_route` contract.
+
+## One-AMR corridor sweep
+
+With the clean warehouse already running, build the overlay and run:
+
+```bash
+cd ~/amr_ws
+colcon build --symlink-install --packages-select sih_amr_interfaces sih_amr_fleet
+bash ~/amr_ws/src/SIH/scripts/run_warehouse_corridor_sweep.sh
+```
+
+It spawns `corridor_sweep` at the south-west junction, drives every green main
+corridor, then traverses the widened 1.1554 m centre lanes in the middle and
+north blocks. The sweep uses odometry for closed-loop waypoint following and
+stops on a close LiDAR return or `Ctrl+C`. It does not attempt the remaining
+0.4028 m shelf gaps because those are too narrow for an AMR. Use a new
+`ROBOT_NAME` or restart the clean world before repeating the test.
+
+## Fleet speed and footprint limits
+
+The normal fleet and corridor sweep maximum is **6.0 m/s**. This is the
+requested Gazebo-only baseline and must never be reused for physical TurtleBot
+hardware. The local Safety Supervisor still has final stop authority.
+
+The fleet keeps its established 0.56 m diameter planning footprint (0.28 m
+radius). The narrow centre lanes are 1.1554 m wide, so a requested 0.95 m
+diameter AMR would have only 0.1027 m clearance on either side. It would not
+have enough margin to steer or turn safely; the robot footprint therefore has
+not been enlarged.
 
 ## Lite versus Standard visual model
 

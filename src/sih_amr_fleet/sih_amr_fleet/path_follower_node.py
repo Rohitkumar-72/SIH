@@ -5,25 +5,27 @@ from rclpy.node import Node
 from sih_amr_interfaces.msg import RobotState, RoutePlan, TaskExecutionStatus
 from std_msgs.msg import Bool
 
-from .common import FLEET_STATE_QOS, clamp
+from .common import FLEET_STATE_QOS, POSE_QOS, clamp
 
 
 class PathFollowerNode(Node):
     """Simple simulator controller: follows the first forward WHCA* waypoint."""
     def __init__(self):
         super().__init__('path_follower_node')
-        self.max_speed = self.declare_parameter('max_speed_mps', 0.45).value
+        self.max_speed = self.declare_parameter('max_speed_mps', 6.0).value
         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
         self.kp = self.declare_parameter('linear_kp', 0.8).value
         self.pose, self.route, self.clear, self.hold = None, None, True, False
         self.pub = self.create_publisher(Twist, 'cmd_vel_desired', FLEET_STATE_QOS)
-        self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_subscription(RoutePlan, 'planned_route', self.on_route, FLEET_STATE_QOS)
         self.create_subscription(Bool, 'corridor_motion_allowed', lambda msg: setattr(self, 'clear', msg.data), FLEET_STATE_QOS)
         self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_timer(0.05, self.control)
 
-    def on_state(self, msg): self.pose = msg.pose
+    def on_state(self, msg):
+        if msg.fleet_header.robot_id == self.robot_id:
+            self.pose = msg.pose
     def on_route(self, msg): self.route = msg if msg.route_feasible else None
     def on_execution(self, msg):
         if msg.owner_robot_id == self.robot_id:

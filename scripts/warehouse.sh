@@ -66,8 +66,9 @@ warehouse_ready() {
     grep -Eq '^[[:space:]]*-[[:space:]]+charging_pad_1[[:space:]]*$'
 }
 
-if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn' >/dev/null; then
-  echo 'ERROR: A Gazebo or AMR launch is already running. Stop it before starting a clean warehouse.' >&2
+if running_processes="$(pgrep -af '[g]z sim')"; then
+  echo 'ERROR: A Gazebo simulator is already running. Stop it before starting a clean warehouse:' >&2
+  echo "$running_processes" >&2
   exit 1
 fi
 echo "Warehouse logs: $LOG_DIR"

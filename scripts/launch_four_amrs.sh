@@ -19,10 +19,13 @@ GUI_CONFIG="${GZ_GUI_CONFIG:-/opt/ros/jazzy/opt/gz_sim_vendor/share/gz/gz-sim8/g
 START_GUI="${START_GUI:-true}"
 START_CHARGING="${START_CHARGING:-false}"
 START_FLEET="${START_FLEET:-false}"
+FLEET_RANDOM_TASKS="${FLEET_RANDOM_TASKS:-true}"
+FLEET_RECORD_DATA="${FLEET_RECORD_DATA:-true}"
 SPAWN_WAIT_SECONDS="${SPAWN_WAIT_SECONDS:-180}"
 SETTLE_SECONDS="${SETTLE_SECONDS:-20}"
 RUN_ID="$(date +%Y%m%d_%H%M%S)"
 LOG_DIR="${LOG_DIR:-$WORKSPACE/log/four_amr_runs/$RUN_ID}"
+FLEET_DATA_FILE="${FLEET_DATA_FILE:-$LOG_DIR/fleet_telemetry.jsonl}"
 
 [[ -f "$POSE_FILE" ]] || { echo "ERROR: pose file not found: $POSE_FILE" >&2; exit 2; }
 source "$POSE_FILE"
@@ -41,8 +44,18 @@ source "$OVERLAY/setup.bash"
 set -u
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
-export FASTDDS_BUILTIN_TRANSPORTS=UDPv4
-export FASTRTPS_DEFAULT_PROFILES_FILE="$SCRIPT_DIR/fastdds_udp_only.xml"
+# The controller managers emit frequent state messages.  Synchronous DDS
+# publication avoids the Fast DDS async queue failures seen with four robots.
+export RMW_FASTRTPS_PUBLICATION_MODE="${RMW_FASTRTPS_PUBLICATION_MODE:-SYNCHRONOUS}"
+# Use Fast DDS's normal shared-memory + UDP transport set on one host.  The
+# earlier UDP-only profile produced controller publish_async_failures and only
+# one AMR delivered usable odometry during the four-robot test.  A user can
+# still explicitly supply a vetted cross-host profile when required.
+if [[ -n "${SIH_FASTDDS_PROFILE:-}" ]]; then
+  export FASTRTPS_DEFAULT_PROFILES_FILE="$SIH_FASTDDS_PROFILE"
+else
+  unset FASTRTPS_DEFAULT_PROFILES_FILE FASTDDS_BUILTIN_TRANSPORTS
+fi
 export GZ_IP="${GZ_IP:-127.0.0.1}"
 export QT_QPA_PLATFORM=xcb
 export GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/lib${GZ_SIM_SYSTEM_PLUGIN_PATH:+:$GZ_SIM_SYSTEM_PLUGIN_PATH}"
@@ -128,14 +141,20 @@ spawn_robot() {
   sleep "$SETTLE_SECONDS"
 }
 
-spawn_robot robot_1 "$ROBOT_1_X" "$ROBOT_1_Y" "$ROBOT_1_YAW" true
+# The Sensors system is loaded once at world scope in warehouse_clean.sdf.
+# Per-model copies race over one rendering scene and crash Gazebo.
+spawn_robot robot_1 "$ROBOT_1_X" "$ROBOT_1_Y" "$ROBOT_1_YAW" false
 spawn_robot robot_2 "$ROBOT_2_X" "$ROBOT_2_Y" "$ROBOT_2_YAW" false
 spawn_robot robot_3 "$ROBOT_3_X" "$ROBOT_3_Y" "$ROBOT_3_YAW" false
 spawn_robot robot_4 "$ROBOT_4_X" "$ROBOT_4_Y" "$ROBOT_4_YAW" false
 
 if [[ "$START_FLEET" == true ]]; then
-  start_group "$LOG_DIR/fleet.log" ros2 launch sih_amr_fleet fleet.launch.py
+  start_group "$LOG_DIR/fleet.log" ros2 launch sih_amr_fleet fleet.launch.py \
+    random_tasks:="$FLEET_RANDOM_TASKS" record_data:="$FLEET_RECORD_DATA" \
+    data_file:="$FLEET_DATA_FILE"
   FLEET_PID="$STARTED_PID"
+  sleep 3
+  kill -0 "$FLEET_PID" 2>/dev/null || fail 'Fleet launch exited during startup'
 fi
 if [[ "$START_GUI" == true ]]; then
   # Always use a known-good config rather than the mutable ~/.gz GUI layout.

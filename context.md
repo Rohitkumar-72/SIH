@@ -443,3 +443,20 @@ When exploring a topic, answer it in the context of this fleet:
 ## Bottom line
 
 This is a layered, decentralised, edge-executed multi-AMR system. CBBA chooses task ownership; WHCA* chooses a short-horizon space-time route; Ricart–Agrawala-style permissions protect narrow corridors; Kalman filtering estimates peers under imperfect communication; ORCA adjusts local velocity; and the LiDAR-based Safety Supervisor has the final power to slow or stop the robot. Gazebo, ROS 2, DDS, QoS, localization, costmaps, logging, dashboarding, ML, and DL support those layers without replacing the safety boundary.
+
+## 21. Current implementation status — September 7, 2026
+
+The repository now includes the static-algorithm baseline additions: the locked-layout map publisher, lane-network task locations, random task generator, task-execution lifecycle, passive JSONL data collector, charging-pad simulation node, four-AMR launcher, and a one-command baseline launcher. The data collector is passive and produces a run manifest plus fleet-state, health, consensus, reservation, corridor, safety, blockage, and execution records when those messages are available.
+
+The current Gazebo profile uses a **6.0 m/s simulation-only maximum speed**, within the requested 5–7 m/s range. This is not a real-robot speed recommendation; physical limits and braking envelopes must be measured and configured separately.
+
+Verification completed on this host:
+
+- `colcon build --symlink-install --packages-select sih_amr_interfaces sih_amr_fleet` succeeds.
+- The pure algorithm and lane-network suite passes **11 tests**.
+- A headless Gazebo launch successfully started the warehouse, four Lite AMRs, all controller/interface-readiness gates, the full 60-process fleet graph, random task generation, CBBA traffic, and passive JSONL logging.
+- Local-state and LiDAR QoS incompatibilities found in the first live run were corrected by using the intended best-effort/volatile local pose/sensor profile. The repeat run had no QoS incompatibility errors.
+
+The static baseline is **not yet accepted as end-to-end complete**. The repeat bounded run showed only `robot_3` publishing live fleet state while the other spawned AMRs did not supply usable odometry/state to their fleet nodes; as a result, CBBA converged incorrectly on `robot_4` for the observed tasks. The task executor now protects an active task from being replaced by later assignments, but the remaining multi-AMR odometry/control publication issue must be resolved and then tested through pickup, dwell, dropoff, completion, route reservations, corridor entry, and safety-stop evidence before long data collection starts.
+
+ML route selection/cost prediction, ML confidence fallback, camera obstacle image collection/classification, semantic labels, and learned CBBA cost are intentionally deferred. The immediate next work is to make the deterministic WHCA* + CBBA + mutex + ORCA + Safety Supervisor stack complete and repeatable; only then should sustained simulation logging be used for ML/DL training data.

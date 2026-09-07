@@ -5,21 +5,26 @@ from rclpy.node import Node
 from sih_amr_interfaces.msg import PeerTrackArray, RobotState
 
 from .algorithms import avoidance_velocity
-from .common import FLEET_STATE_QOS
+from .common import FLEET_STATE_QOS, POSE_QOS
 
 
 class OrcaNode(Node):
     """Produces an uncertainty-inflated reciprocal-velocity safety candidate."""
     def __init__(self):
         super().__init__('orca_node')
-        self.radius = self.declare_parameter('robot_radius_m', 0.28).value
-        self.max_speed = self.declare_parameter('max_speed_mps', 0.45).value
+        self.radius = self.declare_parameter('robot_radius_m', 0.35).value
+        self.max_speed = self.declare_parameter('max_speed_mps', 6.0).value
+        self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
         self.pose, self.desired, self.tracks = None, Twist(), []
         self.pub = self.create_publisher(Twist, 'cmd_vel_candidate', FLEET_STATE_QOS)
-        self.create_subscription(RobotState, 'state', lambda msg: setattr(self, 'pose', msg.pose), FLEET_STATE_QOS)
+        self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_subscription(Twist, 'cmd_vel_desired', lambda msg: setattr(self, 'desired', msg), FLEET_STATE_QOS)
         self.create_subscription(PeerTrackArray, 'peer_tracks', lambda msg: setattr(self, 'tracks', msg.tracks), FLEET_STATE_QOS)
         self.create_timer(0.05, self.control)
+
+    def on_state(self, msg):
+        if msg.fleet_header.robot_id == self.robot_id:
+            self.pose = msg.pose
 
     def control(self):
         result = Twist()

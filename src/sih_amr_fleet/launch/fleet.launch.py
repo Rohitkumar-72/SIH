@@ -12,12 +12,26 @@ def robot_group(robot_id, map_file, pad_pose):
     params = {
         'robot_id': robot_id,
         'map_file': map_file,
+        # Requested Gazebo baseline speed.  This profile is simulation-only;
+        # physical AMRs must use their measured safe limits.
+        'max_speed_mps': 6.0,
+        'nominal_speed_mps': 6.0,
+        # With the planner's 0.5 m cells, this gain lets the follower reach
+        # the configured simulator speed ceiling on a straight route.
+        'linear_kp': 12.0,
+        # Gazebo stress-test braking profile. A real AMR must use its measured
+        # braking model, not these deliberately permissive values.
+        'braking_deceleration_mps2': 60.0,
+        'braking_margin_m': 0.10,
+        # Conservative 0.70 m collision envelope, verified against each
+        # shelf bounding box in the locked warehouse-layout YAML.
+        'robot_radius_m': 0.35,
         'pad_x': pad_pose[0], 'pad_y': pad_pose[1], 'pad_yaw': -1.5708,
         'odom_origin_x': pad_pose[0], 'odom_origin_y': pad_pose[1],
         'odom_origin_yaw': -1.5708,
     }
     nodes = [
-        'localization_node', 'local_costmap_node', 'blockage_detector_node', 'peer_tracker_node',
+        'local_costmap_node', 'blockage_detector_node', 'peer_tracker_node',
         'health_node', 'charging_pad_node', 'cbba_node', 'whca_planner_node', 'reservation_manager_node',
         'corridor_mutex_node', 'path_follower_node', 'orca_node', 'safety_supervisor_node', 'task_execution_node',
     ]

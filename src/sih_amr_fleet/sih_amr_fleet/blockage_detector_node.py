@@ -3,7 +3,7 @@ from nav_msgs.msg import OccupancyGrid
 from rclpy.node import Node
 from sih_amr_interfaces.msg import BlockageObservation, GridCell, RobotState
 
-from .common import FLEET_STATE_QOS, PROTOCOL_QOS, header, new_session_id
+from .common import POSE_QOS, PROTOCOL_QOS, header, new_session_id
 
 
 class BlockageDetectorNode(Node):
@@ -14,8 +14,8 @@ class BlockageDetectorNode(Node):
         self.persistence = self.declare_parameter('persistence_frames', 5).value
         self.session_id, self.sequence, self.pose, self.hits = new_session_id(), 0, None, {}
         self.pub = self.create_publisher(BlockageObservation, '/fleet/blockage_observation', PROTOCOL_QOS)
-        self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
-        self.create_subscription(OccupancyGrid, 'local_costmap', self.on_grid, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, 'state', self.on_state, POSE_QOS)
+        self.create_subscription(OccupancyGrid, 'local_costmap', self.on_grid, POSE_QOS)
 
     def on_state(self, msg): self.pose = msg.pose
 

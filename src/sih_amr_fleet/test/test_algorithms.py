@@ -1,5 +1,6 @@
 import math
 from sih_amr_fleet.algorithms import ConstantVelocityTrack, avoidance_velocity, whca_star
+from sih_amr_fleet.warehouse_tasks import aisle_points, narrow_lanes
 
 
 def test_whca_basic_path():
@@ -106,3 +107,11 @@ def test_avoidance_clips_max_speed():
     )
     speed = math.hypot(safe[0], safe[1])
     assert speed <= 0.45 + 1e-6
+
+
+def test_predefined_narrow_lanes_cover_every_storage_aisle():
+    lanes = narrow_lanes()
+    assert len(lanes) == 48
+    assert all(lane.kind == 'narrow' for lane in lanes)
+    assert any(lane.lane_id == 'NC-MIDDLE-CENTRE' for lane in lanes)
+    assert any(point.x == 0.0 for point in aisle_points())

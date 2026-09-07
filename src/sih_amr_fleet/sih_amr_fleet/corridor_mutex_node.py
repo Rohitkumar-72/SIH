@@ -6,7 +6,7 @@ from rclpy.node import Node
 from sih_amr_interfaces.msg import CorridorProtocol, FleetHealth, RobotState, RoutePlan
 from std_msgs.msg import Bool, String
 
-from .common import FLEET_STATE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
 
 
 class CorridorMutexNode(Node):
@@ -26,6 +26,8 @@ class CorridorMutexNode(Node):
         self.request = None
         self.deferred = {}  # (corridor_id, request_id) -> requesting_robot_id
         self.peers = {}     # robot_id -> lease_until_s
+        self.peer_corridors = {}  # robot_id -> corridor currently announced ENTER
+        self.suspect_corridors = set()
         self.entrance_clear = True
         self.corridors = {}
 
@@ -39,7 +41,7 @@ class CorridorMutexNode(Node):
         self.create_subscription(FleetHealth, '/fleet/health', self.on_health, FLEET_STATE_QOS)
         self.create_subscription(String, 'request_corridor', self.on_request, FLEET_STATE_QOS)
         self.create_subscription(RoutePlan, 'planned_route', self.on_route, FLEET_STATE_QOS)
-        self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, 'state', self.on_state, POSE_QOS)
         self.create_subscription(Bool, 'entrance_clear', self.on_entrance_clear, FLEET_STATE_QOS)
         self.create_timer(0.1, self.tick)
 
@@ -154,10 +156,18 @@ class CorridorMutexNode(Node):
                 self.request['grants'].add(msg.fleet_header.robot_id)
 
         elif msg.event in (CorridorProtocol.EXIT, CorridorProtocol.RELEASE, CorridorProtocol.CANCEL):
+            if self.peer_corridors.get(msg.fleet_header.robot_id) == msg.corridor_id:
+                self.peer_corridors.pop(msg.fleet_header.robot_id, None)
             for (corridor, request_id), peer in list(self.deferred.items()):
                 if corridor == msg.corridor_id:
                     self.send(CorridorProtocol.GRANT, corridor, request_id, peer)
                     del self.deferred[(corridor, request_id)]
+
+        elif msg.event == CorridorProtocol.ENTER:
+            # Network ownership is not physical clearance.  Retain this fact
+            # if the owner later disappears, until an operator/sensor-backed
+            # recovery procedure explicitly clears the corridor.
+            self.peer_corridors[msg.fleet_header.robot_id] = msg.corridor_id
 
     def tick(self):
         if self.request is None:
@@ -165,8 +175,12 @@ class CorridorMutexNode(Node):
             return
 
         now = now_seconds(self)
+        for robot_id, corridor_id in list(self.peer_corridors.items()):
+            if self.peers.get(robot_id, 0.0) < now:
+                self.suspect_corridors.add(corridor_id)
         active_peers = {robot for robot, until in self.peers.items() if until >= now}
-        permitted = active_peers.issubset(self.request['grants'])
+        suspected = self.request['corridor'] in self.suspect_corridors
+        permitted = active_peers.issubset(self.request['grants']) and not suspected
 
         if permitted and self.entrance_clear and not self.request['entered']:
             self.request['entered'] = True

@@ -2,10 +2,10 @@ import math
 import rclpy
 from rclpy.node import Node
 from sih_amr_interfaces.msg import (
-    RobotState, Task, TaskAnnouncement, TaskAssignment, TaskConsensus, TaskExecutionStatus
+    FleetHealth, RobotState, Task, TaskAnnouncement, TaskAssignment, TaskConsensus, TaskExecutionStatus
 )
 
-from .common import FLEET_STATE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
 
 
 class CbbaNode(Node):
@@ -14,20 +14,27 @@ class CbbaNode(Node):
     def __init__(self):
         super().__init__('cbba_node')
         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
-        self.max_speed = self.declare_parameter('nominal_speed_mps', 0.45).value
+        # Gazebo baseline speed.  This is deliberately an explicit fleet
+        # parameter: physical AMRs must use their measured safe limit instead.
+        self.max_speed = self.declare_parameter('nominal_speed_mps', 6.0).value
+        # A small collection window prevents every robot from acting on its
+        # own initial claim before the other candidates have arrived.
+        self.consensus_settle_s = self.declare_parameter('consensus_settle_s', 2.0).value
         self.session_id = new_session_id()
         self.sequence = 0
         self.pose = None
         self.tasks = {}
+        self.task_seen_at = {}
         self.winners = {}  # task_id -> TaskConsensus
-
+        self.peer_health_until = {}
         self.consensus_pub = self.create_publisher(TaskConsensus, '/fleet/task_consensus', PROTOCOL_QOS)
         self.assignment_pub = self.create_publisher(TaskAssignment, 'task_assignment', FLEET_STATE_QOS)
 
         self.create_subscription(TaskAnnouncement, '/fleet/task_announcement', self.on_task, PROTOCOL_QOS)
         self.create_subscription(TaskConsensus, '/fleet/task_consensus', self.on_consensus, PROTOCOL_QOS)
-        self.create_subscription(RobotState, 'state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, 'state', self.on_state, POSE_QOS)
         self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
+        self.create_subscription(FleetHealth, '/fleet/health', self.on_health, FLEET_STATE_QOS)
         self.create_timer(0.5, self.run_round)
         self.get_logger().info(f'CbbaNode initialized for {self.robot_id}')
 
@@ -36,11 +43,17 @@ class CbbaNode(Node):
 
     def on_task(self, msg):
         self.tasks[msg.task.task_id] = msg.task
+        self.task_seen_at.setdefault(msg.task.task_id, now_seconds(self))
 
     def on_execution(self, msg):
         if msg.phase == TaskExecutionStatus.COMPLETED:
             self.tasks.pop(msg.task_id, None)
+            self.task_seen_at.pop(msg.task_id, None)
             self.winners.pop(msg.task_id, None)
+
+    def on_health(self, msg):
+        if msg.fleet_header.robot_id != self.robot_id:
+            self.peer_health_until[msg.fleet_header.robot_id] = stamp_seconds(msg.fleet_header.valid_until)
 
     def on_consensus(self, msg):
         if msg.fleet_header.robot_id == self.robot_id:
@@ -87,6 +100,7 @@ class CbbaNode(Node):
         for task in list(self.tasks.values()):
             if stamp_seconds(task.expires_at) < now:
                 self.tasks.pop(task.task_id, None)
+                self.task_seen_at.pop(task.task_id, None)
                 self.winners.pop(task.task_id, None)
                 continue
 
@@ -100,8 +114,17 @@ class CbbaNode(Node):
                 winner_session = self.session_id
             else:
                 lease_expired = stamp_seconds(old.lease_until) < now
-                epoch = old.assignment_epoch + (1 if lease_expired else 0)
-                if (my_bid, self.robot_id) < (old.winning_bid, old.winner_robot_id) or lease_expired:
+                # Do not treat a peer as failed merely because its first
+                # health message has not arrived.  Take over only after a
+                # previously observed health lease has expired.
+                peer_lease = self.peer_health_until.get(old.winner_robot_id)
+                owner_unreachable = (
+                    old.winner_robot_id != self.robot_id and
+                    peer_lease is not None and peer_lease < now
+                )
+                epoch = old.assignment_epoch + (1 if lease_expired or owner_unreachable else 0)
+                if ((my_bid, self.robot_id) < (old.winning_bid, old.winner_robot_id)
+                        or lease_expired or owner_unreachable):
                     winner = self.robot_id
                     winning_bid = my_bid
                     winner_session = self.session_id
@@ -124,7 +147,11 @@ class CbbaNode(Node):
             self.winners[task.task_id] = consensus
             self.consensus_pub.publish(consensus)
 
-            if winner == self.robot_id:
+            # Consensus claims travel on a reliable protocol topic.  Hold
+            # assignments until at least several bid rounds have had time to
+            # converge, so only the final winner begins task execution.
+            settled = now - self.task_seen_at.get(task.task_id, now) >= self.consensus_settle_s
+            if winner == self.robot_id and settled:
                 assignment = TaskAssignment()
                 assignment.fleet_header = consensus.fleet_header
                 assignment.task = task

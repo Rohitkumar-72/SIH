@@ -1,7 +1,16 @@
-from glob import glob
+from pathlib import Path
 from setuptools import find_packages, setup
 
 package_name = 'sih_amr_fleet'
+package_root = Path(__file__).resolve().parent
+
+
+def package_files(directory, pattern):
+    return [str(path.relative_to(package_root))
+            for path in (package_root / directory).glob(pattern)]
+
+
+config_files = package_files('config', '*.yaml')
 
 setup(
     name=package_name,
@@ -10,10 +19,10 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
-        ('share/' + package_name + '/config', glob('config/*')),
-        ('share/' + package_name + '/maps', glob('maps/*')),
-        ('share/' + package_name + '/scenarios', glob('scenarios/*')),
+        ('share/' + package_name + '/launch', package_files('launch', '*.launch.py')),
+        ('share/' + package_name + '/config', config_files),
+        ('share/' + package_name + '/maps', package_files('maps', '*')),
+        ('share/' + package_name + '/scenarios', package_files('scenarios', '*')),
     ],
     install_requires=['setuptools', 'PyYAML'],
     zip_safe=True,
@@ -42,6 +51,7 @@ setup(
         'random_task_generator_node = sih_amr_fleet.random_task_generator_node:main',
         'task_execution_node = sih_amr_fleet.task_execution_node:main',
         'data_collection_node = sih_amr_fleet.data_collection_node:main',
+        'corridor_sweep_node = sih_amr_fleet.corridor_sweep_node:main',
         'dashboard_bridge_node = sih_amr_fleet.dashboard_bridge_node:main',
     ]},
 )
