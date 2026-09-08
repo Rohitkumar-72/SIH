@@ -12,6 +12,9 @@ FLEET_STATE_QOS = QoSProfile(
     durability=DurabilityPolicy.TRANSIENT_LOCAL)
 PROTOCOL_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST, depth=30, reliability=ReliabilityPolicy.RELIABLE)
+TASK_SOURCE_QOS = QoSProfile(
+    history=HistoryPolicy.KEEP_LAST, depth=30, reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
 
 def new_session_id():

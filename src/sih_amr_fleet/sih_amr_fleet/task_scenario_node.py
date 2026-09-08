@@ -3,9 +3,9 @@ import yaml
 import rclpy
 from geometry_msgs.msg import Pose2D
 from rclpy.node import Node
-from sih_amr_interfaces.msg import Task, TaskAnnouncement
+from sih_amr_interfaces.msg import Task, TaskAnnouncement, TaskExecutionStatus
 
-from .common import PROTOCOL_QOS, header, new_session_id
+from .common import FLEET_STATE_QOS, TASK_SOURCE_QOS, header, new_session_id
 
 
 class TaskScenarioNode(Node):
@@ -16,11 +16,26 @@ class TaskScenarioNode(Node):
         file_name = self.declare_parameter('scenario_file', '').value
         self.tasks = yaml.safe_load(pathlib.Path(file_name).read_text()).get('tasks', []) if file_name else []
         self.started, self.sent = self.get_clock().now().nanoseconds * 1e-9, set()
-        self.pub = self.create_publisher(TaskAnnouncement, '/fleet/task_announcement', PROTOCOL_QOS)
+        self.pending = {}
+        self.reannounce_interval_s = self.declare_parameter('reannounce_interval_s', 1.0).value
+        self.pub = self.create_publisher(TaskAnnouncement, '/fleet/task_announcement', TASK_SOURCE_QOS)
+        self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_timer(0.2, self.tick)
 
+    def on_execution(self, msg):
+        if msg.phase == TaskExecutionStatus.COMPLETED:
+            self.pending.pop(msg.task_id, None)
+
     def tick(self):
-        elapsed = self.get_clock().now().nanoseconds * 1e-9 - self.started
+        now = self.get_clock().now().nanoseconds * 1e-9
+        elapsed = now - self.started
+        for task_id, (msg, last_published) in list(self.pending.items()):
+            expires_at = msg.task.expires_at.sec + msg.task.expires_at.nanosec * 1e-9
+            if now >= expires_at:
+                self.pending.pop(task_id, None)
+            elif now - last_published >= self.reannounce_interval_s:
+                self.pub.publish(msg)
+                self.pending[task_id] = (msg, now)
         for spec in self.tasks:
             if spec['id'] in self.sent or spec.get('at_s', 0.0) > elapsed: continue
             self.sequence += 1; msg = TaskAnnouncement(); msg.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, spec.get('ttl_s', 120.0))
@@ -30,7 +45,9 @@ class TaskScenarioNode(Node):
             task.pickup_wait_s = float(spec.get('pickup_wait_s', 0.0))
             task.dropoff_wait_s = float(spec.get('dropoff_wait_s', 0.0))
             task.created_at, task.expires_at = msg.fleet_header.sent_at, msg.fleet_header.valid_until
-            msg.task = task; self.pub.publish(msg); self.sent.add(spec['id'])
+            msg.task = task; self.pub.publish(msg)
+            self.pending[spec['id']] = (msg, now)
+            self.sent.add(spec['id'])
 
 
 def main():

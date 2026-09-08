@@ -446,6 +446,25 @@ This is a layered, decentralised, edge-executed multi-AMR system. CBBA chooses t
 
 ## 21. Current implementation status — September 7, 2026
 
+### Verified deterministic-safety update — September 8, 2026
+
+The deterministic baseline now includes a project-owned decentralized dock
+lease protocol, mapped dock-centre final-alignment target, charging-pad
+confirmation before a dock-anchor map correction, raw-versus-map odometry
+telemetry fields, recovery event logging, conservative 2.0 m reverse-recovery
+policy, and narrow-resource approach stopping under absent permission or
+degraded peer communication. Green/red guidance strips were added to the
+canonical layout lock and `warehouse_clean.sdf` as visual/map semantics only;
+there is no camera/tape perception claim.
+
+On this host, the overlay built, the 19 pure deterministic tests passed, and
+the SDF validator accepted the updated world. A bounded headless launcher run
+passed robot 1's real odometry/LiDAR gate and began robot 2, but was interrupted
+before all four robots could be verified. A second launch was refused by the
+existing overlap guard after it matched the execution sandbox wrapper. Thus the
+four-robot gate, live dock confirmation, physical collision/contact telemetry,
+and long-duration soak remain unverified—not accepted benchmark evidence.
+
 The repository now includes the static-algorithm baseline additions: the locked-layout map publisher, lane-network task locations, random task generator, task-execution lifecycle, passive JSONL data collector, charging-pad simulation node, four-AMR launcher, and a one-command baseline launcher. The data collector is passive and produces a run manifest plus fleet-state, health, consensus, reservation, corridor, safety, blockage, and execution records when those messages are available.
 
 The current Gazebo profile uses a **6.0 m/s simulation-only maximum speed**, within the requested 5–7 m/s range. This is not a real-robot speed recommendation; physical limits and braking envelopes must be measured and configured separately.
@@ -460,3 +479,57 @@ Verification completed on this host:
 The static baseline is **not yet accepted as end-to-end complete**. The repeat bounded run showed only `robot_3` publishing live fleet state while the other spawned AMRs did not supply usable odometry/state to their fleet nodes; as a result, CBBA converged incorrectly on `robot_4` for the observed tasks. The task executor now protects an active task from being replaced by later assignments, but the remaining multi-AMR odometry/control publication issue must be resolved and then tested through pickup, dwell, dropoff, completion, route reservations, corridor entry, and safety-stop evidence before long data collection starts.
 
 ML route selection/cost prediction, ML confidence fallback, camera obstacle image collection/classification, semantic labels, and learned CBBA cost are intentionally deferred. The immediate next work is to make the deterministic WHCA* + CBBA + mutex + ORCA + Safety Supervisor stack complete and repeatable; only then should sustained simulation logging be used for ML/DL training data.
+
+### Validation agent record — September 8, 2026
+
+The required build and SDF validation passed, and the focused suite passed 26
+tests. The bounded headless run `/tmp/sih_headless_validation_20260908_02`
+spawned four Lite AMRs; every robot passed the launcher gate requiring actual
+odometry and LiDAR samples. Telemetry contained all four robot-state streams
+and non-null raw `gazebo_odom` samples. It completed 0 delivery tasks with 4
+active robots: 0 fleet work cycles, with `robot_1=0, robot_2=0, robot_3=0,
+robot_4=0`; no fairness conclusion is possible from an all-zero workload.
+
+The first run `/tmp/sih_headless_validation_20260908_01` exposed incompatible
+QoS on `/fleet/dock_protocol` and `nearest_obstacle_m`; the smallest fixes
+changed localization's dock subscription to `PROTOCOL_QOS` and the path
+follower's nearest-obstacle subscription to `POSE_QOS`, with a regression test.
+The corrected run had no QoS incompatibility warnings, but still produced no
+task-consensus, execution, dock, corridor, safety, or collision records. The
+diagnostic run `/tmp/sih_headless_validation_20260908_03` also logged Gazebo
+controller `publish_async_failures_` and NaN-command warnings. The Safety
+Supervisor now rejects nonfinite candidate velocity components with a stop
+reason; this is unit-tested but not yet live-verified. Live dock confirmation,
+pickup/dropoff motion, safety recovery, fault injection, collision-contact
+sensing, and long-soak acceptance remain unverified.
+
+After that diagnostic, the local pose publisher was made an exact `POSE_QOS`
+match for its local consumers; CBBA now also filters its own known-good fleet
+state stream and logs first task/local/fleet-state receipt. Task sources wait
+for all four valid robot states, log CBBA subscriber count diagnostically, and
+use a transient-local announcement stream that replays uncompleted work every
+second. The controller configuration now
+matches the existing `TwistStamped` adapter (`use_stamped_vel: true`); the
+adapter emits finite idle-stop references and rejects nonfinite input. Passive
+telemetry now records task announcements. The overlay rebuilt and all 24 focused
+tests passed after these changes. The next bounded run,
+`/tmp/sih_headless_validation_20260908_06`, confirmed fleet readiness and five
+announcements, with `rnd_task_001` accepted by `robot_2`, but it completed 0
+delivery tasks with 4 active robots: 0 fleet work cycles and
+`robot_1=0, robot_2=0, robot_3=0, robot_4=0`. All robots remained at their spawn
+poses; no execution, dock, corridor, or collision telemetry was recorded.
+The JSONL also contained no `task_announcement` records even though five
+announcements appeared in the generator log and one was accepted by `robot_2`.
+Gazebo still logged controller NaN rejections at lines 201, 303, and 412 of its
+run log. Pickup/dropoff motion, live dock confirmation, fault injection, and
+long-soak evidence remain unverified.
+
+The next corrective change set adds the exact local `state` stream to the task
+executor, WHCA* planner, path follower, ORCA, and Safety Supervisor, so an
+intermittent shared fleet-state subscription cannot suppress the local motion
+chain. The supervisor now requires fresh LiDAR and evaluates braking clearance
+only in the commanded forward/reverse scan sector, retaining hard stops for
+stale sensors, invalid commands, and insufficient directional clearance. The
+stamped command bridge retains a finite stop reference for controller activation.
+The overlay rebuilt and the focused suite passed 26 tests after these changes;
+no new headless acceptance run has been performed.

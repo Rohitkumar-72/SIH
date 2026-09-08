@@ -3,6 +3,53 @@ resolution_m: 0.5
 origin: [-22.5, -30.0]
 width: 90
 height: 120
+# ``map`` is the fleet's canonical coordinate frame.  Cells are
+# (round((x-origin_x)/resolution), round((y-origin_y)/resolution)).  Gazebo
+# only supplies simulated odometry; physical AMRs establish this same frame at
+# a dock anchor, then dead-reckon and correct from local perception.
+anchors:
+  charging_pad_1: {map_pose: [-3.6, -29.55, -1.5708], cell: [38, 1]}
+  charging_pad_2: {map_pose: [-1.2, -29.55, -1.5708], cell: [43, 1]}
+  charging_pad_3: {map_pose: [1.2, -29.55, -1.5708], cell: [47, 1]}
+  charging_pad_4: {map_pose: [3.6, -29.55, -1.5708], cell: [52, 1]}
+dock_resources:
+  charging_pad_1: {approach_branch: RS-DOCK-1-BRANCH, centre_strip: DS-1}
+  charging_pad_2: {approach_branch: RS-DOCK-2-BRANCH, centre_strip: DS-2}
+  charging_pad_3: {approach_branch: RS-DOCK-3-BRANCH, centre_strip: DS-3}
+  charging_pad_4: {approach_branch: RS-DOCK-4-BRANCH, centre_strip: DS-4}
+# Main corridors and their large junctions are multi-robot, time-reserved
+# graph resources.  They deliberately do not use a one-at-a-time mutex.
+map_graph:
+  nodes:
+    dock_area: {cell: [45, 1], kind: anchor_area}
+    main_junction_sw: {cell: [30, 40], kind: main_junction, capacity: multi_robot}
+    main_junction_se: {cell: [60, 40], kind: main_junction, capacity: multi_robot}
+    main_junction_nw: {cell: [30, 80], kind: main_junction, capacity: multi_robot}
+    main_junction_ne: {cell: [60, 80], kind: main_junction, capacity: multi_robot}
+    narrow_junction_middle_centre: {cell: [45, 60], kind: narrow_junction, capacity: one_robot}
+    narrow_junction_north_centre: {cell: [45, 100], kind: narrow_junction, capacity: one_robot}
+  edges:
+    - {from: dock_area, to: main_junction_sw, resource: main_vertical_west, policy: whca_reservation}
+    - {from: dock_area, to: main_junction_se, resource: main_vertical_east, policy: whca_reservation}
+    - {from: main_junction_sw, to: main_junction_nw, resource: main_vertical_west, policy: whca_reservation}
+    - {from: main_junction_se, to: main_junction_ne, resource: main_vertical_east, policy: whca_reservation}
+    - {from: main_junction_sw, to: narrow_junction_middle_centre, resource: middle_centre_lanes, policy: corridor_mutex}
+    - {from: narrow_junction_middle_centre, to: narrow_junction_north_centre, resource: north_centre_lanes, policy: corridor_mutex}
+# Only these compact, one-robot resources invoke the Ricart-Agrawala mutex.
+# The two centre shelf quadrants contain only two shelf columns; their central
+# cross-aisle is traversable but is still protected as a narrow junction.
+mutex_resources:
+  narrow_junction_middle_centre:
+    kind: narrow_junction
+    capacity: 1
+    cells: [[44, 47], [46, 73]]
+  narrow_junction_north_centre:
+    kind: narrow_junction
+    capacity: 1
+    cells: [[44, 85], [46, 119]]
+# The mutex node deterministically expands shelf rows into one resource per
+# narrow aisle (48 horizontal aisle segments plus both centre vertical lanes).
+generate_narrow_lane_mutex_resources: true
 corridors:
   main_vertical_west: [[27, 0], [27, 119]]
   main_vertical_east: [[63, 0], [63, 119]]

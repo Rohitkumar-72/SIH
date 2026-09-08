@@ -7,8 +7,9 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from sensor_msgs.msg import BatteryState
 from std_msgs.msg import Bool, Float32, String
+from sih_amr_interfaces.msg import DockProtocol
 
-from .common import clamp, yaw_from_quaternion
+from .common import PROTOCOL_QOS, clamp, header, new_session_id, yaw_from_quaternion
 
 
 def wrap_angle(angle):
@@ -45,23 +46,46 @@ class ChargingPadNode(Node):
             'charge_rate_percent_per_min', 10.0).value
         self.battery_percent = self.declare_parameter('initial_battery_percent', 50.0).value
         self.odom_timeout_s = self.declare_parameter('odom_timeout_s', 0.5).value
+        self.dock_id = self.declare_parameter('dock_id', f'charging_pad_{self.robot_id.rsplit("_", 1)[-1]}').value
 
         self.odom = None
         self.last_odom_wall_time = None
         self.stable_since_ns = None
         self.is_docked = False
         self.last_tick_ns = self.get_clock().now().nanoseconds
+        self.session_id, self.sequence, self.claim = new_session_id(), 0, None
         self.docked_pub = self.create_publisher(Bool, 'charging/is_docked', 10)
         self.percent_pub = self.create_publisher(Float32, 'charging/battery_percent', 10)
         self.battery_pub = self.create_publisher(BatteryState, 'charging/battery_state', 10)
         self.status_pub = self.create_publisher(String, 'charging/docking_status', 10)
+        self.protocol_pub = self.create_publisher(DockProtocol, '/fleet/dock_protocol', PROTOCOL_QOS)
         self.docking_status = 'waiting for odometry'
         self.create_subscription(Odometry, 'odom', self.on_odom, 10)
+        self.create_subscription(DockProtocol, '/fleet/dock_protocol', self.on_dock_protocol, PROTOCOL_QOS)
         self.create_timer(0.2, self.update)
 
     def on_odom(self, msg):
         self.odom = msg
         self.last_odom_wall_time = time.monotonic()
+
+    def on_dock_protocol(self, msg):
+        if (msg.fleet_header.robot_id == self.robot_id and msg.dock_id == self.dock_id
+                and msg.event == DockProtocol.CLAIM):
+            self.claim = (msg.request_id, msg.lamport_time)
+        elif (msg.fleet_header.robot_id == self.robot_id and msg.dock_id == self.dock_id
+              and msg.event in (DockProtocol.RELEASE, DockProtocol.CANCEL)):
+            self.claim = None
+
+    def publish_confirmation(self):
+        if not self.claim:
+            return
+        self.sequence += 1
+        msg = DockProtocol()
+        msg.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, 2.0)
+        msg.dock_id, msg.request_id = self.dock_id, self.claim[0]
+        msg.lamport_time, msg.lease_until = self.claim[1], msg.fleet_header.valid_until
+        msg.event = DockProtocol.CONFIRMED
+        self.protocol_pub.publish(msg)
 
     def dock_conditions_met(self):
         if (self.odom is None or self.last_odom_wall_time is None
@@ -103,11 +127,14 @@ class ChargingPadNode(Node):
         else:
             self.stable_since_ns = None
             self.is_docked = False
+        was_docked = self.is_docked
         if self.is_docked:
             self.battery_percent = clamp(
                 self.battery_percent + self.charge_rate_percent_per_min * elapsed_s / 60.0,
                 0.0, 100.0)
         self.publish_state(now_ns)
+        if self.is_docked and not was_docked:
+            self.publish_confirmation()
 
     def publish_state(self, now_ns):
         self.docked_pub.publish(Bool(data=self.is_docked))

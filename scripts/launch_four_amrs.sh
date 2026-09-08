@@ -26,6 +26,7 @@ SETTLE_SECONDS="${SETTLE_SECONDS:-20}"
 RUN_ID="$(date +%Y%m%d_%H%M%S)"
 LOG_DIR="${LOG_DIR:-$WORKSPACE/log/four_amr_runs/$RUN_ID}"
 FLEET_DATA_FILE="${FLEET_DATA_FILE:-$LOG_DIR/fleet_telemetry.jsonl}"
+RUN_EVENTS_FILE="$LOG_DIR/run_events.jsonl"
 
 [[ -f "$POSE_FILE" ]] || { echo "ERROR: pose file not found: $POSE_FILE" >&2; exit 2; }
 source "$POSE_FILE"
@@ -38,6 +39,10 @@ done
 [[ -f "$WORLD_FILE" ]] || { echo "ERROR: world not found: $WORLD_FILE" >&2; exit 2; }
 [[ -f "$GUI_CONFIG" ]] || { echo "ERROR: GUI config not found: $GUI_CONFIG" >&2; exit 2; }
 mkdir -p "$LOG_DIR" || { echo "ERROR: cannot create $LOG_DIR" >&2; exit 1; }
+write_run_event() {
+  printf '{"event_type":"%s","wall_epoch_s":%s,"detail":"%s"}\n' "$1" "$(date +%s)" "$2" >> "$RUN_EVENTS_FILE"
+}
+write_run_event launcher_started "headless_or_gui_run_requested"
 
 source /opt/ros/jazzy/setup.bash
 source "$OVERLAY/setup.bash"
@@ -74,6 +79,7 @@ start_group() {
 cleanup() {
   local status=$? pid
   trap - EXIT INT TERM
+  write_run_event launcher_exiting "status=$status"
   echo 'Stopping this four-AMR run...'
   for pid in "$GUI_PID" "$FLEET_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
     [[ -n "$pid" ]] && kill -TERM -- "-$pid" 2>/dev/null || true
@@ -119,6 +125,7 @@ echo "Run logs: $LOG_DIR"
 echo "Starting server with $RENDER_ENGINE..."
 start_group "$LOG_DIR/gazebo_server.log" gz sim -s -r --render-engine "$RENDER_ENGINE" "$WORLD_FILE"
 SERVER_PID="$STARTED_PID"
+write_run_event gazebo_server_started "pid=$SERVER_PID"
 wait_for server 60 kill -0 "$SERVER_PID" || fail 'Gazebo server exited during startup'
 wait_for warehouse 60 warehouse_ready || fail 'Gazebo did not expose the warehouse models'
 
@@ -134,10 +141,12 @@ spawn_robot() {
     namespace:="$robot" model:="$MODEL" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.05 yaw:="$yaw" \
     spawn_dock:=false keep_sensors_system:="$keep_sensors"
   ROBOT_PIDS+=("$STARTED_PID")
+  write_run_event robot_launch_started "$robot pid=$STARTED_PID"
   wait_for entity "$SPAWN_WAIT_SECONDS" model_exists "$robot" || fail "$robot body was not created"
   wait_for controller 120 grep -Fq "[$robot.diffdrive_spawner]: Configured and activated diffdrive_controller" "$log_file" || fail "$robot controller did not activate"
   wait_for interfaces 90 grep -Fq "[$robot.interface_readiness]: Interface readiness passed:" "$log_file" || fail "$robot interfaces are not ready"
   echo "$robot passed all gates; settling for ${SETTLE_SECONDS}s."
+  write_run_event robot_interface_gate_passed "$robot"
   sleep "$SETTLE_SECONDS"
 }
 
@@ -153,6 +162,7 @@ if [[ "$START_FLEET" == true ]]; then
     random_tasks:="$FLEET_RANDOM_TASKS" record_data:="$FLEET_RECORD_DATA" \
     data_file:="$FLEET_DATA_FILE"
   FLEET_PID="$STARTED_PID"
+  write_run_event fleet_launch_started "pid=$FLEET_PID"
   sleep 3
   kill -0 "$FLEET_PID" 2>/dev/null || fail 'Fleet launch exited during startup'
 fi

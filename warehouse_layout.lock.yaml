@@ -1,16 +1,25 @@
 # Canonical initial layout. Change this file and warehouse_clean.sdf together.
-schema_version: 3
+schema_version: 4
 layout_locked: true
 source_world: warehouse_clean.sdf
 coordinate_frame: {x: right, y: forward, z: up, yaw_unit: radians}
 metadata:
   warehouse_name: SIH_Warehouse_v1
-  layout_version: 3.0
+  layout_version: 4.0
   author: SIH AMR Team
   map_resolution_m: 0.5
   coordinate_frame: map
   simulation_speed_multiplier: 1.0
   layout_status: locked
+coordinate_system:
+  canonical_frame: map
+  map_origin_m: {x: -22.5, y: -30.0, z: 0.0}
+  resolution_m: 0.5
+  cell_formula: {cell_x: "round((map_x + 22.5) / 0.5)", cell_y: "round((map_y + 30.0) / 0.5)"}
+  simulation_source: gazebo_odometry_transformed_to_map
+  physical_source: dock_anchor_reset_plus_wheel_odom_imu_and_local_perception
+  gazebo_pose_policy: "simulation-only ground truth; never a physical-AMR localization dependency"
+  restart_policy: "publish localization invalid; move slowly along the most open safe direction; use green main-corridor tape to return to a charging-pad anchor; reset map pose only after dock confirmation"
 warehouse:
   id: WH-01
   interior_bounds_2d_m: {min_x: -22.5, min_y: -30.0, max_x: 22.5, max_y: 30.0}
@@ -31,6 +40,11 @@ charging_station:
   queue_capacity: 0
   charging_rate_percent_per_minute: 10.0
   location: {wall: south, min_x: -6.0, max_x: 6.0, min_y: -30.0, max_y: -29.1}
+  map_anchors:
+    - {id: charging_pad_1, pose: {x: -3.6, y: -29.55, yaw: -1.5708}, cell: [38, 1]}
+    - {id: charging_pad_2, pose: {x: -1.2, y: -29.55, yaw: -1.5708}, cell: [43, 1]}
+    - {id: charging_pad_3, pose: {x: 1.2, y: -29.55, yaw: -1.5708}, cell: [47, 1]}
+    - {id: charging_pad_4, pose: {x: 3.6, y: -29.55, yaw: -1.5708}, cell: [52, 1]}
 corridor_id_system:
   main_prefix: MC
   narrow_prefix: NC
@@ -45,10 +59,12 @@ main_corridors:
   - {id: MC-EW-S, name: main_east_west_south, class: main, direction: bidirectional, reservation_enabled: true, max_speed_mps: 6.0, bounds_2d_m: {min_x: -22.25, min_y: -11.5, max_x: 22.25, max_y: -8.5}, width_m: 3.0, orientation: east_west}
   - {id: MC-EW-N, name: main_east_west_north, class: main, direction: bidirectional, reservation_enabled: true, max_speed_mps: 6.0, bounds_2d_m: {min_x: -22.25, min_y: 8.5, max_x: 22.25, max_y: 11.5}, width_m: 3.0, orientation: east_west}
 junctions:
-  - {id: J-SW, name: junction_south_west, connects: [MC-NS-W, MC-EW-S], bounds_2d_m: {min_x: -9.0, min_y: -11.5, max_x: -6.0, max_y: -8.5}, control: reservation_required}
-  - {id: J-SE, name: junction_south_east, connects: [MC-NS-E, MC-EW-S], bounds_2d_m: {min_x: 6.0, min_y: -11.5, max_x: 9.0, max_y: -8.5}, control: reservation_required}
-  - {id: J-NW, name: junction_north_west, connects: [MC-NS-W, MC-EW-N], bounds_2d_m: {min_x: -9.0, min_y: 8.5, max_x: -6.0, max_y: 11.5}, control: reservation_required}
-  - {id: J-NE, name: junction_north_east, connects: [MC-NS-E, MC-EW-N], bounds_2d_m: {min_x: 6.0, min_y: 8.5, max_x: 9.0, max_y: 11.5}, control: reservation_required}
+  - {id: J-SW, name: junction_south_west, class: main_junction, connects: [MC-NS-W, MC-EW-S], bounds_2d_m: {min_x: -9.0, min_y: -11.5, max_x: -6.0, max_y: -8.5}, control: whca_reservation, capacity: multi_robot}
+  - {id: J-SE, name: junction_south_east, class: main_junction, connects: [MC-NS-E, MC-EW-S], bounds_2d_m: {min_x: 6.0, min_y: -11.5, max_x: 9.0, max_y: -8.5}, control: whca_reservation, capacity: multi_robot}
+  - {id: J-NW, name: junction_north_west, class: main_junction, connects: [MC-NS-W, MC-EW-N], bounds_2d_m: {min_x: -9.0, min_y: 8.5, max_x: -6.0, max_y: 11.5}, control: whca_reservation, capacity: multi_robot}
+  - {id: J-NE, name: junction_north_east, class: main_junction, connects: [MC-NS-E, MC-EW-N], bounds_2d_m: {min_x: 6.0, min_y: 8.5, max_x: 9.0, max_y: 11.5}, control: whca_reservation, capacity: multi_robot}
+  - {id: NJ-MC, name: narrow_junction_middle_centre, class: narrow_junction, connects: [NC-MC], bounds_2d_m: {min_x: -0.5, min_y: -6.5, max_x: 0.5, max_y: 6.5}, control: ricart_agrawala_mutex, capacity: one_robot, reason: two_shelf_centre_quadrant_cross_aisle}
+  - {id: NJ-NC, name: narrow_junction_north_centre, class: narrow_junction, connects: [NC-NC], bounds_2d_m: {min_x: -0.5, min_y: 12.5, max_x: 0.5, max_y: 29.5}, control: ricart_agrawala_mutex, capacity: one_robot, reason: two_shelf_centre_quadrant_cross_aisle}
 narrow_corridor_families:
   - {id: NC-SW, sector: south_west, row_gap_centres_y_m: [-27.7725, -25.7375, -23.7025, -21.6675, -19.6325, -17.5975, -15.5625, -13.5275], column_centres_x_m: [-19.99, -15.67, -11.35], instance_count: 24, segment_length_m: 3.9172, clear_width_m: 1.1554, connects_to: [MC-EW-S]}
   - {id: NC-SE, sector: south_east, row_gap_centres_y_m: [-27.7725, -25.7375, -23.7025, -21.6675, -19.6325, -17.5975, -15.5625, -13.5275], column_centres_x_m: [11.35, 15.67, 19.99], instance_count: 24, segment_length_m: 3.9172, clear_width_m: 1.1554, connects_to: [MC-EW-S]}
@@ -65,6 +81,38 @@ navigation:
   path_topic_template: /robot_N/path
   max_speed_mps: 6.0
   goal_checker: {arrival_tolerance_m: 0.35}
+  whca_reservation_buffer_cells: 1
+  whca_reservation_buffer_shape: chebyshev_3x3_same_time_slot
+floor_guidance_markings:
+  # Visual/map references only; no Gazebo tape-perception bridge exists yet.
+  - {id: GS-MC-NS-W, colour: green, geometry: line_segment, map_coordinates_m: [[-7.5, -29.5], [-7.5, 29.5]], width_m: 0.06, purpose: main_corridor_centre_guidance}
+  - {id: GS-MC-NS-E, colour: green, geometry: line_segment, map_coordinates_m: [[7.5, -29.5], [7.5, 29.5]], width_m: 0.06, purpose: main_corridor_centre_guidance}
+  - {id: GS-MC-EW-S, colour: green, geometry: line_segment, map_coordinates_m: [[-22.0, -10.0], [22.0, -10.0]], width_m: 0.06, purpose: main_corridor_centre_guidance}
+  - {id: GS-MC-EW-N, colour: green, geometry: line_segment, map_coordinates_m: [[-22.0, 10.0], [22.0, 10.0]], width_m: 0.06, purpose: main_corridor_centre_guidance}
+  - {id: RS-MC-NS-W, colour: red, geometry: dashed_line_segment, map_coordinates_m: [[-7.5, -29.5], [-7.5, 29.5]], width_m: 0.035, purpose: low_speed_recovery_reference}
+  - {id: RS-MC-NS-E, colour: red, geometry: dashed_line_segment, map_coordinates_m: [[7.5, -29.5], [7.5, 29.5]], width_m: 0.035, purpose: low_speed_recovery_reference}
+  - {id: RS-MC-EW-S, colour: red, geometry: dashed_line_segment, map_coordinates_m: [[-22.0, -10.0], [22.0, -10.0]], width_m: 0.035, purpose: low_speed_recovery_reference}
+  - {id: RS-MC-EW-N, colour: red, geometry: dashed_line_segment, map_coordinates_m: [[-22.0, 10.0], [22.0, 10.0]], width_m: 0.035, purpose: low_speed_recovery_reference}
+  - {id: RS-DOCK-1-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-3.6, -10.0], [-3.6, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-2-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-1.2, -10.0], [-1.2, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-3-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[1.2, -10.0], [1.2, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-4-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[3.6, -10.0], [3.6, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: DS-1, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-3.6, -29.95], [-3.6, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_1}
+  - {id: DS-2, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-1.2, -29.95], [-1.2, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_2}
+  - {id: DS-3, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[1.2, -29.95], [1.2, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_3}
+  - {id: DS-4, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[3.6, -29.95], [3.6, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_4}
+  - {id: tape-narrow-aisles, colour: green, geometry: centreline_and_intersection_marker, applies_to: [narrow_corridor_families, NJ-MC, NJ-NC], purpose: narrow_aisle_following_and_intersection_identification}
+docking_protocol:
+  coordination: decentralized_lamport_lease
+  dock_resource_policy: claim_before_approach_branch
+  lease_seconds: 4.0
+  final_docking: mapped_strip_geometric_alignment_at_0.15_mps_max
+  confirmation: charging_pad_simulated_odometry_then_DockProtocol_CONFIRMED
+  anchor_reset: localization_node_only_after_confirmation
+  tape_sensor_status: not_implemented_visual_and_map_reference_only
+network_and_recovery:
+  approach_control: {distance_m: 2.0, speed_mps: 0.4, no_mutex_permit: stop, degraded_communication: stop}
+  recovery_reverse: {distance_m: 2.0, allowed_range_m: [2.0, 4.0], speed_mps: 0.20, reject_inside_mutex_resource: true, require_lidar_clearance: true}
 sensors:
   gazebo_sensor_system_scope: world
   gazebo_sensor_system_owner: warehouse_clean.sdf

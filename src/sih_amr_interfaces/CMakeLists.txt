@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FleetHealth.msg"
   "msg/SafetyState.msg"
   "msg/FleetEvent.msg"
+  "msg/DockProtocol.msg"
   DEPENDENCIES builtin_interfaces geometry_msgs
 )
 

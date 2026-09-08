@@ -23,6 +23,7 @@ class WhcaPlannerNode(Node):
         map_file = self.declare_parameter('map_file', '').value
         self.resolution = self.declare_parameter('grid_resolution_m', 0.5).value
         self.horizon = self.declare_parameter('horizon_steps', 12).value
+        self.reservation_buffer_cells = self.declare_parameter('reservation_buffer_cells', 1).value
 
         self.session_id = new_session_id()
         self.sequence = 0
@@ -40,6 +41,8 @@ class WhcaPlannerNode(Node):
         self.static_blocked = set()
         self.execution_target = None
         self.execution_waiting = False
+        self.docking_target = None
+        self._received_local_state = False
 
         if map_file:
             self.load_map(map_file)
@@ -48,10 +51,12 @@ class WhcaPlannerNode(Node):
         self.path_pub = self.create_publisher(Path, 'path', FLEET_STATE_QOS)
 
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, 'state', self.on_local_state, POSE_QOS)
         self.create_subscription(TaskAssignment, 'task_assignment', self.on_assignment, FLEET_STATE_QOS)
         self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_subscription(TrajectoryIntent, '/fleet/trajectory_intent', self.on_intent, PROTOCOL_QOS)
         self.create_subscription(BlockageObservation, '/fleet/blockage_observation', self.on_blockage, PROTOCOL_QOS)
+        self.create_subscription(Pose2D, 'docking/target', lambda msg: setattr(self, 'docking_target', msg), FLEET_STATE_QOS)
         self.create_timer(1.0, self.plan)
 
     def load_map(self, filename):
@@ -90,6 +95,14 @@ class WhcaPlannerNode(Node):
         if msg.fleet_header.robot_id != self.robot_id:
             return
         self.pose = msg.pose
+
+    def on_local_state(self, msg):
+        if not msg.localization_valid:
+            return
+        self.pose = msg.pose
+        if not self._received_local_state:
+            self._received_local_state = True
+            self.get_logger().info('WHCA planner received first local RobotState sample')
 
     def on_assignment(self, msg):
         if msg.owner_robot_id == self.robot_id and msg.active:
@@ -132,10 +145,13 @@ class WhcaPlannerNode(Node):
         )
 
     def plan(self):
-        if self.pose is None or self.assignment is None or stamp_seconds(self.assignment.lease_until) < now_seconds(self):
+        if self.pose is None or (self.assignment is None and self.docking_target is None):
             return
 
-        if self.execution_waiting:
+        if self.assignment is not None and stamp_seconds(self.assignment.lease_until) < now_seconds(self) and self.docking_target is None:
+            return
+
+        if self.execution_waiting and self.docking_target is None:
             # Publish single stationary waypoint while holding at dwell location
             self.sequence += 1
             self.plan_id += 1
@@ -151,7 +167,7 @@ class WhcaPlannerNode(Node):
             self.pub.publish(msg)
             return
 
-        target = self.execution_target or self.assignment.task.pickup
+        target = self.docking_target or self.execution_target or self.assignment.task.pickup
         start = self.to_cell(self.pose)
         goal = self.to_cell(target)
 
@@ -167,7 +183,7 @@ class WhcaPlannerNode(Node):
 
         path = whca_star(
             start, goal, self.static_blocked | set(self.blockages), reservations,
-            self.width, self.height, self.horizon
+            self.width, self.height, self.horizon, self.reservation_buffer_cells
         )
 
         self.sequence += 1
@@ -175,7 +191,7 @@ class WhcaPlannerNode(Node):
         msg = RoutePlan()
         msg.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, 1.5)
         msg.plan_id = self.plan_id
-        msg.task_id = self.assignment.task.task_id
+        msg.task_id = self.assignment.task.task_id if self.assignment else 'dock_recovery'
         msg.route_feasible = bool(path)
         msg.failure_reason = '' if path else 'no conflict-free route in current WHCA* window'
         msg.cells = [GridCell(x=x, y=y, time_slot=t) for x, y, t in path]

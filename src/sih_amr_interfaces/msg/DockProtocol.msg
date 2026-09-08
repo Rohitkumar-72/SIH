@@ -1,0 +1,13 @@
+FleetHeader fleet_header
+string dock_id
+string request_id
+string target_robot_id
+uint64 lamport_time
+builtin_interfaces/Time lease_until
+uint8 event
+uint8 REQUEST=0
+uint8 CLAIM=1
+uint8 RELEASE=2
+uint8 CANCEL=3
+uint8 CONFIRMED=4
+uint8 BLOCKED=5

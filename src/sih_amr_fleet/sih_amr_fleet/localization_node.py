@@ -1,11 +1,14 @@
 import rclpy
 import math
+import pathlib
+import yaml
 from geometry_msgs.msg import Pose2D, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
-from sih_amr_interfaces.msg import RobotState
+from sih_amr_interfaces.msg import DockProtocol, RobotState
 
-from .common import FLEET_STATE_QOS, POSE_QOS, header, new_session_id, yaw_from_quaternion
+from .algorithms import map_transform_for_anchor
+from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, yaw_from_quaternion
 
 
 class LocalizationNode(Node):
@@ -16,18 +19,51 @@ class LocalizationNode(Node):
         self.odom_origin_x = self.declare_parameter('odom_origin_x', 0.0).value
         self.odom_origin_y = self.declare_parameter('odom_origin_y', 0.0).value
         self.odom_origin_yaw = self.declare_parameter('odom_origin_yaw', 0.0).value
+        self.map_file = self.declare_parameter('map_file', '').value
         self.session_id, self.sequence = new_session_id(), 0
+        self.dock_anchors = {}
+        self.last_raw_odom = None
+        if self.map_file:
+            try:
+                for dock_id, spec in (yaml.safe_load(pathlib.Path(self.map_file).read_text()) or {}).get('anchors', {}).items():
+                    pose = spec.get('map_pose', [])
+                    if len(pose) >= 3:
+                        self.dock_anchors[dock_id] = tuple(float(v) for v in pose[:3])
+            except Exception as error:
+                self.get_logger().error(f'Could not load dock anchors: {error}')
         self.publisher = self.create_publisher(RobotState, '/fleet/robot_state', FLEET_STATE_QOS)
-        # Retain the latest local pose too: planners are intentionally started
-        # after the controller bring-up and must not wait for a DDS rediscovery
-        # cycle before they can bid on a task.
-        self.local_publisher = self.create_publisher(RobotState, 'state', FLEET_STATE_QOS)
+        # Local pose is a continuously refreshed sensor stream.  Its consumers
+        # use POSE_QOS, so use that exact contract here rather than relying on
+        # DDS' offered/requsted QoS relaxation.  A planner that starts late
+        # receives the next odometry sample immediately; it must not act on a
+        # stale, retained pose.
+        self.local_publisher = self.create_publisher(RobotState, 'state', POSE_QOS)
         self.amcl_publisher = self.create_publisher(PoseWithCovarianceStamped, 'amcl_pose', POSE_QOS)
         self.create_subscription(Odometry, 'odom', self.on_odom, POSE_QOS)
+        self.create_subscription(DockProtocol, '/fleet/dock_protocol', self.on_dock_protocol, PROTOCOL_QOS)
+
+    def on_dock_protocol(self, msg):
+        """Only a charging-pad confirmation may move the map origin."""
+        if msg.event != DockProtocol.CONFIRMED or msg.fleet_header.robot_id != self.robot_id:
+            return
+        anchor = self.dock_anchors.get(msg.dock_id)
+        if anchor is None:
+            self.get_logger().warning(f'Ignoring confirmation for unknown dock {msg.dock_id}')
+            return
+        if self.last_raw_odom is None:
+            self.get_logger().warning('Ignoring dock confirmation before a raw odometry sample')
+            return
+        local_x, local_y, local_yaw = self.last_raw_odom
+        # Solve the odom->map transform so *this raw sample* lands exactly on
+        # the dock anchor. No Gazebo world-pose API participates in this reset.
+        self.odom_origin_x, self.odom_origin_y, self.odom_origin_yaw = map_transform_for_anchor(
+            anchor, (local_x, local_y, local_yaw))
+        self.get_logger().info(f'Applied confirmed dock-anchor correction from {msg.dock_id}')
 
     def on_odom(self, odom):
         self.sequence += 1
         local_x, local_y = odom.pose.pose.position.x, odom.pose.pose.position.y
+        self.last_raw_odom = (local_x, local_y, yaw_from_quaternion(odom.pose.pose.orientation))
         cosine, sine = math.cos(self.odom_origin_yaw), math.sin(self.odom_origin_yaw)
         msg = RobotState()
         msg.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, 0.5)

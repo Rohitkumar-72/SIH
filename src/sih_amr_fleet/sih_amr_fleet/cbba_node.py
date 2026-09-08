@@ -5,7 +5,7 @@ from sih_amr_interfaces.msg import (
     FleetHealth, RobotState, Task, TaskAnnouncement, TaskAssignment, TaskConsensus, TaskExecutionStatus
 )
 
-from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, TASK_SOURCE_QOS, header, new_session_id, now_seconds, stamp_seconds
 
 
 class CbbaNode(Node):
@@ -23,6 +23,9 @@ class CbbaNode(Node):
         self.session_id = new_session_id()
         self.sequence = 0
         self.pose = None
+        self._received_local_state = False
+        self._received_fleet_state = False
+        self._received_task = False
         self.tasks = {}
         self.task_seen_at = {}
         self.winners = {}  # task_id -> TaskConsensus
@@ -30,9 +33,14 @@ class CbbaNode(Node):
         self.consensus_pub = self.create_publisher(TaskConsensus, '/fleet/task_consensus', PROTOCOL_QOS)
         self.assignment_pub = self.create_publisher(TaskAssignment, 'task_assignment', FLEET_STATE_QOS)
 
-        self.create_subscription(TaskAnnouncement, '/fleet/task_announcement', self.on_task, PROTOCOL_QOS)
+        self.create_subscription(TaskAnnouncement, '/fleet/task_announcement', self.on_task, TASK_SOURCE_QOS)
         self.create_subscription(TaskConsensus, '/fleet/task_consensus', self.on_consensus, PROTOCOL_QOS)
         self.create_subscription(RobotState, 'state', self.on_state, POSE_QOS)
+        # The local stream is the low-latency path.  This independently
+        # filtered fleet stream is a deliberate resilience path: it is already
+        # required by the executor/safety stack and prevents a local DDS
+        # discovery delay from silently suppressing all bidding.
+        self.create_subscription(RobotState, '/fleet/robot_state', self.on_fleet_state, FLEET_STATE_QOS)
         self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_subscription(FleetHealth, '/fleet/health', self.on_health, FLEET_STATE_QOS)
         self.create_timer(0.5, self.run_round)
@@ -40,10 +48,27 @@ class CbbaNode(Node):
 
     def on_state(self, msg):
         self.pose = msg.pose
+        if not self._received_local_state:
+            self._received_local_state = True
+            self.get_logger().info('CBBA received first local RobotState sample')
+
+    def on_fleet_state(self, msg):
+        if msg.fleet_header.robot_id != self.robot_id or not msg.localization_valid:
+            return
+        self.pose = msg.pose
+        if not self._received_fleet_state:
+            self._received_fleet_state = True
+            self.get_logger().info('CBBA received first fleet RobotState sample')
 
     def on_task(self, msg):
+        if not msg.task.task_id:
+            self.get_logger().warning('Ignoring task announcement without a task ID')
+            return
         self.tasks[msg.task.task_id] = msg.task
         self.task_seen_at.setdefault(msg.task.task_id, now_seconds(self))
+        if not self._received_task:
+            self._received_task = True
+            self.get_logger().info(f'CBBA received first task announcement: {msg.task.task_id}')
 
     def on_execution(self, msg):
         if msg.phase == TaskExecutionStatus.COMPLETED:

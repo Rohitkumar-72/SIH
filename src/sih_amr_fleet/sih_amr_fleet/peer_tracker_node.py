@@ -13,6 +13,7 @@ class PeerTrackerNode(Node):
         super().__init__('peer_tracker_node')
         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
         self.session_id, self.sequence, self.peers = new_session_id(), 0, {}
+        self.last_publish = now_seconds(self)
         self.pub = self.create_publisher(PeerTrackArray, 'peer_tracks', FLEET_STATE_QOS)
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_timer(0.05, self.publish_tracks)
@@ -35,9 +36,13 @@ class PeerTrackerNode(Node):
 
     def publish_tracks(self):
         now = now_seconds(self); output = PeerTrackArray(); self.sequence += 1
+        dt = max(0.0, min(now - self.last_publish, 1.0)); self.last_publish = now
         output.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, 0.3)
         for robot_id, peer in self.peers.items():
-            age = now - peer['last_seen']; peer['track'].predict(0.05)
+            # Prediction intentionally continues after loss; covariance grows
+            # with the true elapsed time so downstream ORCA/corridor policy can
+            # become more conservative instead of treating a missing peer as gone.
+            age = now - peer['last_seen']; peer['track'].predict(dt)
             item = PeerTrack(); item.robot_id, item.session_id = robot_id, peer['session']
             item.pose = Pose2D(x=peer['track'].x, y=peer['track'].y, theta=peer['theta'])
             item.twist = Twist(); item.twist.linear.x, item.twist.linear.y = peer['track'].vx, peer['track'].vy

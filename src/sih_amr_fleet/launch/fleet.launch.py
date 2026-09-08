@@ -27,12 +27,13 @@ def robot_group(robot_id, map_file, pad_pose):
         # shelf bounding box in the locked warehouse-layout YAML.
         'robot_radius_m': 0.35,
         'pad_x': pad_pose[0], 'pad_y': pad_pose[1], 'pad_yaw': -1.5708,
+        'dock_id': f'charging_pad_{robot_id.rsplit("_", 1)[-1]}',
         'odom_origin_x': pad_pose[0], 'odom_origin_y': pad_pose[1],
         'odom_origin_yaw': -1.5708,
     }
     nodes = [
         'local_costmap_node', 'blockage_detector_node', 'peer_tracker_node',
-        'health_node', 'charging_pad_node', 'cbba_node', 'whca_planner_node', 'reservation_manager_node',
+        'health_node', 'charging_pad_node', 'docking_coordinator_node', 'cbba_node', 'whca_planner_node', 'reservation_manager_node',
         'corridor_mutex_node', 'path_follower_node', 'orca_node', 'safety_supervisor_node', 'task_execution_node',
     ]
     return GroupAction([PushRosNamespace(robot_id)] + [Node(package='sih_amr_fleet', executable=name, name=name, parameters=[params], output='screen') for name in nodes])

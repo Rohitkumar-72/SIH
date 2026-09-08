@@ -26,12 +26,14 @@ class TaskExecutionNode(Node):
         self.wait_until = 0.0
         self.dwell_duration = 0.0
         self.completed_publish_count = 0
+        self._received_local_state = False
 
         self.status_pub = self.create_publisher(
             TaskExecutionStatus, '/fleet/task_execution_status', FLEET_STATE_QOS
         )
         self.create_subscription(TaskAssignment, 'task_assignment', self.on_assignment, FLEET_STATE_QOS)
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
+        self.create_subscription(RobotState, 'state', self.on_local_state, POSE_QOS)
         self.create_timer(0.1, self.tick)
 
     def on_assignment(self, msg):
@@ -69,6 +71,15 @@ class TaskExecutionNode(Node):
             return
         self.current_pose = msg.pose
         self.current_speed = math.hypot(msg.twist.linear.x, msg.twist.linear.y)
+
+    def on_local_state(self, msg):
+        if not msg.localization_valid:
+            return
+        self.current_pose = msg.pose
+        self.current_speed = math.hypot(msg.twist.linear.x, msg.twist.linear.y)
+        if not self._received_local_state:
+            self._received_local_state = True
+            self.get_logger().info('Task executor received first local RobotState sample')
 
     def is_arrived(self, target_pose):
         if self.current_pose is None or target_pose is None:
