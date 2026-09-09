@@ -1,0 +1,12 @@
+tasks:
+  # Deliberately close to robot_1's default dock and outside every shelf/mutex
+  # resource.  This isolates assignment -> route -> pickup dwell -> dropoff
+  # dwell from long-route and narrow-corridor behaviour.
+  - id: debug_short_cycle_01
+    at_s: 2.0
+    pickup: [-4.0, -28.0]
+    dropoff: [-5.0, -28.0]
+    pickup_wait_s: 1.0
+    dropoff_wait_s: 1.0
+    priority: 100
+    ttl_s: 120.0

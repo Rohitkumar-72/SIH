@@ -7,3 +7,7 @@ __pycache__/
 build/
 install/
 log/
+ANTIGRAVITY_HANDOFF.md
+CODEX_CONTINUATION_HANDOFF.md
+CODEX_VALIDATION_HANDOFF.yaml
+antigravity_handoff.md
