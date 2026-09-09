@@ -5,3 +5,4 @@ alias amr4_standard='bash "$HOME/amr_ws/src/SIH/scripts/launch_four_standard.sh"
 alias amr4_headless='START_GUI=false bash "$HOME/amr_ws/src/SIH/scripts/launch_four_lite.sh"'
 alias gzogre='gz sim --render-engine ogre'
 alias gzogre2='gz sim --render-engine ogre2'
+alias workcycle5='bash "$HOME/amr_ws/src/SIH/scripts/run_5_work_cycles.sh"'

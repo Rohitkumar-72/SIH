@@ -34,6 +34,10 @@ ARGUMENTS = [
                           description='Also spawn the vendor dock; disabled for the fleet baseline.'),
     DeclareLaunchArgument('keep_sensors_system', default_value='false', choices=['true', 'false'],
                           description='Keep a model-local Sensors system (normally false: the warehouse loads one world-level system).'),
+    DeclareLaunchArgument('sensor_profile', default_value='fleet', choices=['fleet', 'full'],
+                          description='Fleet keeps navigation LiDAR/contact only; full preserves every vendor sensor.'),
+    DeclareLaunchArgument('lidar_update_rate_hz', default_value='20.0',
+                          description='Navigation LiDAR rate for the fleet sensor profile.'),
     DeclareLaunchArgument('description_wait_s', default_value='5.0',
                           description='Delay insertion so the transient robot description is available.'),
     DeclareLaunchArgument('controller_wait_s', default_value='10.0',
@@ -51,6 +55,8 @@ def generate_launch_description():
     x, y, z, yaw = (LaunchConfiguration(name) for name in ('x', 'y', 'z', 'yaw'))
     world = LaunchConfiguration('world')
     keep_sensors_system = LaunchConfiguration('keep_sensors_system')
+    sensor_profile = LaunchConfiguration('sensor_profile')
+    lidar_update_rate = LaunchConfiguration('lidar_update_rate_hz')
     robot_name = GetNamespacedName(namespace, 'turtlebot4')
     dock_name = GetNamespacedName(namespace, 'standard_dock')
 
@@ -76,7 +82,9 @@ def generate_launch_description():
                 'python3', ' ', '-m', ' ',
                 'sih_amr_fleet.fleet_robot_description', ' ', xacro_file, ' ',
                 'gazebo:=ignition', ' ', 'namespace:=', namespace, ' ',
-                '--keep-sensors-system', ' ', keep_sensors_system]),
+                '--keep-sensors-system', ' ', keep_sensors_system, ' ',
+                '--sensor-profile', ' ', sensor_profile, ' ',
+                '--lidar-update-rate', ' ', lidar_update_rate]),
         }],
         remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')])
 

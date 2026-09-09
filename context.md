@@ -482,7 +482,7 @@ ML route selection/cost prediction, ML confidence fallback, camera obstacle imag
 
 ### Validation agent record — September 8, 2026
 
-The required build and SDF validation passed, and the focused suite passed 26
+The required build and SDF validation passed, and the focused suite passed 27
 tests. The bounded headless run `/tmp/sih_headless_validation_20260908_02`
 spawned four Lite AMRs; every robot passed the launcher gate requiring actual
 odometry and LiDAR samples. Telemetry contained all four robot-state streams
@@ -533,3 +533,225 @@ stale sensors, invalid commands, and insufficient directional clearance. The
 stamped command bridge retains a finite stop reference for controller activation.
 The overlay rebuilt and the focused suite passed 26 tests after these changes;
 no new headless acceptance run has been performed.
+
+The following bounded run `/tmp/sih_headless_validation_20260908_07` passed
+all four real odometry/LiDAR gates and announced five tasks, but no CBBA node
+received a task announcement; telemetry therefore had only robot-state records
+and no motion/route/execution evidence. DDS discovery reported `0/4` shared
+task subscribers. The task source now sends each identical announcement to each
+robot's namespaced `task_announcement` input as well as the shared audit topic;
+this is broadcast delivery, not centralized assignment, and each robot still
+performs its own CBBA bid. Executor status is now also emitted and consumed
+locally by its planner/follower and passive telemetry. The overlay rebuilt and
+27 focused tests passed after this change; it awaits a new headless run.
+
+Run14 isolated Fast DDS shared-memory lock failures (`fastrtps_port7041`) during
+the task-path investigation. The launcher now uses synchronous UDPv4 for this
+single-host headless baseline and its cleanup signals both process leaders and
+groups. Run15 then passed all robot gates and restored blockage telemetry but
+still found zero `TaskAnnouncement` readers. The local source therefore now
+uses a validated standard-message payload that each CBBA reconstructs locally
+before its normal decentralized bid. The overlay rebuilt and 29 focused tests
+passed; no end-to-end completion is claimed until that fallback is live-tested.
+
+Validation record, September 8, 2026: Cyclone DDS was installed, but its default
+`Discovery/MaxAutoParticipantIndex` of 9 caused the first full graph attempt to
+fail with `Failed to find a free participant index for domain 42`; the affected
+fleet nodes exited and that run was invalid. A project-local Cyclone XML profile
+now raises the supported maximum to 119 and is wired into the launcher and
+package install. The fresh post-fix run
+`/tmp/sih_headless_validation_20260908_freshD` selected Cyclone, passed all four
+real odometry/LiDAR interface gates, kept the full fleet graph alive, matched
+all four task inboxes, and produced five task announcements with four receipts
+and four CBBA participants each. It recorded one unique owner per task,
+feasible planned routes, trajectory intents, task execution status, and actual
+movement. It completed 0 delivery tasks with 4 active robots, therefore 0 fleet
+work cycles, with `robot_1=0, robot_2=0, robot_3=0, robot_4=0`; fairness is not
+established. `map_pose`, `map_twist`, and non-null `gazebo_odom` were present in
+state telemetry. Safety telemetry recorded stops, bounded retreats, and
+blocked reverse attempts, but deliberate fault-injection recovery, pickup /
+dropoff completion, docking, protected-resource tests, collision-contact
+sensing, WHCA* runtime-buffer behavior, and long-soak acceptance remain
+unverified. Build, SDF validation, and the focused suite passed 31 tests. No
+fleet process crashed in the post-fix run; the remaining controller startup NaN
+warnings are at `gazebo_server.log:194,295,401`.
+
+Post-run diagnosis of `freshD` found that the remaining zero-completion result
+was downstream of CBBA. Robots 2 and 3 translated while rotating away from
+their south-facing dock headings and curved into the south wall; their measured
+0.18–0.21 m braking stops were valid safety decisions. Robot 1 passed within
+0.234 m of its pickup at about 3.9 m/s, failing the executor's stationary-arrival
+gate. Robot 4's continuous pose remained physically south of a shelf, but
+rounded into occupied planning cell `(52,45)`, after which WHCA* rejected every
+route because the start cell was blocked. The path follower also targeted only
+`waypoints[1]` between one-second route updates.
+
+The pending-validation correction makes the follower advance through the local
+waypoint sequence, turn in place before translating, use a 1.0 m/s cap matching
+the 0.5 m / 0.5 s WHCA* reservation model, slow and stop inside the task arrival
+region, and use rear-sector clearance plus odometric distance for rate-limited
+reverse recovery. WHCA* now snaps a rounded blocked **start** to the nearest
+free cardinal cell while still rejecting a blocked goal. LiDAR blockage points
+are now rotated from `base_link` into map coordinates and converted from metres
+to actual grid indices. These edits passed a Python syntax check only; build,
+focused tests, SDF validation, and a new headless acceptance run remain for the
+next validation agent. The one-time controller NaN warnings occur immediately
+after vendor diff-drive activation, before a subscriber callback can replace
+its internally uninitialised reference; no runtime nonfinite command was seen.
+The `pal_statistics publish_async_failures_ 172` line was emitted during process
+teardown, not during fleet motion. Neither diagnostic is evidence of a runtime
+control NaN, though both should continue to be reported separately.
+
+The next bounded run, `/tmp/sih_headless_validation_20260908_takeover_2018`,
+passed build, 34 tests, SDF validation, layout-lock equality, Cyclone selection,
+all four robot gates, 5 announcements, 20 receipts, and four CBBA participants
+per task. All four robots turned before translating, moved at up to 1.0 m/s,
+and robot 4 produced no infeasible route. It still completed no task. Telemetry
+showed the precise cause: executor and planner task identities diverged. Robot
+3's executor pursued task 1 while 210 of its routes targeted task 4; robot 1
+executed task 2 before its planner changed to task 5; robot 2 showed the same
+task 3/task 5 split. Task 1 also produced active assignments for robots 4, 1,
+and 3 across later epochs. The executor's local task lock was therefore not
+enough because neither CBBA nor WHCA* treated execution as a commit.
+
+The pending-validation fix makes live execution status sticky ownership in all
+CBBA replicas, excludes busy robots from unrelated assignments, ignores
+conflicting executor owners/stale consensus, and prevents WHCA* from accepting
+an assignment that differs from its executor task. The same run also revealed
+an achieved physics real-time factor around 0.12–0.13 during long straight
+segments. Hardware inspection found a Ryzen 5 5600X, 16 GiB RAM, and RTX 3070,
+but no `/dev/nvidia*`, failed `nvidia-smi`, and Gazebo EGL `driver (null)` / DRI2
+errors. The four Lite descriptions were still rendering 48 GPU lidars at 62 Hz
+(44 unused cliff/IR units plus four navigation lidars) and four 30 Hz RGB-D
+cameras. The fleet sensor profile now retains only four
+navigation lidars at 20 Hz plus contact sensing. All fleet nodes use simulation
+time; telemetry schema 0.3 adds wall time; the simulation launcher defaults to
+4.0 m/s while direct fleet launch remains 1.0 m/s. WHCA* reservation duration
+is derived from resolution/speed. These edits have syntax, shell, diff, and
+generated-description checks only; a new full validation must establish
+completion and measure the post-optimization real-time factor.
+
+The subsequent host-context run
+`/tmp/sih_headless_validation_20260908_gpu_2107` established that the GPU
+diagnosis above was a Codex sandbox artifact: the host has driver 595.84,
+direct NVIDIA OpenGL 4.6, and Gazebo appeared in `nvidia-smi`. Despite that,
+achieved RTF was only 0.097 with Gazebo at about 107% CPU and GPU utilisation
+around 36%, so this world is CPU/physics-bound. The 4.0 m/s launcher setting did
+take effect (telemetry peak approximately 3.9997 m/s), but only about 26.5
+simulation seconds elapsed during roughly 271 wall seconds. A target
+`real_time_factor > 1` therefore cannot accelerate this setup by itself.
+
+That run also exposed the remaining ownership race. At simulation time 20.0,
+robot 4 published the task-1 assignment at epoch 1 while robot 1 independently
+published it at epoch 2; both executors accepted before execution status became
+visible at 20.1. The old assignment gate proved only that all four participants
+had sent some consensus packet, not that their latest winner decisions agreed.
+The pending-validation CBBA correction is now a two-phase commit: every robot
+publishes its own bid, each replica computes the deterministic `(bid,
+robot_id)` minimum from a complete fresh bid set, every robot publishes a CLAIM
+acknowledging that exact winner/session/bid/epoch tuple, and assignment is
+permitted only after fresh matching CLAIMs from all four expected robots.
+Ownership is committed before the local assignment is emitted; execution
+status confirms the commit instead of creating it too late. Autonomous
+health/lease epoch promotion during an open auction was removed because it was
+the source of divergent simultaneous owners. Syntax validation passed; the
+full fleet run remains intentionally delegated for independent validation.
+
+Validation run `/tmp/sih_headless_validation_20260908_cbba_fixed_2118` passed
+the rebuild, 37 tests, syntax/diff/SDF checks, and all four physical interface
+gates. The ownership safety fix worked: robots 1, 2, and 3 logged the same
+commit of task 1 to robot 4, with no conflicting-owner error and no duplicate
+executor acceptance. It exposed an asymmetric liveness bug, however. The three
+early replicas entered their committed branch and stopped publishing BID
+records. Robot 4 had not observed the same sequence-fresh quorum in that exact
+round; its cached peer bids expired, producing missing-participant warnings at
+fleet log lines 125–126, so the sole permitted owner could never assign.
+
+The next full one-cycle run still produced only three local commit messages per
+task. Telemetry showed that all four writers were continuously emitting both
+BID and CLAIM with identical winner tuples. The remaining liveness failure was
+the cross-writer condition that every claim sequence be newer than that
+writer's latest bid sequence. Because all nodes run synchronized
+BID-then-CLAIM timers, a receiver can always observe one writer's next BID
+before its matching CLAIM and chase a permanently moving sequence boundary.
+Commit now requires fresh exact claims from all expected robot IDs, the same
+winner/session/bid/epoch tuple, and the same source boot session as each current
+bid; it does not compare sequence counters belonging to independent writers.
+Pre-commit BID/CLAIM refresh continues until execution confirmation.
+
+The same audit found a separate deterministic navigation liveness bug. The
+12-cell WHCA* window used Manhattan distance, so at a shelf face the planner
+preferred WAIT over the temporarily goal-worsening sideways steps needed to
+reach the next aisle. A replay of every dock-to-task route plus 400 seeded
+task-to-task routes reproduced 153 rolling-plan loops. WHCA* now computes an
+obstacle-aware reverse-BFS distance-to-goal heuristic; the same 1,140-case
+diagnostic produced zero rolling-route failures after the change.
+
+Additional pending-validation corrections subtract the exact shared static map
+from LiDAR blockage reports (past logs contained thousands of ordinary shelf
+echoes falsely injected as dynamic WHCA* blocks), clear the planner's task
+identity on completion, treat task TTL as an unclaimed-work acceptance deadline
+rather than an in-progress execution deadline, reset stale corridor arming from
+the current rolling route, expire cached trajectory intents instead of
+refreshing ghost reservations after a task ends, reject an old route when the
+follower observes a different executor task, and rotate base-frame odometry
+velocity into the map frame before peer prediction. These changes have diagnostic/static evidence but
+still require the independently delegated headless acceptance run before any
+pickup, dropoff, completion, collision, or work-cycle claim is made.
+
+Validation `/tmp/sih_headless_validation_20260908_correctness_1ms_1mps_2310`
+passed 44 tests and all task-delivery/interface gates but again produced three
+commits and zero assignments. The shared telemetry subscriber continuously
+received all four sources with constant identical claim values, while the
+winning CBBA process later logged a missing BID from a source that the other
+replicas continued receiving. This establishes an asymmetric DDS
+writer-to-reader path, not an auction disagreement. Consensus now keeps the
+typed shared topic and additionally sends each packet through independently
+matched reliable per-robot standard-message inboxes. The inbox reconstructs
+the original logical source/header after strict field, expiry, participant,
+event, and finiteness validation. Same-session BID and CLAIM views also reject
+non-monotonic sequence updates. This transport correction is pending the next
+delegated live validation.
+
+On 2026-09-09, the one-task diagnostic run
+`/tmp/sih_debug_short_cycle_v5_20260909` produced the first verified complete
+pickup/dropoff lifecycle. The focused suite passed 49 tests. Robot 1 recorded
+all phases in order (66 EN_ROUTE_PICKUP, 10 PICKUP_WAIT, 62
+EN_ROUTE_DROPOFF, 10 DROPOFF_WAIT, and 10 COMPLETED publications), with one
+assignment, zero infeasible routes, and zero ROS errors. The root cause was a
+layering/frame combination: TurtleBot 4 Lite mounts `rplidar_link` at +pi/2
+from `base_link`, but costmap and directional scan consumers treated scan
+angles as base-frame angles; global coarse LiDAR fusion could then quantize
+the executing robot or a task endpoint into WHCA*'s blocked set. LiDAR points
+are now transformed with the vendor mount pose, safety sectors account for
+the sensor yaw, and WHCA* leaves its immediate self footprint and validated
+task-station envelope to the 40 Hz ORCA/safety layers while retaining distant
+dynamic blocks. Telemetry schema 0.5 adds one-hertz correlated pipeline
+diagnostics, exact route/blockage cells, and every `/rosout` warning/error/fatal
+with node/source location. This micro-run proves the lifecycle path; it does
+not yet establish four-robot fairness, random-workload throughput, docking,
+fault injection, contact sensing, or soak acceptance.
+
+The subsequent 20-minute random workload
+`/tmp/sih_full_random_workload_20260909_4mps_retry2` produced three assignments,
+111 infeasible WHCA* routes, and zero completions. Offline saved-log replay
+showed that all sampled static routes were connected, while four robots' 2.0 s
+LiDAR leases fused warehouse-wall, shelf-edge, dock/peer, and swept-trail echoes
+into 43--208 dynamic cells. The blockage detector now removes the static-map
+quantization halo, finite-map boundary, configured docks, and fresh fleet robot
+envelopes before a ten-frame persistence gate, and uses a 0.75 s global lease;
+the unfiltered local safety path is unchanged. Applying this semantic filter
+offline to the recorded failure snapshots restored route availability.
+
+That run also revealed why some four-participant CBBA commits remained live but
+never unanimous: the node recalculated pose-dependent bids every round. Task 5
+advertised at least nine distinct winning float32 values, and other tasks could
+switch from a finite value to `1e9` after busy-state propagation. Exact claim
+matching was therefore correctly rejecting a value that participants
+themselves kept changing. Each robot now freezes its first BID and first
+complete-set CLAIM per task/epoch and only refreshes their leases. Telemetry
+schema 0.6 records `winner_session_id` for direct session-level diagnosis.
+These corrections have offline-log evidence, a successful two-package rebuild,
+52 passing focused tests, successful Python/launch compilation, a valid SDF,
+and matching layout locks. No Gazebo run was performed after them at the
+user's request.

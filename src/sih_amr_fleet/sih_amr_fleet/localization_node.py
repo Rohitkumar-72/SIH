@@ -2,12 +2,12 @@ import rclpy
 import math
 import pathlib
 import yaml
-from geometry_msgs.msg import Pose2D, PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose2D, PoseWithCovarianceStamped, Twist
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from sih_amr_interfaces.msg import DockProtocol, RobotState
 
-from .algorithms import map_transform_for_anchor
+from .algorithms import body_velocity_to_map, map_transform_for_anchor
 from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, yaw_from_quaternion
 
 
@@ -71,7 +71,17 @@ class LocalizationNode(Node):
             x=self.odom_origin_x + cosine * local_x - sine * local_y,
             y=self.odom_origin_y + sine * local_x + cosine * local_y,
             theta=self.odom_origin_yaw + yaw_from_quaternion(odom.pose.pose.orientation))
-        msg.twist = odom.twist.twist
+        # nav_msgs/Odometry expresses twist in child_frame_id (base_link for
+        # these AMRs).  Fleet consumers predict peers in the map frame, so a
+        # body-forward velocity cannot be copied and mislabeled as map +x.
+        body_twist = odom.twist.twist
+        map_vx, map_vy = body_velocity_to_map(
+            body_twist.linear.x, body_twist.linear.y, msg.pose.theta)
+        msg.twist = Twist()
+        msg.twist.linear.x = map_vx
+        msg.twist.linear.y = map_vy
+        msg.twist.linear.z = body_twist.linear.z
+        msg.twist.angular = body_twist.angular
         msg.position_covariance_xy = [odom.pose.covariance[0], odom.pose.covariance[1],
                                       odom.pose.covariance[6], odom.pose.covariance[7]]
         msg.localization_valid = True

@@ -1,4 +1,3 @@
-import math
 import pathlib
 import rclpy
 import yaml
@@ -6,6 +5,8 @@ from geometry_msgs.msg import Pose
 from nav_msgs.msg import MapMetaData, OccupancyGrid
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+
+from .map_geometry import map_geometry_from_data
 
 MAP_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST,
@@ -50,34 +51,12 @@ class WarehouseMapNode(Node):
 
         try:
             data = yaml.safe_load(path.read_text())
-            self.resolution = float(data.get('resolution_m', self.resolution))
-            self.width = int(data.get('width', self.width))
-            self.height = int(data.get('height', self.height))
-            origin = data.get('origin', [self.origin_x, self.origin_y])
-            self.origin_x, self.origin_y = float(origin[0]), float(origin[1])
-
-            self.blocked_cells = {tuple(c) for c in data.get('blocked_cells', [])}
-
-            layout = data.get('shelf_layout')
-            if layout:
-                footprint = layout.get('footprint_m', [3.92, 0.90])
-                half_x = math.ceil(footprint[0] / self.resolution / 2.0)
-                half_y = math.ceil(footprint[1] / self.resolution / 2.0)
-                excluded = {tuple(p) for p in layout.get('excluded_zones', [])}
-
-                for y_zone, rows in layout.get('y_zones', {}).items():
-                    for x_zone, columns in layout.get('x_zones', {}).items():
-                        if (y_zone, x_zone) in excluded:
-                            continue
-                        for x in columns:
-                            for y in rows:
-                                cx = round((x - self.origin_x) / self.resolution)
-                                cy = round((y - self.origin_y) / self.resolution)
-                                for dx in range(-half_x, half_x + 1):
-                                    for dy in range(-half_y, half_y + 1):
-                                        bx, by = cx + dx, cy + dy
-                                        if 0 <= bx < self.width and 0 <= by < self.height:
-                                            self.blocked_cells.add((bx, by))
+            (self.resolution, self.width, self.height,
+             self.origin_x, self.origin_y,
+             self.blocked_cells) = map_geometry_from_data(
+                data, default_resolution=self.resolution,
+                default_width=self.width, default_height=self.height,
+                default_origin=(self.origin_x, self.origin_y))
         except Exception as e:
             self.get_logger().error(f'Error reading map file {filename}: {e}')
 

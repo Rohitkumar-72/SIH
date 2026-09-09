@@ -13,6 +13,8 @@ OVERLAY="${OVERLAY:-$WORKSPACE/install}"
 WORLD_FILE="${WORLD_FILE:-$WAREHOUSE_DIR/worlds/small_warehouse/warehouse_clean.sdf}"
 WORLD_NAME="${WORLD_NAME:-default}"
 MODEL="${MODEL:-lite}"
+SENSOR_PROFILE="${SENSOR_PROFILE:-fleet}"
+LIDAR_UPDATE_RATE_HZ="${LIDAR_UPDATE_RATE_HZ:-20.0}"
 RENDER_ENGINE="${RENDER_ENGINE:-ogre2}"
 GUI_RENDER_ENGINE="${GUI_RENDER_ENGINE:-ogre2}"
 GUI_CONFIG="${GZ_GUI_CONFIG:-/opt/ros/jazzy/opt/gz_sim_vendor/share/gz/gz-sim8/gui/gui.config}"
@@ -21,6 +23,11 @@ START_CHARGING="${START_CHARGING:-false}"
 START_FLEET="${START_FLEET:-false}"
 FLEET_RANDOM_TASKS="${FLEET_RANDOM_TASKS:-true}"
 FLEET_RECORD_DATA="${FLEET_RECORD_DATA:-true}"
+FLEET_SCENARIO_FILE="${FLEET_SCENARIO_FILE:-}"
+# The four-AMR launcher is simulation-only and defaults to accelerated task
+# throughput.  Set FLEET_TRACKING_SPEED_MPS=1.0 for real-world-like timing.
+FLEET_TRACKING_SPEED_MPS="${FLEET_TRACKING_SPEED_MPS:-4.0}"
+FLEET_RESERVATION_SLOT_S="${FLEET_RESERVATION_SLOT_S:-0.0}"
 SPAWN_WAIT_SECONDS="${SPAWN_WAIT_SECONDS:-180}"
 SETTLE_SECONDS="${SETTLE_SECONDS:-20}"
 RUN_ID="$(date +%Y%m%d_%H%M%S)"
@@ -43,30 +50,38 @@ write_run_event() {
   printf '{"event_type":"%s","wall_epoch_s":%s,"detail":"%s"}\n' "$1" "$(date +%s)" "$2" >> "$RUN_EVENTS_FILE"
 }
 write_run_event launcher_started "headless_or_gui_run_requested"
+write_run_event simulation_profile "sensor_profile=$SENSOR_PROFILE lidar_hz=$LIDAR_UPDATE_RATE_HZ tracking_mps=$FLEET_TRACKING_SPEED_MPS reservation_slot_s=$FLEET_RESERVATION_SLOT_S"
 
 source /opt/ros/jazzy/setup.bash
 source "$OVERLAY/setup.bash"
 set -u
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
-# The controller managers emit frequent state messages.  Synchronous DDS
-# publication avoids the Fast DDS async queue failures seen with four robots.
-export RMW_FASTRTPS_PUBLICATION_MODE="${RMW_FASTRTPS_PUBLICATION_MODE:-SYNCHRONOUS}"
-# Use Fast DDS's normal shared-memory + UDP transport set on one host.  The
-# earlier UDP-only profile produced controller publish_async_failures and only
-# one AMR delivered usable odometry during the four-robot test.  A user can
-# still explicitly supply a vetted cross-host profile when required.
-if [[ -n "${SIH_FASTDDS_PROFILE:-}" ]]; then
-  export FASTRTPS_DEFAULT_PROFILES_FILE="$SIH_FASTDDS_PROFILE"
+# The 60-process graph repeatedly left valid Fast DDS endpoints unmatched even
+# after shared memory was disabled.  Cyclone DDS is installed with Jazzy on
+# this host and is now the deterministic single-machine baseline.  Do not
+# inherit an unrelated shell-wide RMW selection; comparison runs opt in with
+# the project-specific SIH_RMW_IMPLEMENTATION variable.
+export RMW_IMPLEMENTATION="${SIH_RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
+if [[ "$RMW_IMPLEMENTATION" == rmw_fastrtps* ]]; then
+  export RMW_FASTRTPS_PUBLICATION_MODE="${RMW_FASTRTPS_PUBLICATION_MODE:-SYNCHRONOUS}"
+  if [[ -n "${SIH_FASTDDS_PROFILE:-}" ]]; then
+    export FASTRTPS_DEFAULT_PROFILES_FILE="$SIH_FASTDDS_PROFILE"
+  else
+    unset FASTRTPS_DEFAULT_PROFILES_FILE
+    export FASTDDS_BUILTIN_TRANSPORTS=UDPv4
+  fi
 else
-  unset FASTRTPS_DEFAULT_PROFILES_FILE FASTDDS_BUILTIN_TRANSPORTS
+  unset FASTRTPS_DEFAULT_PROFILES_FILE FASTDDS_BUILTIN_TRANSPORTS RMW_FASTRTPS_PUBLICATION_MODE
+  export CYCLONEDDS_URI="${SIH_CYCLONEDDS_URI:-file://$SIH_ROOT/src/sih_amr_fleet/config/cyclonedds.xml}"
 fi
+write_run_event middleware_selected "$RMW_IMPLEMENTATION"
 export GZ_IP="${GZ_IP:-127.0.0.1}"
 export QT_QPA_PLATFORM=xcb
 export GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/lib${GZ_SIM_SYSTEM_PLUGIN_PATH:+:$GZ_SIM_SYSTEM_PLUGIN_PATH}"
 export GZ_SIM_RESOURCE_PATH="$SIH_ROOT/src/sih_amr_fleet/models:$WAREHOUSE_DIR/models:$WAREHOUSE_DIR:/opt/ros/jazzy/share"
 
-SERVER_PID="" CLOCK_PID="" GUI_PID="" FLEET_PID="" STARTED_PID=""
+SERVER_PID="" CLOCK_PID="" GUI_PID="" FLEET_PID="" DATA_PID="" STARTED_PID=""
 declare -a ROBOT_PIDS=() CHARGING_PIDS=()
 
 start_group() {
@@ -81,20 +96,50 @@ cleanup() {
   trap - EXIT INT TERM
   write_run_event launcher_exiting "status=$status"
   echo 'Stopping this four-AMR run...'
-  for pid in "$GUI_PID" "$FLEET_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+  for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+    # start_group creates a dedicated session.  Signal both its leader and
+    # its process group: `timeout` can otherwise interrupt this wrapper while
+    # a ROS launch has already re-parented its children, leaving a stale AMR
+    # group that blocks the next clean headless run.
+    [[ -n "$pid" ]] && kill -TERM "$pid" 2>/dev/null || true
     [[ -n "$pid" ]] && kill -TERM -- "-$pid" 2>/dev/null || true
   done
   for _ in $(seq 1 15); do
     local alive=false
-    for pid in "$GUI_PID" "$FLEET_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+    for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
       [[ -n "$pid" ]] && kill -0 -- "-$pid" 2>/dev/null && alive=true
     done
     [[ "$alive" == false ]] && break
     sleep 1
   done
-  for pid in "$GUI_PID" "$FLEET_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+  for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+    [[ -n "$pid" ]] && kill -KILL "$pid" 2>/dev/null || true
     [[ -n "$pid" ]] && kill -KILL -- "-$pid" 2>/dev/null || true
   done
+  if [[ -f "$FLEET_DATA_FILE" ]]; then
+    python3 -c "
+import json
+first_s, first_w = None, None
+last_s, last_w = None, None
+try:
+    with open('$FLEET_DATA_FILE') as f:
+        for line in f:
+            if not line.strip(): continue
+            r = json.loads(line)
+            st = float(r.get('logged_at', r.get('sim_time_s', 0.0)))
+            wt = float(r.get('wall_logged_at', r.get('wall_time_s', 0.0)))
+            if st <= 0.0 or wt <= 0.0: continue
+            if first_s is None: first_s, first_w = st, wt
+            last_s, last_w = st, wt
+    if first_s is not None and last_s is not None and last_w > first_w:
+        d_sim = last_s - first_s
+        d_wall = last_w - first_w
+        rtf = d_sim / d_wall
+        print(f'\n=== Real-Time Ratio (RTF): {rtf:.2f}x (Simulated: {d_sim:.1f}s, Wall: {d_wall:.1f}s) ===\n')
+except Exception:
+    pass
+" 2>/dev/null || true
+  fi
   exit "$status"
 }
 trap cleanup EXIT
@@ -108,8 +153,12 @@ wait_for() {
   return 1
 }
 model_exists() {
+  local robot="$1" log_file="$LOG_DIR/$1.log"
+  if [[ -f "$log_file" ]] && grep -Fq "[$robot.create_robot]: Entity creation successful" "$log_file" 2>/dev/null; then
+    return 0
+  fi
   timeout 10s gz model --list 2>/dev/null |
-    grep -Eq "^[[:space:]]*-[[:space:]]+$1/turtlebot4[[:space:]]*$"
+    grep -Eq "^[[:space:]]*-[[:space:]]+$robot/turtlebot4[[:space:]]*$"
 }
 warehouse_ready() {
   timeout 10s gz model --list 2>/dev/null |
@@ -134,12 +183,25 @@ CLOCK_PID="$STARTED_PID"
 sleep 3
 kill -0 "$CLOCK_PID" 2>/dev/null || fail 'Clock bridge exited'
 
+# Start telemetry before any robot/controller process so /rosout diagnostics
+# from bring-up are captured too. Direct fleet.launch.py use still supports its
+# own record_data node; this launcher disables that duplicate below.
+if [[ "$START_FLEET" == true && "$FLEET_RECORD_DATA" == true ]]; then
+  start_group "$LOG_DIR/data_collection.log" ros2 run sih_amr_fleet data_collection_node \
+    --ros-args -p use_sim_time:=true -p output_file:="$FLEET_DATA_FILE"
+  DATA_PID="$STARTED_PID"
+  write_run_event data_collection_started "pid=$DATA_PID"
+  sleep 2
+  kill -0 "$DATA_PID" 2>/dev/null || fail 'Early data collector exited during startup'
+fi
+
 spawn_robot() {
   local robot="$1" x="$2" y="$3" yaw="$4" keep_sensors="$5" log_file="$LOG_DIR/$1.log"
   echo "Starting $robot at x=$x y=$y yaw=$yaw..."
   start_group "$log_file" ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py \
     namespace:="$robot" model:="$MODEL" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.05 yaw:="$yaw" \
-    spawn_dock:=false keep_sensors_system:="$keep_sensors"
+    spawn_dock:=false keep_sensors_system:="$keep_sensors" \
+    sensor_profile:="$SENSOR_PROFILE" lidar_update_rate_hz:="$LIDAR_UPDATE_RATE_HZ"
   ROBOT_PIDS+=("$STARTED_PID")
   write_run_event robot_launch_started "$robot pid=$STARTED_PID"
   wait_for entity "$SPAWN_WAIT_SECONDS" model_exists "$robot" || fail "$robot body was not created"
@@ -158,9 +220,14 @@ spawn_robot robot_3 "$ROBOT_3_X" "$ROBOT_3_Y" "$ROBOT_3_YAW" false
 spawn_robot robot_4 "$ROBOT_4_X" "$ROBOT_4_Y" "$ROBOT_4_YAW" false
 
 if [[ "$START_FLEET" == true ]]; then
+  declare -a FLEET_SCENARIO_ARGS=()
+  FLEET_LAUNCH_RECORD_DATA="$FLEET_RECORD_DATA"
+  [[ -n "$DATA_PID" ]] && FLEET_LAUNCH_RECORD_DATA=false
+  [[ -n "$FLEET_SCENARIO_FILE" ]] && FLEET_SCENARIO_ARGS+=(scenario_file:="$FLEET_SCENARIO_FILE")
   start_group "$LOG_DIR/fleet.log" ros2 launch sih_amr_fleet fleet.launch.py \
-    random_tasks:="$FLEET_RANDOM_TASKS" record_data:="$FLEET_RECORD_DATA" \
-    data_file:="$FLEET_DATA_FILE"
+    random_tasks:="$FLEET_RANDOM_TASKS" record_data:="$FLEET_LAUNCH_RECORD_DATA" \
+    data_file:="$FLEET_DATA_FILE" path_tracking_speed_mps:="$FLEET_TRACKING_SPEED_MPS" \
+    reservation_time_slot_s:="$FLEET_RESERVATION_SLOT_S" "${FLEET_SCENARIO_ARGS[@]}"
   FLEET_PID="$STARTED_PID"
   write_run_event fleet_launch_started "pid=$FLEET_PID"
   sleep 3

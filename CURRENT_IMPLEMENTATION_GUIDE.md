@@ -77,7 +77,7 @@ Ricart–Agrawala mutex.
 |---|---|---|---|
 | `localization_node` | `/robot_N/odom` | `/robot_N/state`, `/fleet/robot_state`, `amcl_pose` | Transforms simulator odometry to map-relative fleet state. `amcl_pose` is compatibility output, not AMCL. |
 | `local_costmap_node` | `scan` | `local_costmap`, `nearest_obstacle_m` | Robot-frame LiDAR occupancy grid. |
-| `blockage_detector_node` | local state/costmap | `/fleet/blockage_observation` | Five-frame persistent LiDAR blockage report. |
+| `blockage_detector_node` | local/fleet state, local costmap | `/fleet/blockage_observation` | Ten-frame persistent, semantically filtered, short-lease LiDAR blockage report. |
 | `peer_tracker_node` | `/fleet/robot_state` | `peer_tracks` | Per-peer constant-velocity/Kalman-style prediction. |
 | `health_node` | peer tracks, safety, charge percent | `/fleet/health`, `status` | Battery, local safety, and communication freshness. |
 | `cbba_node` | task announcement/consensus, local state, own filtered fleet state, execution | `/fleet/task_consensus`, local `task_assignment` | Bidding, claim convergence, assignment. |
@@ -112,16 +112,42 @@ Every `cbba_node` stores two in-memory dictionaries: `tasks` and `winners`. This
 ```text
 travel_distance = distance(robot, pickup) + distance(pickup, dropoff)
 base_bid        = travel_distance / max(nominal_speed_mps, 0.1)
-workload        = 120 s × other tasks currently claimed by this robot
 priority_bonus  = (priority / 100) × 10 s
-bid             = max(1 s, base_bid + workload - priority_bonus)
+bid             = infinity when executing another task
+                  otherwise max(1 s, base_bid - priority_bonus)
 ```
 
-`distance` is currently straight-line Euclidean distance(will change), not actual route length. `nominal_speed_mps` is 6.0 in the Gazebo profile. Lower bids win; robot ID breaks ties deterministically. The workload penalty favours robots without existing work, while higher priority reduces the bid. 
+`distance` is currently straight-line Euclidean distance (will change), not
+actual route length. `nominal_speed_mps` follows the configured route-tracking
+speed. Lower bids win; robot ID breaks ties deterministically. A busy robot is
+unavailable instead of accumulating assignments its single-task executor cannot
+queue, while higher priority reduces the bid.
 
-The robot broadcasts a `TaskConsensus` claim on `/fleet/task_consensus`: winner ID/session, bid, epoch, and 2.5 s lease. Receivers keep a higher epoch, or at the same epoch the lowest `(winning_bid, winner_robot_id)`. The winner writes a namespaced `task_assignment` only after a 2.0 s consensus collection window, preventing several robots from executing their own initial claim.
+Each robot first broadcasts its own `TaskConsensus.BID` on
+`/fleet/task_consensus`. After a 2.0 s collection window, every replica derives
+the same `(winning_bid, winner_robot_id)` minimum and broadcasts a
+`TaskConsensus.CLAIM` for that exact winner/session/bid/epoch tuple. The winner
+writes its namespaced `task_assignment` only after fresh matching claims from
+all four expected participants. Each participant freezes its first bid and its
+first complete-set winner decision for the lifetime of that auction epoch;
+robot motion or asynchronously learned busy state cannot alter an already
+signed tuple. A claim must come from the same boot session as
+that participant's current bid, but commit does not depend on cross-writer
+sequence ordering: synchronized BID-then-CLAIM timers otherwise make the newest
+bid permanently overtake another writer's claim. Live execution status confirms
+and refreshes the pre-execution commit. A busy robot advertises an unavailable
+bid, and WHCA* rejects an assignment whose task ID differs from its executor's
+current task.
 
-This is a bounded single-task CBAA/CBBA stepping stone, not complete bundle/queue CBBA. The executor protects one active task from being replaced by later assignments. Queued bundles, battery-aware bids, full failure reauction, and durable state storage are planned.
+Consensus retains the typed shared topic as its public/audit interface. Every
+originating CBBA node also sends the identical logical packet as validated JSON
+to each peer's independently matched `/<robot>/consensus_inbox`, using reliable
+depth-30 protocol QoS. This repairs asymmetric shared-topic writer/reader paths
+without introducing an allocator or weakening the four-participant quorum.
+Receivers reject expired, malformed, unknown-source, and non-monotonic
+same-session packets before updating BID or CLAIM state.
+
+This is a bounded single-task CBAA/CBBA stepping stone, not complete bundle/queue CBBA. The executor protects one active task from being replaced by later assignments; excess work remains pending until a robot becomes available. Queued bundles, battery-aware bids, full failure reauction, and durable state storage are planned.
 
 The task executor publishes:
 
@@ -130,7 +156,7 @@ EN_ROUTE_PICKUP -> PICKUP_WAIT -> EN_ROUTE_DROPOFF
 -> DROPOFF_WAIT -> COMPLETED
 ```
 
-Arrival requires <=0.45 m position error and <=0.15 m/s speed. Each pickup/dropoff waits the task’s 2–5 s dwell time. Completion is broadcast for about one second; CBBA and the random generator then remove the task.
+Arrival requires <=0.45 m position error and <=0.15 m/s speed. Each pickup/dropoff waits the task’s 2–5 s dwell time. Completion is broadcast for about one second; CBBA and the random generator then remove the task, and the planner clears its task identity for the next delivery. The announcement TTL is an acceptance deadline: committed work continues to receive lease refreshes until `COMPLETED` instead of being stranded when its original announcement expires.
 
 ## Decentralisation and network behaviour
 
@@ -148,15 +174,25 @@ The warehouse uses a 0.5 m occupancy grid. WHCA* searches `(x_cell, y_cell, time
 
 ```text
 g = elapsed grid moves
-h = Manhattan distance to goal
+h = obstacle-aware shortest grid distance to goal
 f = g + h
 ```
 
-It rejects static shelf cells, observed blockage cells, cells reserved by another robot at the same slot, and opposite-direction edge swaps. If the goal is farther than the window, it returns the reached horizon path and replans every second.
+It rejects static shelf cells, observed blockage cells, cells reserved by another robot at the same slot, and opposite-direction edge swaps. The reverse-BFS distance heuristic is essential for rolling liveness: a route can temporarily increase Manhattan distance to travel around a shelf instead of selecting a full window of WAIT actions at every replan. If the goal is farther than the window, it returns the reached horizon path and replans every second.
 
-`RoutePlan` is published locally on `planned_route`; a standard `nav_msgs/Path` is also emitted. The reservation manager republishes its cell/time tuples on `/fleet/trajectory_intent` every 0.75 seconds with plan ID, 0.5 s slot duration, priority, and 1.5 s validity. Each planner imports still-valid peer intents into its next search. This provides strategic collision avoidance; it is not a physical guarantee.
+`RoutePlan` is published locally on `planned_route`; a standard `nav_msgs/Path` is also emitted. The reservation manager republishes its cell/time tuples on `/fleet/trajectory_intent` every 0.75 seconds with plan ID, speed-derived slot duration, priority, and 1.5 s validity. An infeasible replacement or an expired source route clears the cached plan, so a completed task cannot become an indefinitely refreshed ghost reservation. Each planner imports still-valid peer intents into its next search. This provides strategic collision avoidance; it is not a physical guarantee.
 
-LiDAR -> local costmap -> five persistent occupied frames -> `/fleet/blockage_observation`. Valid reports become planner blocked cells and force rerouting if an alternative is found. Entries are removed when their validity lease expires. Blockage-triggered task reallocation is planned.
+LiDAR -> local costmap -> expected-geometry/robot subtraction -> ten persistent
+occupied frames -> `/fleet/blockage_observation`. The detector removes the
+one-cell quantization halo around shared static occupancy, the two-cell
+envelopes around fresh fleet robot poses and configured dock anchors, and the
+two outer grid rows/columns. Known shelves, warehouse walls, docks, and peer
+silhouettes therefore cannot become a second obstacle representation on top of
+WHCA* reservations, ORCA, and local safety. Valid remaining reports carry a
+0.75 s lease, become planner blocked cells, and force rerouting if an
+alternative exists. Entries are removed at lease expiry. Local directional
+safety continues to consume every scan without this semantic filtering.
+Blockage-triggered task reallocation is planned.
 
 ## Narrow corridors and failure safety
 
@@ -192,7 +228,56 @@ The Safety Supervisor is authoritative. It calculates:
 braking_distance = speed² / (2 × deceleration) + braking_margin
 ```
 
-It issues `STOP` and zero velocity for E-stop, localization older than 0.5 s, or LiDAR inside braking distance. It issues `SLOW` in the warning zone and scales linear speed to 40%. It publishes `entrance_clear` for the corridor policy. WHCA*, CBBA, ORCA, dashboard, and future ML cannot override this node.
+It issues `STOP` and zero velocity for E-stop, stale localization/LiDAR, a
+nonfinite command, or LiDAR inside the commanded travel direction's braking
+distance. It issues `SLOW` in the warning zone and scales linear speed to 40%.
+It publishes `entrance_clear` for the corridor policy and a separately measured
+rear-sector clearance for guarded reverse recovery. WHCA*, CBBA, ORCA,
+dashboard, and future ML cannot override this node.
+
+The Gazebo drivetrain retains the requested simulation-only 6.0 m/s ceiling.
+A direct `fleet.launch.py` invocation defaults to a real-world-like 1.0 m/s;
+the simulation-only `launch_four_amrs.sh` defaults to 4.0 m/s for faster data
+collection and accepts `FLEET_TRACKING_SPEED_MPS=1.0` to restore realistic
+timing. WHCA* derives each reservation slot as `0.5 m / tracking speed`, so
+changing the speed preserves the route's space-time meaning. The follower advances through the received
+waypoint sequence locally instead of repeatedly targeting only waypoint 1,
+turns in place before translating across a grid-direction change, and ramps
+down before the executor's pickup/dropoff arrival region. Inside 0.35 m of the
+active task target it commands a stop so the executor can meet both its 0.45 m
+position and 0.15 m/s speed gates.
+
+All fleet nodes use `/clock` simulation time. Telemetry schema 0.3 records both
+`logged_at` simulation seconds and `wall_logged_at` host epoch seconds, allowing
+achieved real-time factor to be calculated from every run. The fleet sensor
+profile removes the vendor Lite model's unused RGB-D camera and eleven unused
+cliff/IR GPU lidars per robot, keeps the navigation LiDAR plus contact sensor,
+and runs the navigation LiDAR at 20 Hz instead of 62 Hz. The full vendor sensor
+profile remains opt-in with `SENSOR_PROFILE=full`.
+
+Host-context validation confirmed that the RTX 3070 and NVIDIA stack are
+healthy; missing GPU devices in an earlier Codex run were sandbox isolation.
+The fleet-profile run still achieved only `0.097` RTF with Gazebo at about one
+fully occupied CPU core and GPU utilisation around 36%, so this world is
+physics-bound. The same telemetry measured a 3.9997 m/s peak, confirming that
+the 4.0 m/s simulation tracking profile is active. Raising only the requested
+SDF real-time factor does not accelerate a simulation below its current
+ceiling. Evaluate coarser physics and simplified collision profiles separately
+after end-to-end task correctness passes.
+
+CBBA assignment uses a two-phase pre-execution commit. Each participant first
+publishes its own BID. Once all expected fresh bids are present, every replica
+independently selects the same `(bid, robot_id)` minimum and publishes a CLAIM
+for the complete winner/session/bid/epoch tuple. An assignment is emitted only
+after fresh, identical CLAIMs from all four expected robots. Execution status
+then refreshes this committed ownership; it is not relied upon to resolve a
+race after local executors have already accepted.
+
+Pre-commit messages are retransmitted until executor confirmation. In
+particular, a replica that observes the unanimous CLAIM quorum before the
+winner continues publishing its frozen own BID followed by the committed CLAIM.
+This prevents the winner's bid cache from expiring during an asymmetric quorum
+observation. Matching execution status stops the additional BID traffic.
 
 ## Charging pads
 
@@ -236,13 +321,17 @@ records dock protocol and recovery/collision event streams. The launcher writes
 `run_events.jsonl` start/exit and interface-gate events; it does not hide a
 launcher failure.
 
-On a Safety Supervisor STOP trigger, the path follower first holds, then will
-reverse at 0.20 m/s for at most 2.0 m only if local LiDAR clearance exceeds the
-reverse distance plus margin and the robot is neither in a protected narrow
-resource nor in final docking. The resulting events identify the map pose and
-reason. An unsafe reverse remains stopped and emits `recovery_blocked`; no
-Gazebo contact is invented. A contact bridge/sensor has not been added, so
-`collision_event` is a passive input contract rather than evidence of a contact.
+Only a persistent braking-envelope STOP starts path-follower recovery; startup
+localization/scan staleness does not. The follower first holds, then will reverse
+at 0.20 m/s for at most 2.0 m only if **rear-sector** LiDAR clearance exceeds
+the reverse distance plus margin and the robot is neither in a protected narrow
+resource nor in final docking. Travel is measured from odometry instead of
+being inferred only from elapsed command time. A five-second retry cooldown
+prevents an unsafe reverse from generating an event storm. The resulting events
+identify the map pose, global nearest return, rear clearance, and reason. An
+unsafe reverse remains stopped and emits `recovery_blocked`; no Gazebo contact
+is invented. A contact bridge/sensor has not been added, so `collision_event`
+is a passive input contract rather than evidence of a contact.
 
 For narrow-resource mouths, the mutex node computes a 2.0 m approach zone,
 requires a permit before entry, and publishes a zero speed cap when permission
@@ -251,7 +340,7 @@ message loss while covariance grows. ORCA remains a lightweight approximation,
 not an unseen-robot safety proof; the local Safety Supervisor remains final
 authority.
 
-**Verified on September 8, 2026:** the overlay build, 26 pure tests, and
+**Verified on September 8, 2026:** the overlay build, 27 pure tests, and
 `gz sdf -k` passed. The focused suite covers one-owner dock tie resolution,
 lease release/expiry, dock-anchor transform math, raw/map telemetry schema
 declarations, unsafe reverse rejection, approach stop policy, and the existing
@@ -291,6 +380,16 @@ sector; it still stops on stale sensors, invalid commands, and unsafe directiona
 clearance. The stamped command bridge now retains a finite stop for a newly
 activated controller. These changes and their focused tests passed in the
 26-test suite, but they have not yet been accepted by a new headless run.
+The subsequent bounded run `/tmp/sih_headless_validation_20260908_07` again
+passed all four real odometry/LiDAR gates and announced five tasks, but no CBBA
+subscriber received them (`0/4` discovery count), so it recorded no task,
+route, execution, safety, or completion evidence. To remove that single shared
+DDS point from task delivery, task sources now broadcast the same announcement
+to each robot's namespaced `task_announcement` input while preserving the
+shared topic for interoperability. This performs no allocation: every recipient
+still bids through CBBA. The executor also emits a local execution-status stream
+consumed by its planner/follower and passive telemetry. These changes passed the
+27-test suite but have not yet been accepted by a new headless run.
 Four-robot motion completion, live dock confirmation,
 fault injection, and long-soak evidence remain unverified.
 
@@ -317,3 +416,85 @@ bash ~/amr_ws/src/SIH/scripts/run_baseline_random_fleet.sh
 ```
 
 This starts Gazebo, four AMRs, the full node graph, random tasks, and passive telemetry. It is an integration launcher, not proof that delivery, collision, and fault-injection acceptance criteria have been met.
+
+Latest verified diagnostics: the four-AMR UDPv4 run passed all real interface
+gates and restored passive blockage telemetry, while Fast DDS shared-memory
+lock errors were eliminated. `TaskAnnouncement` still had zero matched readers,
+so the local resilience channel now carries a strictly validated standard
+message payload which CBBA reconstructs into a typed task before bidding. This
+does not allocate work centrally. The overlay rebuild, SDF validation, and 29
+focused tests passed; end-to-end delivery with that final fallback remains to
+be verified in a new headless run.
+
+The next Cyclone run initially failed because this host's Cyclone build defaults
+`Discovery/MaxAutoParticipantIndex` to 9, which is too small for the four robot
+launchers plus the 60-process fleet graph. The project now supplies
+`config/cyclonedds.xml` with the supported maximum participant index (119),
+exports it from the headless launcher, installs it with the package, and covers
+the wiring with a focused test. After rebuilding, the bounded run
+`/tmp/sih_headless_validation_20260908_freshD` selected
+`rmw_cyclonedds_cpp`, passed all four real odometry/LiDAR gates, matched all four
+task-inbox readers, recorded five de-duplicated task announcements and 20
+receipts (four per task), observed all four CBBA participants per task, and
+recorded one unique owner per task plus feasible planned routes and trajectory
+intents. Robots 1 and 4 moved; robots 2 and 3 repeatedly stopped on measured
+directional clearances of about 0.18--0.21 m. The run completed 0 delivery
+tasks with 4 active robots: 0 fleet work cycles and
+`robot_1=0, robot_2=0, robot_3=0, robot_4=0`; fairness is not established.
+Telemetry included distinct non-null `map_pose`, `map_twist`, and
+`gazebo_odom` fields. Runtime recovery records included stop, bounded retreat,
+and blocked-reverse events, but controlled fault-injection acceptance, pickup,
+dropoff, docking, collision-contact sensing, WHCA* runtime-buffer behavior, and
+long-soak acceptance remain unverified. The rebuild and focused suite passed 31
+tests. Gazebo still emitted the documented controller startup NaN warnings at
+`gazebo_server.log:194,295,401`; no fleet process crash occurred in this run.
+
+## Verified pickup/dropoff diagnostic (2026-09-09)
+
+The bounded run `/tmp/sih_debug_short_cycle_v5_20260909` completed one real
+Gazebo task from assignment through pickup dwell, dropoff dwell, and
+`COMPLETED`. It recorded phases 0/1/2/3/4 in order, zero infeasible planned
+routes, and zero ROS errors; the focused suite is 49 passing tests.
+
+The fix aligns the TurtleBot 4 Lite LiDAR's +pi/2 vendor-URDF mount with
+`base_link` in local costmap and directional safety consumers. WHCA* also
+removes the coarse one-cell self and validated station envelopes from global
+LiDAR blockages because peers can observe the executing robot and endpoint
+quantization can otherwise mark the start/goal blocked. ORCA and the 40 Hz
+directional safety supervisor remain final authority in those near-field
+envelopes; distant dynamic blocks remain active.
+
+Telemetry schema 0.6 writes `pipeline_diagnostic` snapshots for assignment,
+execution, route, desired command, ORCA command, corridor gate, safety, and
+final command. It also records exact route/blockage cells, the claimed winner's
+session ID, and subscribes to
+`/rosout`, persisting every warning/error/fatal as `ros_log` with node, file,
+function, line, and message. The reusable one-cycle scenario is
+`scenarios/debug_short_cycle.yaml`. This is lifecycle proof, not yet the full
+random-workload/fairness, docking, fault-injection, collision, or soak result.
+
+## Random-workload blockage/consensus correction (pending live validation)
+
+The 20-minute run `/tmp/sih_full_random_workload_20260909_4mps_retry2`
+delivered all task packets but completed no task. Offline reconstruction proves
+that static WHCA* paths existed. The old blockage detector instead published
+the bottom wall, shelf-surface quantization cells, dock hardware, and the other
+robots; four 2.0 s leases overlapped into 43--208 global cells and disconnected
+the assigned robots from their pickups. Applying the semantic filter above to
+the saved blockage/state telemetry restores connectivity in each sampled
+failure case without changing the static map.
+
+The same telemetry exposes a separate CBBA liveness violation. An open task's
+pose-dependent BID was recalculated every 0.5 s; task 5 alone advertised at
+least nine distinct winning float32 values, and busy-state changes could also
+replace a finite BID with `1e9`. Since phase 2 intentionally requires exact
+winner/session/bid/epoch agreement, participants repeatedly invalidated their
+own quorum. Per-epoch BID and CLAIM decisions are now immutable and are merely
+lease-refreshed. The data collector records `winner_session_id` so a future run
+can distinguish value disagreement from boot-session disagreement.
+
+No Gazebo run was performed after these changes at the user's request. The
+offline saved-log audit, two-package rebuild, 52 focused tests, Python/launch
+compilation, valid SDF, matching layout locks, and clean `git diff --check` are
+the applicable pre-validation evidence; end-to-end throughput and fairness
+remain unverified until the delegated run.

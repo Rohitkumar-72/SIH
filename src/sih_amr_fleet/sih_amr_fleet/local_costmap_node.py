@@ -5,6 +5,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Float32
 
+from .algorithms import sensor_point_to_base
 from .common import POSE_QOS
 
 
@@ -15,6 +16,13 @@ class LocalCostmapNode(Node):
         self.resolution = self.declare_parameter('resolution_m', 0.20).value
         self.size = self.declare_parameter('size_m', 8.0).value
         self.frame = self.declare_parameter('base_frame', 'base_link').value
+        # TurtleBot 4 Lite's rplidar_link is fixed at +pi/2 yaw from
+        # base_link (see the vendor URDF).  LaserScan angles are expressed in
+        # that sensor frame, so explicitly transform every return before
+        # labeling this grid as base_link.
+        self.lidar_x = self.declare_parameter('lidar_x_in_base_m', 0.00393584).value
+        self.lidar_y = self.declare_parameter('lidar_y_in_base_m', 0.0).value
+        self.lidar_yaw = self.declare_parameter('lidar_yaw_in_base_rad', math.pi / 2.0).value
         self.grid_pub = self.create_publisher(OccupancyGrid, 'local_costmap', POSE_QOS)
         self.distance_pub = self.create_publisher(Float32, 'nearest_obstacle_m', POSE_QOS)
         self.create_subscription(LaserScan, 'scan', self.on_scan, POSE_QOS)
@@ -32,7 +40,10 @@ class LocalCostmapNode(Node):
                 continue
             nearest = min(nearest, distance)
             angle = scan.angle_min + index * scan.angle_increment
-            x, y = distance * math.cos(angle), distance * math.sin(angle)
+            x, y = sensor_point_to_base(
+                (distance * math.cos(angle), distance * math.sin(angle)),
+                (self.lidar_x, self.lidar_y, self.lidar_yaw),
+            )
             gx, gy = int((x + self.size / 2.0) / self.resolution), int((y + self.size / 2.0) / self.resolution)
             if 0 <= gx < cells and 0 <= gy < cells: grid.data[gy * cells + gx] = 100
         self.grid_pub.publish(grid)

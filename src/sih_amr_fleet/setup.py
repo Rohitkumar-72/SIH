@@ -10,7 +10,7 @@ def package_files(directory, pattern):
             for path in (package_root / directory).glob(pattern)]
 
 
-config_files = package_files('config', '*.yaml')
+config_files = package_files('config', '*.yaml') + package_files('config', '*.xml')
 
 setup(
     name=package_name,
@@ -25,6 +25,7 @@ setup(
         ('share/' + package_name + '/scenarios', package_files('scenarios', '*')),
     ],
     install_requires=['setuptools', 'PyYAML'],
+    tests_require=['pytest'],
     zip_safe=True,
     maintainer='SIH AMR Team',
     maintainer_email='team@example.invalid',

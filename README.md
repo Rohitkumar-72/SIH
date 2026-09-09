@@ -188,9 +188,13 @@ stops on a close LiDAR return or `Ctrl+C`. It does not attempt the remaining
 
 ## Fleet speed and footprint limits
 
-The normal fleet and corridor sweep maximum is **6.0 m/s**. This is the
-requested Gazebo-only baseline and must never be reused for physical TurtleBot
-hardware. The local Safety Supervisor still has final stop authority.
+The simulated drivetrain and corridor-sweep ceiling is **6.0 m/s**. Direct
+`fleet.launch.py` route tracking defaults to 1.0 m/s; the simulation-only
+`launch_four_amrs.sh` defaults to 4.0 m/s for shorter validation/data runs.
+Set `FLEET_TRACKING_SPEED_MPS=1.0` for real-world-like timing. WHCA* derives
+its reservation slot duration from the configured tracking speed. These
+Gazebo settings must never be reused blindly on physical TurtleBot hardware;
+the local Safety Supervisor remains final authority.
 
 The fleet keeps its established 0.56 m diameter planning footprint (0.28 m
 radius). The narrow centre lanes are 1.1554 m wide, so a requested 0.95 m
@@ -207,18 +211,29 @@ upper sensor plate. It is not a partially spawned robot. Use
 
 ## Sustained simulation and dataset collection
 
-This is a bare-metal Ubuntu installation with a Ryzen 5 5600X (6 cores / 12
-threads), 16 GiB RAM, and an RTX 3070, so all of that hardware is available to
-Gazebo. The NVIDIA 595.84 driver was verified with `nvidia-smi`, and a four-AMR
-Ogre2 run used about 1 GiB of RTX memory at a real-time factor of about `0.78`.
-Before a long visual run, recheck the stack with `nvidia-smi` and the actual
-OpenGL renderer with `glxinfo -B` after a driver or desktop update.
+The host contains a Ryzen 5 5600X (6 cores / 12 threads), 16 GiB RAM, an RTX
+3070, and ample NVMe space. Host-context validation confirmed NVIDIA driver
+595.84, direct NVIDIA OpenGL 4.6, and Gazebo on the GPU. Missing
+`/dev/nvidia*` and `/dev/dri` in an earlier Codex run were sandbox device
+isolation, not a host driver fault; no driver change is required.
 
-The verified four-lite run with the GUI attached measured a real-time factor of
-about `0.78`. At that rate, 1,000 simulated hours takes roughly 1,280 wall-clock
-hours (about 53 days). Headless mode should be used for long runs and may be
-faster, but measure its real-time factor first; do not assume it will be faster
-than real time.
+The default `SENSOR_PROFILE=fleet` removes the Lite model's unused RGB-D camera
+and eleven unused cliff/IR GPU lidars per robot, retaining the 20 Hz navigation
+LiDAR and contact sensor. Use `SENSOR_PROFILE=full` only when those sensors are
+actually needed. Telemetry schema 0.3 records simulation and wall time so every
+run can report achieved real-time factor instead of assuming the SDF target was
+met.
+
+The host-context headless run
+`/tmp/sih_headless_validation_20260908_gpu_2107` measured only `0.097` achieved
+real-time factor while Gazebo used about 107% CPU and GPU utilisation was about
+36%. This configuration is physics/CPU-bound, not GPU-bound. Its telemetry
+also confirms the accelerated route setting is active: peak robot speed was
+about 3.9997 m/s. Increasing the SDF `real_time_factor` above one cannot make a
+simulation that currently reaches only 0.097 run faster; a later, separately
+validated throughput profile must reduce physics work (for example, a coarser
+step and simpler collision geometry). Keep correctness validation on the
+canonical 1 ms physics profile so timing changes do not hide control defects.
 
 Long runs are feasible, but split them into restartable chunks, record seeds and
 scenario metadata, monitor disk and system memory, and disable the GUI. A

@@ -1,13 +1,19 @@
 import math
 import pathlib
+import re
 import pytest
 import yaml
 from sih_amr_fleet.algorithms import (
     ConstantVelocityTrack, DockLeaseTable, approach_policy, avoidance_velocity,
-    directional_scan_minimum, finite_command, map_transform_for_anchor,
-    reverse_recovery_allowed, whca_star,
+    body_velocity_to_map, braking_safe_speed,
+    clear_nearfield_blockages, directional_scan_minimum, expand_grid_cells,
+    filter_unexpected_blockages, finite_command, float32_wire_value,
+    freeze_auction_value, lane_waypoint_overrides,
+    map_transform_for_anchor,
+    local_point_to_grid_cell, reverse_recovery_allowed, sensor_point_to_base, whca_star,
 )
-from sih_amr_fleet.warehouse_tasks import aisle_points, narrow_lanes
+from sih_amr_fleet.map_geometry import map_geometry_from_data
+from sih_amr_fleet.warehouse_tasks import Lane, aisle_points, narrow_lanes
 
 
 def test_whca_basic_path():
@@ -15,6 +21,75 @@ def test_whca_basic_path():
     assert len(path) == 4
     assert path[0] == (0, 0, 0)
     assert path[-1] == (3, 0, 3)
+
+
+def test_turtlebot_lite_lidar_point_is_rotated_into_base_link():
+    # A scan return along +x of a LiDAR mounted at +pi/2 lies along base +y.
+    x, y = sensor_point_to_base((2.0, 0.0), (0.00393584, 0.0, math.pi / 2.0))
+    assert x == pytest.approx(0.00393584)
+    assert y == pytest.approx(2.0)
+
+
+def test_nearfield_blockage_filter_clears_self_and_close_goal_envelopes():
+    blocked = {(4, 4), (5, 4), (6, 4), (7, 4), (10, 10)}
+    assert clear_nearfield_blockages(
+        blocked, start=(4, 4), goal=(7, 4), clear_goal=True,
+    ) == {(10, 10)}
+
+
+def test_nearfield_blockage_filter_keeps_distant_goal_blocked():
+    blocked = {(4, 4), (5, 4), (7, 4), (10, 10)}
+    assert clear_nearfield_blockages(
+        blocked, start=(4, 4), goal=(7, 4), clear_goal=False,
+    ) == {(7, 4), (10, 10)}
+
+
+def test_unexpected_blockage_filter_removes_map_peer_and_boundary_echoes():
+    expected = expand_grid_cells({(5, 5)}, 1, width=12, height=12)
+    observed = {
+        (0, 7), (1, 7),       # finite-map boundary/wall envelope
+        (4, 5), (6, 6),       # known static geometry halo
+        (8, 8), (9, 8),       # peer footprint and quantization envelope
+        (3, 9),                # genuine unmodelled persistent obstacle
+    }
+    assert filter_unexpected_blockages(
+        observed, expected, robot_cells={(8, 8)}, width=12, height=12,
+        boundary_clearance_cells=1, robot_clearance_cells=1,
+    ) == {(3, 9)}
+
+
+def test_grid_expansion_is_clipped_to_planning_bounds():
+    assert expand_grid_cells({(0, 0)}, 1, width=3, height=3) == {
+        (0, 0), (0, 1), (1, 0), (1, 1),
+    }
+
+
+def test_cbba_value_is_immutable_within_an_auction_epoch():
+    cache = {}
+    assert freeze_auction_value(cache, 'task_1', (6.882328, 1)) == (6.882328, 1)
+    # Pose motion and asynchronously learned busy state may change a proposed
+    # bid, but neither may alter a value already signed in this epoch.
+    assert freeze_auction_value(cache, 'task_1', (6.884371, 1)) == (6.882328, 1)
+    assert freeze_auction_value(cache, 'task_1', (1.0e9, 1)) == (6.882328, 1)
+    assert freeze_auction_value(cache, 'task_2', (1.0e9, 1)) == (1.0e9, 1)
+
+
+def test_cbba_bid_is_canonicalized_to_its_float32_wire_value():
+    assert float32_wire_value(22.016171488229702) == 22.016172409057617
+
+
+def test_narrow_lane_waypoints_use_exact_subcell_centreline():
+    lane = Lane('test', 'narrow', (7.5, -27.7725), (21.5, -27.7725))
+    overrides = lane_waypoint_overrides([lane], (-22.5, -30.0), 0.5)
+    assert overrides[(73, 4)] == (14.0, -27.7725)
+    assert overrides[(85, 4)] == (20.0, -27.7725)
+
+
+def test_braking_speed_cap_fits_available_clearance():
+    assert braking_safe_speed(1.25, 0.8, 0.25) == pytest.approx(
+        math.sqrt(1.6))
+    assert braking_safe_speed(0.20, 0.8, 0.25) == 0.0
+    assert math.isinf(braking_safe_speed(math.inf, 0.8, 0.25))
 
 
 def test_whca_avoids_reserved_cell():
@@ -55,11 +130,68 @@ def test_whca_respects_static_obstacles():
         assert (x, y) not in blocked
 
 
+def test_whca_snaps_a_rounded_blocked_start_to_free_space():
+    # A continuous robot pose can still be physically outside a shelf while
+    # rounding to the shelf's occupied 0.5 m cell.  Planning must recover from
+    # that representation boundary instead of remaining infeasible forever.
+    path = whca_star(
+        start=(1, 1), goal=(4, 1), blocked={(1, 1)}, reservations=set(),
+        width=6, height=4, horizon=8,
+    )
+    assert path
+    assert path[0][:2] == (2, 1)
+    assert path[-1][:2] == (4, 1)
+    assert all((x, y) != (1, 1) for x, y, _ in path)
+
+
+def test_whca_does_not_snap_an_invalid_blocked_goal():
+    assert whca_star(
+        start=(0, 0), goal=(2, 0), blocked={(2, 0)}, reservations=set(),
+        width=4, height=4, horizon=6,
+    ) == []
+
+
 def test_whca_horizon_limit():
     # Goal is far away, horizon is only 3 steps
     path = whca_star(start=(0, 0), goal=(10, 10), blocked=set(), reservations=set(), width=20, height=20, horizon=3)
     assert len(path) == 4  # t=0, t=1, t=2, t=3
     assert path[-1][2] == 3
+
+
+def test_whca_rolling_window_detours_around_shelf_instead_of_waiting_forever():
+    # The goal is directly north, but a wide shelf forces an initially
+    # Manhattan-worsening west/east detour longer than the rolling horizon.
+    # A Manhattan heuristic plus WAIT returned a stationary window forever.
+    shelf = {(x, y) for x in range(10, 19) for y in range(5, 8)}
+    path = whca_star(
+        start=(14, 4), goal=(14, 9), blocked=shelf, reservations=set(),
+        width=30, height=20, horizon=12,
+    )
+    assert path
+    assert path[-1][:2] != (14, 4)
+    assert all((x, y) not in shelf for x, y, _ in path)
+
+
+def test_whca_prefers_clearance_over_hugging_a_long_obstacle_edge():
+    wall = {(4, y) for y in range(1, 12)}
+    path = whca_star(
+        start=(5, 0), goal=(5, 13), blocked=wall, reservations=set(),
+        width=10, height=15, horizon=13,
+    )
+    assert path
+    assert any(x >= 7 for x, _, _ in path)
+
+
+def test_locked_task_points_are_free_in_the_shared_static_geometry():
+    package_root = pathlib.Path(__file__).parents[1]
+    data = yaml.safe_load(package_root.joinpath('maps/demo_warehouse.yaml').read_text())
+    resolution, _, _, origin_x, origin_y, blocked = map_geometry_from_data(data)
+    for point in aisle_points():
+        cell = (
+            round((point.x - origin_x) / resolution),
+            round((point.y - origin_y) / resolution),
+        )
+        assert cell not in blocked
 
 
 def test_track_prediction_increases_uncertainty():
@@ -182,11 +314,28 @@ def test_confirmed_dock_anchor_transform_corrects_current_raw_odom_sample():
     assert origin_yaw + 0.2 == pytest.approx(-1.57)
 
 
+def test_body_forward_velocity_is_rotated_into_map_frame():
+    map_vx, map_vy = body_velocity_to_map(1.0, 0.0, math.pi / 2.0)
+    assert map_vx == pytest.approx(0.0, abs=1e-9)
+    assert map_vy == pytest.approx(1.0)
+
+
+def test_local_obstacle_point_uses_robot_yaw_and_map_grid_coordinates():
+    # A point 1 m forward from a north-facing robot at map (3, -8) is world
+    # (3, -7), which is planning cell (51, 46) in the warehouse grid.
+    assert local_point_to_grid_cell(
+        (3.0, -8.0, math.pi / 2.0), (1.0, 0.0), (-22.5, -30.0), 0.5
+    ) == (51, 46)
+
+
 def test_telemetry_schema_explicitly_keeps_map_and_raw_simulator_odom_distinct():
     source = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet/data_collection_node.py').read_text()
     assert "'map_pose'" in source
     assert "'gazebo_odom'" in source
-    assert "'schema_version': '0.2.0'" in source
+    assert "'schema_version': '0.6.0'" in source
+    assert "record['wall_logged_at'] = time.time()" in source
+    assert 'self.last_assignments = {}' in source
+    assert 'self.last_execution_sequences = {}' in source
 
 
 def test_live_qos_matches_dock_protocol_and_nearest_obstacle_publishers():
@@ -234,6 +383,195 @@ def test_task_sources_replay_pending_work_and_generator_waits_for_fleet_readines
     assert 'TASK_SOURCE_QOS' in scenario
 
 
+def test_task_source_fanout_and_local_execution_paths_are_resilient_to_shared_dds_loss():
+    package_root = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet')
+    generator = package_root.joinpath('random_task_generator_node.py').read_text()
+    cbba = package_root.joinpath('cbba_node.py').read_text()
+    executor = package_root.joinpath('task_execution_node.py').read_text()
+    planner = package_root.joinpath('whca_planner_node.py').read_text()
+    collector = package_root.joinpath('data_collection_node.py').read_text()
+    assert "String, f'/{robot_id}/task_inbox', FLEET_STATE_QOS" in generator
+    assert "String, f'/{self.robot_id}/task_inbox', self.on_local_task_wire, FLEET_STATE_QOS" in cbba
+    assert "TaskExecutionStatus, 'task_execution_status', FLEET_STATE_QOS" in executor
+    assert "TaskExecutionStatus, 'task_execution_status', self.on_execution, FLEET_STATE_QOS" in planner
+    assert 'seen_task_announcements' in collector
+    assert "RoutePlan, f'/{robot_id}/planned_route', self.on_route" in collector
+    assert "TaskAssignment, f'/{robot_id}/task_assignment', self.on_assignment" in collector
+
+
+def test_random_baseline_uses_one_authoritative_acknowledged_fanout_source():
+    package_root = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet')
+    generator = package_root.joinpath('random_task_generator_node.py').read_text()
+    cbba = package_root.joinpath('cbba_node.py').read_text()
+    launch = pathlib.Path(__file__).parents[1].joinpath('launch/fleet.launch.py').read_text()
+    assert 'json.dumps' in generator
+    assert "'/fleet/task_wire'" in generator
+    assert "name='random_task_generator_node'" in launch
+    assert 'task_receipt_pub' in cbba
+    assert "'/fleet/task_receipt', self.on_task_receipt, FLEET_STATE_QOS" in generator
+    assert 'Task delivery confirmed for' in generator
+    assert 'def task_transport_ready(self):' in generator
+    assert 'Waiting for task inbox readers' in generator
+    assert 'created_at_ns' in generator and 'expires_at_ns' in generator
+    assert 'created_at_ns' in cbba and 'expires_at_ns' in cbba
+
+
+def test_cbba_requires_matching_claims_from_every_expected_participant():
+    cbba = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet/cbba_node.py').read_text()
+    assert "'expected_robot_ids', ['robot_1', 'robot_2', 'robot_3', 'robot_4']" in cbba
+    assert 'self.consensus_participants.setdefault(msg.task_id, set()).add' in cbba
+    assert 'self.bid_views = {}' in cbba
+    assert 'self.claim_views = {}' in cbba
+    assert 'self.own_bids = {}' in cbba
+    assert 'self.own_claims = {}' in cbba
+    assert 'freeze_auction_value(\n                self.own_bids' in cbba
+    assert 'freeze_auction_value(self.own_claims' in cbba
+    assert 'missing = self.expected_robot_ids - set(views)' in cbba
+    assert 'if missing or not settled:' in cbba
+    assert 'missing_claims = self.expected_robot_ids - set(claims)' in cbba
+    assert 'not missing_claims and not mismatched_claims' in cbba
+    assert 'self.claim_key(claims[source]) != claim_key' in cbba
+    assert 'views[source].fleet_header.session_id' in cbba
+    assert 'claims[source].fleet_header.sequence_no >' not in cbba
+    assert 'own_bid_value, own_bid_epoch = freeze_auction_value' in cbba
+    assert 'msg.winning_bid = float32_wire_value(winning_bid)' in cbba
+    assert 'task.task_id not in self.execution_confirmed_tasks' in cbba
+    assert 'self.publish_consensus(bid_refresh)' in cbba
+    assert 'claim_values={claim_values}' in cbba
+    assert 'if winner == self.robot_id and winning_bid < UNAVAILABLE_BID' in cbba
+
+
+def test_cbba_consensus_has_independently_matched_targeted_transport():
+    cbba = pathlib.Path(__file__).parents[1].joinpath(
+        'sih_amr_fleet/cbba_node.py').read_text()
+    assert "String, f'/{robot_id}/consensus_inbox', PROTOCOL_QOS" in cbba
+    assert "String, f'/{self.robot_id}/consensus_inbox'" in cbba
+    assert 'def consensus_wire_payload(self, consensus):' in cbba
+    assert 'def on_local_consensus_wire(self, msg):' in cbba
+    assert 'self.publish_consensus(bid_msg)' in cbba
+    assert 'self.publish_consensus(claim)' in cbba
+    assert 'old.fleet_header.sequence_no >= msg.fleet_header.sequence_no' in cbba
+
+
+def test_execution_commits_cbba_owner_and_planner_task_identity():
+    package_root = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet')
+    cbba = package_root.joinpath('cbba_node.py').read_text()
+    planner = package_root.joinpath('whca_planner_node.py').read_text()
+    assert 'self.executing_tasks = {}' in cbba
+    assert 'self.busy_robots = {}' in cbba
+    assert "Ignoring conflicting executor owner" in cbba
+    assert 'msg.winner_robot_id != committed[0]' in cbba
+    assert 'self.committed_claims[task.task_id] = claim_key' in cbba
+    assert 'self.execution_task_id = None' in planner
+    assert 'msg.task.task_id != self.execution_task_id' in planner
+    assert 'if msg.phase == TaskExecutionStatus.COMPLETED:' in planner
+    assert 'self.assignment = None' in planner
+
+
+def test_committed_work_survives_announcement_ttl_until_completion():
+    package_root = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet')
+    cbba = package_root.joinpath('cbba_node.py').read_text()
+    generator = package_root.joinpath('random_task_generator_node.py').read_text()
+    assert 'task.task_id not in self.executing_tasks' in cbba
+    assert 'self.executing_tasks = set()' in generator
+    assert 'if task_id in self.executing_tasks:' in generator
+
+
+def test_blockage_detector_excludes_shared_static_occupancy():
+    package_root = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet')
+    detector = package_root.joinpath('blockage_detector_node.py').read_text()
+    assert 'map_geometry_from_data' in detector
+    assert 'self.expected_cells = expand_grid_cells' in detector
+    assert 'filter_unexpected_blockages' in detector
+    assert "RobotState, '/fleet/robot_state', self.on_fleet_state" in detector
+    assert "'blockage_observation_ttl_s', 0.75" in detector
+
+
+def test_corridor_exit_clears_stale_route_arm():
+    source = pathlib.Path(__file__).parents[1].joinpath(
+        'sih_amr_fleet/corridor_mutex_node.py').read_text()
+    release_path = source[source.index('def release_request'):source.index('def on_route')]
+    assert release_path.index('self.request = None') < release_path.index('self.armed_corridor = None')
+    assert 'self.release_request(CorridorProtocol.EXIT)' in source
+
+
+def test_corridor_speed_cap_applies_in_approach_band_before_entry():
+    source = pathlib.Path(__file__).parents[1].joinpath(
+        'sih_amr_fleet/corridor_mutex_node.py').read_text()
+    assert "constrained = self.in_approach and not self.request.get('entered', False)" in source
+
+
+def test_corridor_claim_is_cancelled_when_rolling_route_abandons_it():
+    source = pathlib.Path(__file__).parents[1].joinpath(
+        'sih_amr_fleet/corridor_mutex_node.py').read_text()
+    route_path = source[source.index('def on_route'):source.index('def on_state')]
+    assert "if self.request['was_inside'] or still_planned" in route_path
+    assert 'self.release_request(CorridorProtocol.CANCEL)' in route_path
+    assert 'for cell in route.cells[1:]' in route_path
+
+
+def test_stale_routes_cannot_be_refreshed_as_ghost_reservations():
+    package_root = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet')
+    reservations = package_root.joinpath('reservation_manager_node.py').read_text()
+    follower = package_root.joinpath('path_follower_node.py').read_text()
+    assert 'self.current = route if route.route_feasible else None' in reservations
+    assert 'stamp_seconds(self.current.fleet_header.valid_until) < now_seconds(self)' in reservations
+    assert 'self.route.task_id != msg.task_id' in follower
+
+
+def test_data_collector_correlates_every_motion_pipeline_gate():
+    collector = pathlib.Path(__file__).parents[1].joinpath(
+        'sih_amr_fleet/data_collection_node.py').read_text()
+    assert "'event_type': 'pipeline_diagnostic'" in collector
+    assert "('cmd_vel_desired', 'desired_command')" in collector
+    assert "('cmd_vel_candidate', 'orca_command')" in collector
+    assert "('cmd_vel', 'final_command')" in collector
+    assert "'CORRIDOR_MOTION_DENIED'" in collector
+    assert "'ORCA_LINEAR_VETO'" in collector
+    assert "'SAFETY_LINEAR_VETO'" in collector
+    assert "'ACTUATION_NOT_FOLLOWING_COMMAND'" in collector
+    assert "'cells': [[int(cell.x), int(cell.y)] for cell in msg.cells]" in collector
+    assert "self.create_subscription(Log, '/rosout', self.on_ros_log, ROSOUT_QOS)" in collector
+    assert "'event_type': 'ros_log'" in collector
+    assert "if int(msg.level) < int(Log.WARN):" in collector
+
+
+def test_fleet_sensor_profile_removes_unused_gpu_sensors():
+    source = pathlib.Path(__file__).parents[1].joinpath(
+        'sih_amr_fleet/fleet_robot_description.py').read_text()
+    assert "FLEET_SENSOR_NAMES = {'rplidar', 'bumper_contact_sensor'}" in source
+    assert "sensor_profile == 'fleet'" in source
+    assert 'parent.remove(sensor)' in source
+    assert "visualize.text = 'false'" in source
+
+
+def test_simulation_time_and_tracking_speed_are_launch_configurable():
+    package_root = pathlib.Path(__file__).parents[1]
+    launch = package_root.joinpath('launch/fleet.launch.py').read_text()
+    reservations = package_root.joinpath('sih_amr_fleet/reservation_manager_node.py').read_text()
+    launcher = pathlib.Path(__file__).parents[3].joinpath('scripts/launch_four_amrs.sh').read_text()
+    assert "'use_sim_time': True" in launch
+    assert "DeclareLaunchArgument('path_tracking_speed_mps'" in launch
+    assert 'derived_dt = grid_resolution / max(tracking_speed, 0.01)' in reservations
+    assert 'FLEET_TRACKING_SPEED_MPS="${FLEET_TRACKING_SPEED_MPS:-4.0}"' in launcher
+    assert 'sensor_profile:="$SENSOR_PROFILE"' in launcher
+
+
+def test_four_amr_launcher_defaults_to_cyclone_and_keeps_fastdds_override_safe():
+    launcher = pathlib.Path(__file__).parents[3].joinpath('scripts/launch_four_amrs.sh').read_text()
+    assert 'RMW_IMPLEMENTATION="${SIH_RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"' in launcher
+    assert 'CYCLONEDDS_URI="${SIH_CYCLONEDDS_URI:-file://$SIH_ROOT/src/sih_amr_fleet/config/cyclonedds.xml}"' in launcher
+    assert 'if [[ "$RMW_IMPLEMENTATION" == rmw_fastrtps* ]]' in launcher
+    assert 'export FASTDDS_BUILTIN_TRANSPORTS=UDPv4' in launcher
+    assert 'kill -TERM "$pid"' in launcher
+
+
+def test_cyclone_config_allows_the_full_fleet_participant_graph():
+    config = pathlib.Path(__file__).parents[1].joinpath('config/cyclonedds.xml').read_text()
+    match = re.search(r'<MaxAutoParticipantIndex>(\d+)</MaxAutoParticipantIndex>', config)
+    assert match is not None and int(match.group(1)) >= 119
+
+
 def test_controller_contract_is_stamped_and_bridge_rejects_nonfinite_commands():
     package_root = pathlib.Path(__file__).parents[1]
     bridge = package_root.joinpath('sih_amr_fleet/twist_stamper_node.py').read_text()
@@ -255,3 +593,6 @@ def test_local_state_fallback_covers_every_motion_critical_node():
     safety = package_root.joinpath('safety_supervisor_node.py').read_text()
     assert 'directional_scan_minimum' in safety
     assert "'scan stale'" in safety
+    assert "self.margin = self.declare_parameter('braking_margin_m'" in safety
+    assert "self.forward_half_angle = self.declare_parameter('braking_sector_half_angle_rad'" in safety
+

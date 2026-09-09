@@ -1,6 +1,59 @@
 """Pure, ROS-independent algorithms used by the coordination nodes."""
 import heapq
 import math
+import struct
+
+
+def float32_wire_value(value):
+    """Return the exact value a ROS ``float32`` field carries on the wire."""
+    return struct.unpack('!f', struct.pack('!f', float(value)))[0]
+
+
+def lane_waypoint_overrides(lanes, origin, resolution):
+    """Map rasterized lane cells to their exact physical centrelines.
+
+    A 0.5 m planning grid cannot represent the warehouse's 1.1554 m shelf-gap
+    centrelines exactly.  The discrete cells remain authoritative for WHCA*
+    reservations, while these sub-cell waypoint offsets keep the physical AMR
+    equally clear of the shelves on both sides of a narrow lane.
+    """
+    origin_x, origin_y = origin
+    overrides = {}
+    for lane in lanes:
+        start_x = round((lane.start[0] - origin_x) / resolution)
+        start_y = round((lane.start[1] - origin_y) / resolution)
+        end_x = round((lane.end[0] - origin_x) / resolution)
+        end_y = round((lane.end[1] - origin_y) / resolution)
+        if start_y == end_y:
+            for cell_x in range(min(start_x, end_x), max(start_x, end_x) + 1):
+                overrides[(cell_x, start_y)] = (
+                    origin_x + cell_x * resolution, lane.start[1])
+        elif start_x == end_x:
+            for cell_y in range(min(start_y, end_y), max(start_y, end_y) + 1):
+                overrides[(start_x, cell_y)] = (
+                    lane.start[0], origin_y + cell_y * resolution)
+    return overrides
+
+
+def braking_safe_speed(clearance_m, deceleration_mps2, margin_m):
+    """Maximum speed whose ideal stopping distance fits the clearance."""
+    clearance = float(clearance_m)
+    if math.isinf(clearance):
+        return math.inf
+    usable = max(0.0, clearance - float(margin_m))
+    return math.sqrt(2.0 * max(float(deceleration_mps2), 1e-6) * usable)
+
+
+def freeze_auction_value(cache, task_id, proposed_value):
+    """Return the first value signed for one task's current auction epoch.
+
+    Consensus packets compare the exact advertised value.  A robot may move
+    while an auction is open, but its pose-dependent bid must not move with it
+    until a new epoch is explicitly started.
+    """
+    if task_id not in cache:
+        cache[task_id] = proposed_value
+    return cache[task_id]
 
 
 class DockLeaseTable:
@@ -98,8 +151,106 @@ def map_transform_for_anchor(anchor_pose, raw_odom_pose):
             anchor_y - sine * local_x - cosine * local_y, origin_yaw)
 
 
+def body_velocity_to_map(linear_x, linear_y, map_yaw):
+    """Rotate a base-frame planar velocity into the fleet map frame."""
+    cosine, sine = math.cos(map_yaw), math.sin(map_yaw)
+    return (
+        cosine * linear_x - sine * linear_y,
+        sine * linear_x + cosine * linear_y,
+    )
+
+
+def local_point_to_grid_cell(robot_pose, local_point, map_origin, resolution):
+    """Transform a base-frame point into an integer planning-grid cell."""
+    pose_x, pose_y, pose_yaw = robot_pose
+    local_x, local_y = local_point
+    cosine, sine = math.cos(pose_yaw), math.sin(pose_yaw)
+    world_x = pose_x + cosine * local_x - sine * local_y
+    world_y = pose_y + sine * local_x + cosine * local_y
+    return (
+        round((world_x - map_origin[0]) / resolution),
+        round((world_y - map_origin[1]) / resolution),
+    )
+
+
+def sensor_point_to_base(sensor_point, sensor_pose_in_base):
+    """Transform a 2-D point from a fixed sensor frame into ``base_link``.
+
+    Gazebo reports LaserScan angles in the LiDAR link frame.  TurtleBot 4 Lite
+    mounts ``rplidar_link`` at +pi/2 yaw relative to ``base_link``; treating
+    those samples as base-frame points makes stationary obstacles rotate in
+    the map whenever the robot turns.
+    """
+    sensor_x, sensor_y = sensor_point
+    offset_x, offset_y, offset_yaw = sensor_pose_in_base
+    cosine, sine = math.cos(offset_yaw), math.sin(offset_yaw)
+    return (
+        offset_x + cosine * sensor_x - sine * sensor_y,
+        offset_y + sine * sensor_x + cosine * sensor_y,
+    )
+
+
+def clear_nearfield_blockages(blocked, start, goal=None, clear_goal=False,
+                               clearance_cells=1):
+    """Let high-rate local safety own the immediate robot/arrival envelope.
+
+    A fleet blockage grid is deliberately coarse.  A peer LiDAR can therefore
+    quantize the planning robot's body into its current cell, while a return
+    beside a task station can quantize into the goal cell.  Those cells must
+    not strand WHCA*: ORCA and the directional safety supervisor still retain
+    final authority over real near-field obstacles.
+    """
+    centres = [start]
+    if clear_goal and goal is not None:
+        centres.append(goal)
+    return {
+        cell for cell in blocked
+        if all(max(abs(cell[0] - centre[0]), abs(cell[1] - centre[1])) > clearance_cells
+               for centre in centres)
+    }
+
+
+def expand_grid_cells(cells, clearance_cells, width, height):
+    """Return an in-bounds Chebyshev expansion of a set of grid cells."""
+    clearance = max(0, int(clearance_cells))
+    return {
+        (x + dx, y + dy)
+        for x, y in cells
+        for dx in range(-clearance, clearance + 1)
+        for dy in range(-clearance, clearance + 1)
+        if 0 <= x + dx < width and 0 <= y + dy < height
+    }
+
+
+def filter_unexpected_blockages(cells, expected_cells, robot_cells, width, height,
+                                 boundary_clearance_cells=1,
+                                 robot_clearance_cells=2):
+    """Keep only observations that can represent an unmodelled obstacle.
+
+    The global blockage topic must not duplicate known map geometry or other
+    AMRs.  Static geometry already constrains WHCA*, while peer reservations,
+    ORCA, and the safety supervisor own robot-to-robot separation.  Treating
+    their LiDAR silhouettes as expiring map obstacles creates swept trails
+    which can topologically close an otherwise free aisle.
+
+    ``expected_cells`` is pre-expanded by the caller because the static map is
+    large and does not change at scan rate.  A small boundary envelope removes
+    wall returns which quantize just inside the finite planning grid.
+    """
+    robot_envelope = expand_grid_cells(
+        robot_cells, robot_clearance_cells, width, height)
+    boundary = max(0, int(boundary_clearance_cells))
+    return {
+        (int(x), int(y)) for x, y in cells
+        if (boundary < int(x) < width - 1 - boundary and
+            boundary < int(y) < height - 1 - boundary and
+            (int(x), int(y)) not in expected_cells and
+            (int(x), int(y)) not in robot_envelope)
+    }
+
+
 def whca_star(start, goal, blocked, reservations, width, height, horizon,
-              reservation_buffer_cells=1):
+              reservation_buffer_cells=1, heading_rad=None):
     """Return a 4-connected, time-indexed path or an empty list.
 
     ``reservations`` contains (x, y, time_slot) held by other robots.  At a
@@ -110,11 +261,83 @@ def whca_star(start, goal, blocked, reservations, width, height, horizon,
     """
     start = (int(start[0]), int(start[1]))
     goal = (int(goal[0]), int(goal[1]))
-    if start in blocked or goal in blocked:
+    if goal in blocked:
         return []
-    queue = [(abs(start[0] - goal[0]) + abs(start[1] - goal[1]), 0, start[0], start[1], 0)]
+    if start in blocked:
+        # A continuous pose immediately outside a shelf can round into that
+        # shelf's occupied grid cell.  Refusing to plan from that cell leaves
+        # a physically collision-free robot permanently stranded.  Snap only
+        # the start (never the goal) to the nearest free cardinal cell.
+        frontier = [start]
+        visited = {start}
+        start = None
+        while frontier and start is None:
+            next_frontier = []
+            for x, y in frontier:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    candidate = (x + dx, y + dy)
+                    if candidate in visited:
+                        continue
+                    visited.add(candidate)
+                    if not (0 <= candidate[0] < width and 0 <= candidate[1] < height):
+                        continue
+                    if candidate not in blocked:
+                        start = candidate
+                        break
+                    next_frontier.append(candidate)
+                if start is not None:
+                    break
+            frontier = next_frontier
+        if start is None:
+            return []
+
+    def proximity_penalty(x, y):
+        # A point-grid shortest path otherwise hugs the first free cell beside
+        # a shelf.  Prefer the open main-corridor interior when it is available;
+        # genuine narrow aisles remain usable because every alternative there
+        # has the same local penalty and physical waypoints are centre-snapped.
+        if any((x + dx, y + dy) in blocked
+               for dx in range(-1, 2) for dy in range(-1, 2)
+               if dx or dy):
+            return 4
+        if any((x + dx, y + dy) in blocked
+               for dx in range(-2, 3) for dy in range(-2, 3)
+               if max(abs(dx), abs(dy)) == 2):
+            return 1
+        return 0
+
+    # Manhattan distance is not a usable rolling-horizon heuristic in this
+    # warehouse.  At the end of a shelf row, reaching the next aisle requires
+    # temporarily increasing Manhattan distance.  With WAIT as an available
+    # action, the old planner preferred twelve waits, returned that stationary
+    # window, and made the same choice forever.  Reverse BFS supplies the true
+    # static-grid distance.  This reverse Dijkstra search uses the same
+    # clearance cost as the forward search; otherwise a robot just outside an
+    # unavoidable narrow aisle can still prefer WAIT over entering the aisle.
+    distance_to_goal = {goal: 0}
+    distance_queue = [(0, goal[0], goal[1])]
+    while distance_queue:
+        distance, x, y = heapq.heappop(distance_queue)
+        if distance != distance_to_goal.get((x, y)):
+            continue
+        # In reverse, a predecessor enters the current cell during forward
+        # travel, so the current cell's proximity cost belongs on this edge.
+        next_distance = distance + 1 + proximity_penalty(x, y)
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            cell = (x + dx, y + dy)
+            if (cell in blocked or
+                    not (0 <= cell[0] < width and 0 <= cell[1] < height)):
+                continue
+            if next_distance < distance_to_goal.get(cell, math.inf):
+                distance_to_goal[cell] = next_distance
+                heapq.heappush(distance_queue, (next_distance, cell[0], cell[1]))
+    if start not in distance_to_goal:
+        return []
+
+    queue = [(distance_to_goal[start], 0, start[0], start[1], 0)]
     parent = {}
     cost = {(start[0], start[1], 0): 0}
+
     while queue:
         _, g, x, y, t = heapq.heappop(queue)
         state = (x, y, t)
@@ -138,11 +361,23 @@ def whca_star(start, goal, blocked, reservations, width, height, horizon,
             )
             if reserved_neighbourhood or (nx, ny, t) in reservations and (x, y, nt) in reservations:
                 continue
-            new_g = g + 1
+            turn_penalty = 0.0
+            if (dx, dy) != (0, 0):
+                if t == 0 and heading_rad is not None:
+                    hx, hy = math.cos(heading_rad), math.sin(heading_rad)
+                    step_len = math.hypot(dx, dy)
+                    alignment = (dx * hx + dy * hy) / step_len
+                    turn_penalty = 1.5 * max(0.0, 1.0 - alignment)
+                elif state in parent:
+                    pstate = parent[state]
+                    pdx, pdy = x - pstate[0], y - pstate[1]
+                    if (pdx, pdy) != (0, 0) and (dx, dy) != (pdx, pdy):
+                        turn_penalty = 0.35
+            new_g = g + 1 + proximity_penalty(nx, ny) + turn_penalty
             if new_g < cost.get(candidate, math.inf):
                 cost[candidate] = new_g
                 parent[candidate] = state
-                h = abs(nx - goal[0]) + abs(ny - goal[1])
+                h = distance_to_goal[(nx, ny)]
                 heapq.heappush(queue, (new_g + h, new_g, nx, ny, nt))
     return []
 

@@ -15,8 +15,6 @@ PROTOCOL_QOS = QoSProfile(
 TASK_SOURCE_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST, depth=30, reliability=ReliabilityPolicy.RELIABLE,
     durability=DurabilityPolicy.TRANSIENT_LOCAL)
-
-
 def new_session_id():
     return str(uuid.uuid4())
 

@@ -27,6 +27,7 @@ class CorridorSweepNode(Node):
         self.robot_radius = self.declare_parameter('robot_radius_m', 0.35).value
         self.tolerance = self.declare_parameter('waypoint_tolerance_m', 0.18).value
         self.stop_distance = self.declare_parameter('emergency_stop_distance_m', 0.32).value
+        self.lidar_yaw = self.declare_parameter('lidar_yaw_in_base_rad', math.pi / 2.0).value
         self.pose, self.front_range, self.index, self.finished = None, math.inf, 0, False
         self.emergency_reported = False
         self.route = self.build_route(self.robot_radius)
@@ -99,7 +100,9 @@ class CorridorSweepNode(Node):
                     # Side shelves are only 0.5777 m from a centred narrow
                     # lane.  A tight forward cone detects an obstacle on the
                     # line ahead without mistaking those shelf corners for it.
-                    and abs(angle) <= math.radians(8.0)):
+                    and abs(math.atan2(
+                        math.sin(angle + self.lidar_yaw),
+                        math.cos(angle + self.lidar_yaw))) <= math.radians(8.0)):
                 front.append(value)
         self.front_range = min(front, default=math.inf)
 

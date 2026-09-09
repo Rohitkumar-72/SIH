@@ -1,4 +1,3 @@
-import math
 import pathlib
 import yaml
 import rclpy
@@ -10,8 +9,10 @@ from sih_amr_interfaces.msg import (
     TaskExecutionStatus, TrajectoryIntent
 )
 
-from .algorithms import whca_star
+from .algorithms import clear_nearfield_blockages, lane_waypoint_overrides, whca_star
 from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .map_geometry import map_geometry_from_data
+from .warehouse_tasks import narrow_lanes
 
 
 class WhcaPlannerNode(Node):
@@ -39,8 +40,11 @@ class WhcaPlannerNode(Node):
         self.origin_x = -22.5
         self.origin_y = -30.0
         self.static_blocked = set()
+        self.lane_waypoints = {}
         self.execution_target = None
+        self.execution_task_id = None
         self.execution_waiting = False
+        self._reported_assignment_mismatches = set()
         self.docking_target = None
         self._received_local_state = False
 
@@ -54,6 +58,7 @@ class WhcaPlannerNode(Node):
         self.create_subscription(RobotState, 'state', self.on_local_state, POSE_QOS)
         self.create_subscription(TaskAssignment, 'task_assignment', self.on_assignment, FLEET_STATE_QOS)
         self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
+        self.create_subscription(TaskExecutionStatus, 'task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_subscription(TrajectoryIntent, '/fleet/trajectory_intent', self.on_intent, PROTOCOL_QOS)
         self.create_subscription(BlockageObservation, '/fleet/blockage_observation', self.on_blockage, PROTOCOL_QOS)
         self.create_subscription(Pose2D, 'docking/target', lambda msg: setattr(self, 'docking_target', msg), FLEET_STATE_QOS)
@@ -62,31 +67,14 @@ class WhcaPlannerNode(Node):
     def load_map(self, filename):
         try:
             data = yaml.safe_load(pathlib.Path(filename).read_text())
-            self.width = int(data.get('width', self.width))
-            self.height = int(data.get('height', self.height))
-            origin = data.get('origin', [self.origin_x, self.origin_y])
-            self.origin_x, self.origin_y = float(origin[0]), float(origin[1])
-            self.resolution = float(data.get('resolution_m', self.resolution))
-            self.static_blocked = {tuple(cell) for cell in data.get('blocked_cells', [])}
-
-            layout = data.get('shelf_layout')
-            if layout:
-                footprint = layout.get('footprint_m', [3.92, 0.90])
-                half_x = math.ceil(footprint[0] / self.resolution / 2.0)
-                half_y = math.ceil(footprint[1] / self.resolution / 2.0)
-                excluded = {tuple(pair) for pair in layout.get('excluded_zones', [])}
-
-                for y_zone, rows in layout.get('y_zones', {}).items():
-                    for x_zone, columns in layout.get('x_zones', {}).items():
-                        if (y_zone, x_zone) in excluded:
-                            continue
-                        for x in columns:
-                            for y in rows:
-                                centre = self.to_cell(Pose2D(x=x, y=y, theta=0.0))
-                                for cell_x in range(centre[0] - half_x, centre[0] + half_x + 1):
-                                    for cell_y in range(centre[1] - half_y, centre[1] + half_y + 1):
-                                        if 0 <= cell_x < self.width and 0 <= cell_y < self.height:
-                                            self.static_blocked.add((cell_x, cell_y))
+            (self.resolution, self.width, self.height,
+             self.origin_x, self.origin_y,
+             self.static_blocked) = map_geometry_from_data(
+                data, default_resolution=self.resolution,
+                default_width=self.width, default_height=self.height,
+                default_origin=(self.origin_x, self.origin_y))
+            self.lane_waypoints = lane_waypoint_overrides(
+                narrow_lanes(), (self.origin_x, self.origin_y), self.resolution)
             self.get_logger().info(f'Loaded map in WhcaPlannerNode: {self.width}x{self.height}, {len(self.static_blocked)} blocked cells')
         except Exception as e:
             self.get_logger().error(f'Failed loading map in WhcaPlannerNode: {e}')
@@ -105,12 +93,34 @@ class WhcaPlannerNode(Node):
             self.get_logger().info('WHCA planner received first local RobotState sample')
 
     def on_assignment(self, msg):
-        if msg.owner_robot_id == self.robot_id and msg.active:
-            self.assignment = msg
+        if msg.owner_robot_id != self.robot_id:
+            return
+        if not msg.active:
+            if self.assignment and self.assignment.task.task_id == msg.task.task_id:
+                self.assignment = None
+            return
+        if (self.execution_task_id is not None and
+                msg.task.task_id != self.execution_task_id):
+            mismatch = (self.execution_task_id, msg.task.task_id)
+            if mismatch not in self._reported_assignment_mismatches:
+                self._reported_assignment_mismatches.add(mismatch)
+                self.get_logger().warning(
+                    f'Ignoring assignment {msg.task.task_id}; executor is committed '
+                    f'to {self.execution_task_id}')
+            return
+        self.assignment = msg
 
     def on_execution(self, msg):
         if msg.owner_robot_id != self.robot_id:
             return
+        if msg.phase == TaskExecutionStatus.COMPLETED:
+            if self.assignment and self.assignment.task.task_id == msg.task_id:
+                self.assignment = None
+            self.execution_task_id = None
+            self.execution_target = None
+            self.execution_waiting = False
+            return
+        self.execution_task_id = msg.task_id
         self.execution_waiting = msg.phase in (
             TaskExecutionStatus.PICKUP_WAIT,
             TaskExecutionStatus.DROPOFF_WAIT,
@@ -138,9 +148,13 @@ class WhcaPlannerNode(Node):
         return (max(0, min(cx, self.width - 1)), max(0, min(cy, self.height - 1)))
 
     def to_pose(self, cell):
+        x, y = self.lane_waypoints.get(cell, (
+            self.origin_x + cell[0] * self.resolution,
+            self.origin_y + cell[1] * self.resolution,
+        ))
         return Pose2D(
-            x=self.origin_x + cell[0] * self.resolution,
-            y=self.origin_y + cell[1] * self.resolution,
+            x=x,
+            y=y,
             theta=0.0
         )
 
@@ -181,10 +195,47 @@ class WhcaPlannerNode(Node):
             if stamp_seconds(intent.fleet_header.valid_until) >= now:
                 reservations.update((cell.x, cell.y, cell.time_slot) for cell in intent.reservations)
 
-        path = whca_star(
-            start, goal, self.static_blocked | set(self.blockages), reservations,
-            self.width, self.height, self.horizon, self.reservation_buffer_cells
+        # Global LiDAR reports include this robot as observed by peers.  Never
+        # let that coarse representation block the robot's own current
+        # footprint. Also leave the validated task-station envelope to the
+        # 40 Hz directional safety supervisor. Task
+        # stations are validated free-space endpoints; if a real object is at
+        # one, local safety will stop before arrival. This prevents a transient
+        # quantized endpoint beside the station from making
+        # the goal topologically unreachable while preserving distant dynamic
+        # obstacle avoidance.
+        planning_blockages = clear_nearfield_blockages(
+            set(self.blockages), start, goal,
+            clear_goal=True,
+            clearance_cells=1,
         )
+
+        heading = self.pose.theta if self.pose is not None else None
+        path = whca_star(
+            start, goal, self.static_blocked | planning_blockages, reservations,
+            self.width, self.height, self.horizon, self.reservation_buffer_cells,
+            heading_rad=heading
+        )
+        task_id = self.assignment.task.task_id if self.assignment else ('docking' if self.docking_target else 'idle')
+        if not path:
+            self.get_logger().warning(
+                f'[{self.robot_id}:WHCA] ERROR: ROUTE_INFEASIBLE for task={task_id}. '
+                f'Actor=WhcaPlanner:{self.robot_id}. Info: start={start} '
+                f'(static={start in self.static_blocked}, dynamic={start in self.blockages}), '
+                f'goal={goal} (static={goal in self.static_blocked}, dynamic={goal in self.blockages}), '
+                f'static_cells={len(self.static_blocked)}, dynamic_cells={len(planning_blockages)} '
+                f'(raw={len(self.blockages)}), reservations={len(reservations)}. '
+                f'Reason=no conflict-free route in current WHCA* window.',
+                throttle_duration_sec=3.0,
+            )
+        else:
+            self.get_logger().info(
+                f'[{self.robot_id}:WHCA] Decision: ROUTE_FEASIBLE for task={task_id}. '
+                f'Actor=WhcaPlanner:{self.robot_id}. Info: start={start} -> goal={goal}, '
+                f'steps={len(path)}, waypoints={len(path)}, reservations={len(reservations)}, '
+                f'dynamic_cells={len(planning_blockages)}.',
+                throttle_duration_sec=5.0,
+            )
 
         self.sequence += 1
         self.plan_id += 1

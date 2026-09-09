@@ -50,6 +50,13 @@ class OrcaNode(Node):
             vx, vy = avoidance_velocity(preferred, (self.pose.x, self.pose.y), peers, self.radius, 1.5, self.max_speed)
             result.linear.x = vx * direction[0] + vy * direction[1]
             result.angular.z = self.desired.angular.z
+            if peers and abs(result.linear.x - self.desired.linear.x) > 0.05:
+                self.get_logger().info(
+                    f'[{self.robot_id}:ORCA] Decision: AVOID_PEER_ADJUSTMENT. Actor=ORCA:{self.robot_id}. '
+                    f'Info: desired_vx={self.desired.linear.x:.2f} -> adjusted_vx={result.linear.x:.2f}, '
+                    f'active_peers_tracked={len(peers)}.',
+                    throttle_duration_sec=3.0
+                )
         if not finite_command(result.linear.x, result.angular.z):
             result = Twist()
         self.pub.publish(result)

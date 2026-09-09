@@ -154,19 +154,65 @@ class CorridorMutexNode(Node):
             'was_inside': False
         }
         self.send(CorridorProtocol.REQUEST, corridor_id, request_id)
-        self.get_logger().info(f'[{self.robot_id}] Requested corridor mutex for {corridor_id} (req={request_id[:8]})')
+        self.get_logger().info(
+            f'[{self.robot_id}:CorridorMutex] Decision: REQUEST_MUTEX for corridor {corridor_id}. '
+            f'Actor=CorridorMutex:{self.robot_id}. Info: req_id={request_id[:8]}, clock={self.clock}.'
+        )
 
     def on_request(self, msg):
         self.begin_request(msg.data)
 
+    def release_request(self, event):
+        """Release the active resource and flush grants deferred behind it."""
+        corridor = self.request['corridor']
+        request_id = self.request['id']
+        event_names = {
+            CorridorProtocol.REQUEST: 'REQUEST',
+            CorridorProtocol.GRANT: 'GRANT',
+            CorridorProtocol.DEFER: 'DEFER',
+            CorridorProtocol.ENTER: 'ENTER',
+            CorridorProtocol.EXIT: 'EXIT',
+            CorridorProtocol.RELEASE: 'RELEASE',
+            CorridorProtocol.CANCEL: 'CANCEL',
+        }
+        event_name = event_names.get(event, str(event))
+        self.send(event, corridor, request_id)
+        self.get_logger().info(
+            f'[{self.robot_id}:CorridorMutex] Decision: RELEASE_MUTEX for corridor {corridor}. '
+            f'Actor=CorridorMutex:{self.robot_id}. Event={event_name}, req_id={request_id[:8]}.'
+        )
+        for (deferred_corridor, deferred_id), peer in list(self.deferred.items()):
+            if deferred_corridor == corridor:
+                self.send(CorridorProtocol.GRANT, deferred_corridor, deferred_id, peer)
+                del self.deferred[(deferred_corridor, deferred_id)]
+        self.request = None
+        self.armed_corridor = None
+
     def on_route(self, route):
+        # A grant permits entry; it does not prove that the robot physically
+        # entered. Rolling replans can abandon an armed corridor while the
+        # robot is still in its approach band. Cancel that unused claim so it
+        # cannot retain the corridor speed cap indefinitely.
+        if self.request is not None:
+            requested_cells = self.corridors.get(self.request['corridor'], set())
+            still_planned = route.route_feasible and any(
+                (cell.x, cell.y) in requested_cells for cell in route.cells[1:])
+            if self.request['was_inside'] or still_planned:
+                return
+            self.get_logger().info(
+                f"[{self.robot_id}:CorridorMutex] Decision: CANCEL_ABANDONED_MUTEX for corridor "
+                f"{self.request['corridor']}. Actor=CorridorMutex:{self.robot_id}.")
+            self.release_request(CorridorProtocol.CANCEL)
         if not route.route_feasible:
+            self.armed_corridor = None
             return
+        next_corridor = None
         for cell in route.cells[1:]:
             corridor = next((name for name, cells in self.corridors.items() if (cell.x, cell.y) in cells), '')
             if corridor:
-                self.armed_corridor = corridor
-                return
+                next_corridor = corridor
+                break
+        self.armed_corridor = next_corridor
 
     def on_state(self, state):
         cell = (
@@ -183,13 +229,15 @@ class CorridorMutexNode(Node):
             self.request['was_inside'] = True
         elif self.request['was_inside']:
             # Exited the corridor
-            self.get_logger().info(f"[{self.robot_id}] Exited corridor {self.request['corridor']}; releasing mutex.")
-            self.send(CorridorProtocol.EXIT, self.request['corridor'], self.request['id'])
-            for (corridor, request_id), peer in list(self.deferred.items()):
-                if corridor == self.request['corridor']:
-                    self.send(CorridorProtocol.GRANT, corridor, request_id, peer)
-                    del self.deferred[(corridor, request_id)]
-            self.request = None
+            self.get_logger().info(
+                f"[{self.robot_id}:CorridorMutex] Decision: EXIT_CORRIDOR {self.request['corridor']}. "
+                f"Actor=CorridorMutex:{self.robot_id}. Info: releasing mutex and unblocking deferred peers."
+            )
+            self.release_request(CorridorProtocol.EXIT)
+            # The exited cell is normally still inside this corridor's broad
+            # approach band. Clearing the old arm prevents the next 20 Hz
+            # state sample from immediately requesting the corridor again
+            # before the 1 Hz rolling route identifies the next resource.
 
     def on_protocol(self, msg):
         if msg.fleet_header.robot_id == self.robot_id:
@@ -211,13 +259,14 @@ class CorridorMutexNode(Node):
         elif msg.event in (CorridorProtocol.EXIT, CorridorProtocol.RELEASE, CorridorProtocol.CANCEL):
             if self.peer_corridors.get(msg.fleet_header.robot_id) == msg.corridor_id:
                 self.peer_corridors.pop(msg.fleet_header.robot_id, None)
+            self.suspect_corridors.discard(msg.corridor_id)
             for (corridor, request_id), peer in list(self.deferred.items()):
                 if corridor == msg.corridor_id:
                     self.send(CorridorProtocol.GRANT, corridor, request_id, peer)
                     del self.deferred[(corridor, request_id)]
 
         elif msg.event == CorridorProtocol.ENTER:
-            # Network ownership is not physical clearance.  Retain this fact
+            # Network ownership is not physical clearance. Retain this fact
             # if the owner later disappears, until an operator/sensor-backed
             # recovery procedure explicitly clears the corridor.
             self.peer_corridors[msg.fleet_header.robot_id] = msg.corridor_id
@@ -231,9 +280,10 @@ class CorridorMutexNode(Node):
             return
 
         now = now_seconds(self)
-        for robot_id, corridor_id in list(self.peer_corridors.items()):
-            if self.peers.get(robot_id, 0.0) < now:
-                self.suspect_corridors.add(corridor_id)
+        self.suspect_corridors = {
+            corridor_id for robot_id, corridor_id in self.peer_corridors.items()
+            if self.peers.get(robot_id, 0.0) < now
+        }
         active_peers = {robot for robot, until in self.peers.items() if until >= now}
         suspected = self.request['corridor'] in self.suspect_corridors
         permitted = active_peers.issubset(self.request['grants']) and not suspected and not (self.in_approach and self.communication_degraded)
@@ -241,10 +291,20 @@ class CorridorMutexNode(Node):
         if permitted and self.entrance_clear and not self.request['entered']:
             self.request['entered'] = True
             self.send(CorridorProtocol.ENTER, self.request['corridor'], self.request['id'])
-            self.get_logger().info(f"[{self.robot_id}] Entered corridor {self.request['corridor']} with full grants.")
+            self.get_logger().info(
+                f"[{self.robot_id}:CorridorMutex] Decision: ENTER_CORRIDOR {self.request['corridor']}. "
+                f"Actor=CorridorMutex:{self.robot_id}. Info: full grants received from peers {list(self.request['grants'])}, "
+                f"entrance physical clearance confirmed."
+            )
 
         allowed = permitted and self.entrance_clear
-        cap = approach_policy(self.in_approach, allowed, self.communication_degraded, self.approach_speed_mps)
+        # The conservative speed cap applies in the approach band while
+        # entering or waiting for grants. Once inside with exclusive ownership,
+        # the AMR tracks at nominal path velocity.
+        constrained = self.in_approach and not self.request.get('entered', False)
+        cap = approach_policy(
+            constrained, allowed, self.communication_degraded,
+            self.approach_speed_mps)
         self.allowed_pub.publish(Bool(data=allowed))
         self.speed_pub.publish(Float32(data=float(cap if math.isfinite(cap) else 1e6)))
         self.protected_pub.publish(Bool(data=self.request['entered']))
