@@ -1,0 +1,16 @@
+# Fleet Coordination & Communication Configuration
+schema_version: 1
+
+coordination:
+  task_allocation: "CBBA"
+  consensus_settle_s: 2.0
+  corridor_mutex: "Ricart_Agrawala"
+  corridor_lease_s: 4.0
+  trajectory_intent_ttl_s: 1.5
+  health_heartbeat_hz: 2.0
+
+communication:
+  protocol: "DDS"
+  rmw_default: "rmw_cyclonedds_cpp"
+  domain_id: 42
+  discovery_range: "LOCALHOST"

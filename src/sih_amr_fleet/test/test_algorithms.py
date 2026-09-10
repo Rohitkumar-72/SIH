@@ -10,7 +10,8 @@ from sih_amr_fleet.algorithms import (
     filter_unexpected_blockages, finite_command, float32_wire_value,
     freeze_auction_value, lane_waypoint_overrides,
     map_transform_for_anchor,
-    local_point_to_grid_cell, reverse_recovery_allowed, sensor_point_to_base, whca_star,
+    local_point_to_grid_cell, reverse_recovery_allowed, sensor_point_to_base,
+    static_grid_path_distance, whca_star,
 )
 from sih_amr_fleet.map_geometry import map_geometry_from_data
 from sih_amr_fleet.warehouse_tasks import Lane, aisle_points, narrow_lanes
@@ -595,4 +596,19 @@ def test_local_state_fallback_covers_every_motion_critical_node():
     assert "'scan stale'" in safety
     assert "self.margin = self.declare_parameter('braking_margin_m'" in safety
     assert "self.forward_half_angle = self.declare_parameter('braking_sector_half_angle_rad'" in safety
+
+
+def test_static_grid_path_distance_navigates_around_obstacles():
+    # Straight line distance between (0, 2) and (4, 2) is 4 cells = 2.0m (res=0.5)
+    # With a vertical wall at x=2 from y=1 to y=3, path must route around
+    wall = {(2, 1), (2, 2), (2, 3)}
+    dist = static_grid_path_distance(
+        start=(0, 2), goal=(4, 2), blocked=wall, width=10, height=10, resolution=0.5)
+    # Bypassing wall: (0,2)->(1,2)->(1,0)->(3,0)->(3,2)->(4,2) = 6 or 8 steps
+    assert dist > 2.0  # Must be strictly longer than straight line due to obstacle
+    assert dist == pytest.approx(4.0)  # 8 steps * 0.5 = 4.0m
+
+
+def test_static_grid_path_distance_same_cell():
+    assert static_grid_path_distance((5, 5), (5, 5), blocked=set(), width=10, height=10, resolution=0.5) == 0.0
 

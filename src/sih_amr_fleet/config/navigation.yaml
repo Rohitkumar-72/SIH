@@ -1,0 +1,28 @@
+# Navigation & Local Motion Configuration
+schema_version: 1
+
+planner:
+  type: "WHCA_star"
+  horizon_steps: 12
+  time_slot_seconds: 0.125
+  reservation_buffer_cells: 1
+  reservation_buffer_shape: "chebyshev_3x3_same_time_slot"
+
+path_follower:
+  linear_kp: 12.0
+  angular_kp: 6.0
+  arrival_tolerance_m: 0.35
+  max_tracking_speed_mps: 4.0
+
+local_avoidance:
+  type: "ORCA"
+  time_horizon_s: 2.5
+  robot_radius_m: 0.35
+  safety_margin_m: 0.10
+
+safety_supervisor:
+  authoritative: true
+  sensor_source: "directional_lidar"
+  braking_deceleration_mps2: 60.0
+  braking_margin_m: 0.10
+  forward_half_angle_rad: 0.5236

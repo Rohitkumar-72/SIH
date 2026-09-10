@@ -227,7 +227,12 @@ if [[ "$START_FLEET" == true ]]; then
   start_group "$LOG_DIR/fleet.log" ros2 launch sih_amr_fleet fleet.launch.py \
     random_tasks:="$FLEET_RANDOM_TASKS" record_data:="$FLEET_LAUNCH_RECORD_DATA" \
     data_file:="$FLEET_DATA_FILE" path_tracking_speed_mps:="$FLEET_TRACKING_SPEED_MPS" \
-    reservation_time_slot_s:="$FLEET_RESERVATION_SLOT_S" "${FLEET_SCENARIO_ARGS[@]}"
+    reservation_time_slot_s:="$FLEET_RESERVATION_SLOT_S" \
+    enable_faults:="${FLEET_ENABLE_FAULTS:-false}" \
+    enable_spawner:="${FLEET_ENABLE_SPAWNER:-false}" \
+    enable_vision:="${FLEET_ENABLE_VISION:-false}" \
+    random_seed:="${FLEET_RANDOM_SEED:-42}" \
+    "${FLEET_SCENARIO_ARGS[@]}"
   FLEET_PID="$STARTED_PID"
   write_run_event fleet_launch_started "pid=$FLEET_PID"
   sleep 3

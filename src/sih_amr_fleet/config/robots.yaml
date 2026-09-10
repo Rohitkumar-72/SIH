@@ -1,0 +1,26 @@
+# Robot Fleet Specification Configuration
+schema_version: 1
+
+robots:
+  count: 4
+  instances:
+    - id: "robot_1"
+      namespace: "/robot_1"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_1"
+      initial_pose: [-3.6, -29.55, -1.5708]
+    - id: "robot_2"
+      namespace: "/robot_2"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_2"
+      initial_pose: [-1.2, -29.55, -1.5708]
+    - id: "robot_3"
+      namespace: "/robot_3"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_3"
+      initial_pose: [1.2, -29.55, -1.5708]
+    - id: "robot_4"
+      namespace: "/robot_4"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_4"
+      initial_pose: [3.6, -29.55, -1.5708]

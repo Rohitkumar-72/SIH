@@ -1,0 +1,30 @@
+# Domain Randomization Scenario Configuration
+schema_version: 1
+random_seed: 42
+domain_randomization_enabled: true
+
+lighting:
+  ambient_illuminance_lux_range: [200.0, 500.0]
+  directional_light_intensity_range: [0.7, 1.2]
+  color_temperature_kelvin_range: [4000, 6500]
+
+sensor_noise:
+  lidar:
+    range_noise_std_dev_m: 0.015
+    beam_dropout_probability: 0.001
+    angular_noise_rad: 0.002
+  odometry:
+    longitudinal_slip_std_dev: 0.03
+    lateral_slip_std_dev: 0.02
+    drift_rate_rad_per_m: 0.005
+
+drivetrain:
+  wheel_friction_range: [0.7, 1.0]
+  battery_initial_percent_range: [45.0, 100.0]
+  spawn_jitter_radius_m: 0.03
+
+obstacle_randomization:
+  max_simultaneous_obstacles: 2
+  allowed_types: ["tote_box", "wooden_pallet", "barrel"]
+  min_lifetime_s: 15.0
+  max_lifetime_s: 60.0

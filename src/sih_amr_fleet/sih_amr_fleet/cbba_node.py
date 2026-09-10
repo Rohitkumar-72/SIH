@@ -1,5 +1,7 @@
 import json
 import math
+import pathlib
+import yaml
 import rclpy
 from rclpy.node import Node
 from sih_amr_interfaces.msg import (
@@ -9,8 +11,9 @@ from sih_amr_interfaces.msg import (
 from geometry_msgs.msg import Pose2D
 from std_msgs.msg import String
 
-from .algorithms import float32_wire_value, freeze_auction_value
+from .algorithms import float32_wire_value, freeze_auction_value, static_grid_path_distance
 from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, TASK_SOURCE_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .map_geometry import map_geometry_from_data
 
 UNAVAILABLE_BID = 1.0e9
 
@@ -21,6 +24,13 @@ class CbbaNode(Node):
     def __init__(self):
         super().__init__('cbba_node')
         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
+        self.map_file = self.declare_parameter('map_file', '').value
+        self.resolution = self.declare_parameter('grid_resolution_m', 0.5).value
+        self.width = 90
+        self.height = 120
+        self.origin_x = -22.5
+        self.origin_y = -30.0
+        self.static_blocked = set()
         # Gazebo baseline speed.  This is deliberately an explicit fleet
         # parameter: physical AMRs must use their measured safe limit instead.
         self.max_speed = self.declare_parameter('nominal_speed_mps', 6.0).value
@@ -35,6 +45,9 @@ class CbbaNode(Node):
         self._received_local_state = False
         self._received_fleet_state = False
         self._received_task = False
+
+        if self.map_file:
+            self.load_map(self.map_file)
         self.received_task_ids = set()
         self.consensus_participants = {}
         self._reported_missing_consensus = {}
@@ -385,6 +398,25 @@ class CbbaNode(Node):
             msg.winner_robot_id, msg.winner_session_id,
             msg.winning_bid, msg.assignment_epoch)
 
+    def load_map(self, filename):
+        try:
+            data = yaml.safe_load(pathlib.Path(filename).read_text())
+            (self.resolution, self.width, self.height,
+             self.origin_x, self.origin_y,
+             self.static_blocked) = map_geometry_from_data(
+                data, default_resolution=self.resolution,
+                default_width=self.width, default_height=self.height,
+                default_origin=(self.origin_x, self.origin_y))
+            self.get_logger().info(
+                f'Loaded static map in CbbaNode: {self.width}x{self.height}, {len(self.static_blocked)} blocked cells')
+        except Exception as e:
+            self.get_logger().error(f'Failed loading map in CbbaNode: {e}')
+
+    def to_cell(self, pose):
+        cx = round((pose.x - self.origin_x) / self.resolution)
+        cy = round((pose.y - self.origin_y) / self.resolution)
+        return (max(0, min(cx, self.width - 1)), max(0, min(cy, self.height - 1)))
+
     def bid(self, task):
         if self.pose is None:
             return UNAVAILABLE_BID
@@ -393,11 +425,26 @@ class CbbaNode(Node):
         if busy is not None and busy[0] != task.task_id:
             return UNAVAILABLE_BID
 
-        # Base travel time: AMR -> Pickup -> Dropoff
-        travel_dist = (
-            math.hypot(task.pickup.x - self.pose.x, task.pickup.y - self.pose.y) +
-            math.hypot(task.dropoff.x - task.pickup.x, task.dropoff.y - task.pickup.y)
-        )
+        # Base travel distance using 2D static grid A* (respects shelf rows & walls)
+        if self.static_blocked:
+            amr_cell = self.to_cell(self.pose)
+            pickup_cell = self.to_cell(task.pickup)
+            dropoff_cell = self.to_cell(task.dropoff)
+
+            dist_to_pickup = static_grid_path_distance(
+                amr_cell, pickup_cell, self.static_blocked,
+                self.width, self.height, self.resolution)
+            dist_pickup_to_dropoff = static_grid_path_distance(
+                pickup_cell, dropoff_cell, self.static_blocked,
+                self.width, self.height, self.resolution)
+            travel_dist = dist_to_pickup + dist_pickup_to_dropoff
+        else:
+            # Fallback to Euclidean distance if map not loaded
+            travel_dist = (
+                math.hypot(task.pickup.x - self.pose.x, task.pickup.y - self.pose.y) +
+                math.hypot(task.dropoff.x - task.pickup.x, task.dropoff.y - task.pickup.y)
+            )
+
         base_bid = travel_dist / max(self.max_speed, 0.1)
 
         # Priority discount (higher priority = lower bid value / more attractive)

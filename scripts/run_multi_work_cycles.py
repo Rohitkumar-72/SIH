@@ -267,7 +267,9 @@ class WorkCycleRun:
             pass
         return 0.0
 
-    def execute(self, tracking_speed: float, settle_s: int) -> bool:
+    def execute(self, tracking_speed: float, settle_s: int, seed: int = 42,
+                enable_faults: bool = False, enable_spawner: bool = False,
+                enable_vision: bool = False) -> bool:
         """Executes a single work-cycle test run."""
         self.clean_lingering_processes()
         self.start_time = time.time()
@@ -280,12 +282,16 @@ class WorkCycleRun:
         env["FLEET_RECORD_DATA"] = "true"
         env["RENDER_ENGINE"] = "ogre2"
         env["GUI_RENDER_ENGINE"] = "ogre2"
-        env["SENSOR_PROFILE"] = "fleet"  # Lean 2D lidar profile (avoids 44 GPU depth camera rendering pipelines)
+        env["SENSOR_PROFILE"] = "fleet"  # Lean 2D lidar profile
         env["LIDAR_UPDATE_RATE_HZ"] = os.environ.get("LIDAR_UPDATE_RATE_HZ", "10.0")
         env["FLEET_TRACKING_SPEED_MPS"] = str(tracking_speed)
         env["SETTLE_SECONDS"] = str(settle_s)
         env["LOG_DIR"] = str(self.log_dir)
         env["FLEET_DATA_FILE"] = str(self.telemetry_file)
+        env["FLEET_RANDOM_SEED"] = str(seed + self.run_index)
+        env["FLEET_ENABLE_FAULTS"] = "true" if enable_faults else "false"
+        env["FLEET_ENABLE_SPAWNER"] = "true" if enable_spawner else "false"
+        env["FLEET_ENABLE_VISION"] = "true" if enable_vision else "false"
         
         # GPU Acceleration environment for NVIDIA GeForce RTX 3070 / Linux
         env["__NV_PRIME_RENDER_OFFLOAD"] = "1"
@@ -583,7 +589,7 @@ def generate_master_benchmark_report(runs: List[WorkCycleRun], base_dir: Path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run 5 sequential multi-AMR warehouse work-cycle tests with GPU acceleration and live stage tracking."
+        description="Run sequential multi-AMR warehouse work-cycle tests with domain randomization, fault injection, and dataset generation."
     )
     parser.add_argument("--runs", type=int, default=5, help="Number of sequential work cycle test runs (default: 5)")
     parser.add_argument("--tasks-per-cycle", type=int, default=4, help="Number of completed tasks required per work cycle (default: 4)")
@@ -591,6 +597,11 @@ def main():
     parser.add_argument("--settle-seconds", type=int, default=5, help="AMR spawn settle time in seconds (default: 5s)")
     parser.add_argument("--timeout", type=int, default=1200, help="Max timeout per run in seconds (default: 1200s)")
     parser.add_argument("--output-dir", type=str, default=None, help="Root directory for multi-run logs")
+    parser.add_argument("--seed", type=int, default=42, help="Base random seed for domain randomization (default: 42)")
+    parser.add_argument("--enable-faults", action="store_true", help="Enable seeded fault injection harness")
+    parser.add_argument("--enable-spawner", action="store_true", help="Enable dynamic obstacle spawner in safe zones")
+    parser.add_argument("--enable-vision", action="store_true", help="Enable bounded camera dataset recorder")
+    parser.add_argument("--export-dataset", action="store_true", help="Auto-generate tabular ML dataset CSV on completion")
 
     args = parser.parse_args()
 
@@ -606,15 +617,19 @@ def main():
     base_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{C_BOLD}{C_CYAN}========================================================================={C_RESET}")
-    print(f"{C_BOLD}{C_CYAN}   SIH DECENTRALIZED MULTI-AMR FLEET — 5-TEST WORK-CYCLE RUNNER          {C_RESET}")
+    print(f"{C_BOLD}{C_CYAN}   SIH DECENTRALIZED MULTI-AMR FLEET — WORK-CYCLE & DATASET RUNNER       {C_RESET}")
     print(f"{C_BOLD}{C_CYAN}========================================================================={C_RESET}")
     print(f" • Sequential Runs:    {args.runs}")
     print(f" • Tasks Per Cycle:    {args.tasks_per_cycle} completed tasks")
+    print(f" • Base Seed:          {args.seed}")
+    print(f" • Fault Injection:    {'ENABLED' if args.enable_faults else 'DISABLED'}")
+    print(f" • Dynamic Spawner:    {'ENABLED' if args.enable_spawner else 'DISABLED'}")
+    print(f" • Vision Recording:   {'ENABLED' if args.enable_vision else 'DISABLED'}")
     print(f" • Tracking Speed:     {args.tracking_speed} m/s")
     print(f" • Spawn Settle Time:  {args.settle_seconds} s")
     print(f" • Timeout Per Run:    {args.timeout} s")
     print(f" • Root Log Directory: {base_dir}")
-    print(f" • GPU Acceleration:   NVIDIA GeForce RTX 3070 (Headless OGRE2, Fleet 2D Profile)")
+    print(f" • GPU Acceleration:   NVIDIA GeForce RTX 3070 (Headless OGRE2, Fleet Profile)")
     print(f"{C_CYAN}-------------------------------------------------------------------------{C_RESET}\n")
 
     runs: List[WorkCycleRun] = []
@@ -632,10 +647,17 @@ def main():
             )
             runs.append(run)
             current_run = run
-            success = run.execute(tracking_speed=args.tracking_speed, settle_s=args.settle_seconds)
+            success = run.execute(
+                tracking_speed=args.tracking_speed,
+                settle_s=args.settle_seconds,
+                seed=args.seed,
+                enable_faults=args.enable_faults,
+                enable_spawner=args.enable_spawner,
+                enable_vision=args.enable_vision
+            )
             current_run = None
             
-            # Short cooldown between sequential runs to allow Cyclone DDS ports to reset
+            # Short cooldown between sequential runs
             if i < args.runs:
                 print(f"\n{C_DIM}Cooldown between runs (5s)...{C_RESET}")
                 time.sleep(5.0)
@@ -653,6 +675,16 @@ def main():
     finally:
         if runs:
             generate_master_benchmark_report(runs, base_dir)
+            if args.export_dataset:
+                dataset_csv = base_dir / "fleet_congestion_dataset.csv"
+                telemetry_files = [str(r.telemetry_file) for r in runs if r.telemetry_file.exists()]
+                if telemetry_files:
+                    try:
+                        cmd = ["python3", str(script_dir / "generate_ml_dataset.py"), *telemetry_files, "-o", str(dataset_csv)]
+                        subprocess.run(cmd, check=True)
+                        print(f" {C_GREEN}✔ Auto-exported ML Dataset CSV:{C_RESET} {dataset_csv}")
+                    except Exception as e:
+                        print(f" {C_RED}Failed to auto-export ML dataset: {e}{C_RESET}")
         if interrupted:
             sys.exit(130)
 

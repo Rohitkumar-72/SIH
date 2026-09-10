@@ -382,6 +382,67 @@ def whca_star(start, goal, blocked, reservations, width, height, horizon,
     return []
 
 
+def static_grid_path_distance(start, goal, blocked, width, height, resolution=0.5):
+    """Compute the shortest 2D collision-free grid distance between start and goal in metres.
+
+    Snaps blocked or boundary endpoints to the nearest free grid cell.
+    Uses 2D A* search over the static warehouse layout geometry.
+    """
+    start_cell = (int(start[0]), int(start[1]))
+    goal_cell = (int(goal[0]), int(goal[1]))
+
+    if start_cell == goal_cell:
+        return 0.0
+
+    def snap_to_free(cell):
+        if 0 <= cell[0] < width and 0 <= cell[1] < height and cell not in blocked:
+            return cell
+        frontier = [cell]
+        visited = {cell}
+        while frontier:
+            next_frontier = []
+            for x, y in frontier:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    cand = (x + dx, y + dy)
+                    if cand in visited:
+                        continue
+                    visited.add(cand)
+                    if 0 <= cand[0] < width and 0 <= cand[1] < height and cand not in blocked:
+                        return cand
+                    if abs(cand[0] - cell[0]) <= 3 and abs(cand[1] - cell[1]) <= 3:
+                        next_frontier.append(cand)
+            frontier = next_frontier
+        return None
+
+    actual_start = snap_to_free(start_cell)
+    actual_goal = snap_to_free(goal_cell)
+    if actual_start is None or actual_goal is None:
+        return math.hypot(goal_cell[0] - start_cell[0], goal_cell[1] - start_cell[1]) * resolution
+
+    h_start = math.hypot(actual_goal[0] - actual_start[0], actual_goal[1] - actual_start[1])
+    queue = [(h_start, 0.0, actual_start[0], actual_start[1])]
+    cost = {actual_start: 0.0}
+
+    while queue:
+        _, g, x, y = heapq.heappop(queue)
+        if (x, y) == actual_goal:
+            return g * resolution
+        if g > cost.get((x, y), math.inf):
+            continue
+
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if not (0 <= nx < width and 0 <= ny < height) or (nx, ny) in blocked:
+                continue
+            new_g = g + 1.0
+            if new_g < cost.get((nx, ny), math.inf):
+                cost[(nx, ny)] = new_g
+                h = math.hypot(actual_goal[0] - nx, actual_goal[1] - ny)
+                heapq.heappush(queue, (new_g + h, new_g, nx, ny))
+
+    return math.hypot(goal_cell[0] - start_cell[0], goal_cell[1] - start_cell[1]) * resolution * 1.5
+
+
 class ConstantVelocityTrack:
     """Small diagonal constant-velocity Kalman-style filter for peer tracking."""
     def __init__(self, x, y, vx=0.0, vy=0.0):

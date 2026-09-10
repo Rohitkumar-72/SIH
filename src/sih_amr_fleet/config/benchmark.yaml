@@ -1,0 +1,15 @@
+# Benchmark Metrics & Evaluation Configuration
+schema_version: 1
+
+metrics:
+  calculate_makespan: true
+  calculate_throughput: true
+  calculate_corridor_wait_times: true
+  calculate_replans: true
+  calculate_safety_stops: true
+  calculate_energy_estimate: true
+  calculate_deadlocks: true
+
+baselines:
+  stop_and_wait_makespan_target_ratio: 0.80
+  zero_collision_enforced: true

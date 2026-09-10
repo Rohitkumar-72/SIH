@@ -1,0 +1,5058 @@
+{
+  "layout_version": "4.0",
+  "warehouse_id": "WH-01",
+  "map_resolution_m": 0.5,
+  "shelves_count": 192,
+  "corridors_count": 172,
+  "junctions_count": 6,
+  "shelves": [
+    {
+      "shelf_id": "shelf_south_west_R01_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R01_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R01_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R02_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R02_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R02_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R03_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R03_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R03_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R04_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R04_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R04_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R05_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R05_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R05_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R06_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R06_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R06_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R07_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R07_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R07_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R08_C01",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_WEST-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R08_C02",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_WEST-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_west_R08_C03",
+      "class": "storage_shelf",
+      "sector": "south_west",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_WEST-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R01_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R01_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R01_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R02_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R02_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R02_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R03_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R03_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R03_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R04_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R04_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R04_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R05_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R05_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R05_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R06_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R06_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R06_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R07_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R07_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R07_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R08_C01",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-SOUTH_EAST-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R08_C02",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-SOUTH_EAST-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_south_east_R08_C03",
+      "class": "storage_shelf",
+      "sector": "south_east",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-SOUTH_EAST-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R01_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R01_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R01_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R02_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R02_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R02_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R03_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R03_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R03_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R04_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R04_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R04_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R05_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R05_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R05_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R06_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R06_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R06_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R07_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R07_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R07_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R08_C01",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R08_C02",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_west_R08_C03",
+      "class": "storage_shelf",
+      "sector": "middle_west",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_WEST-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R01_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R01_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R01_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R02_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R02_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R02_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R03_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R03_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R03_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R04_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R04_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R04_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R05_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R05_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R05_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R06_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R06_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R06_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R07_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R07_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R07_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R08_C01",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R08_C02",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_center_R08_C03",
+      "class": "storage_shelf",
+      "sector": "middle_center",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_CENTER-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R01_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R01_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R01_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R02_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R02_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R02_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R03_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R03_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R03_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R04_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R04_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R04_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R05_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R05_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R05_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R06_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R06_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R06_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R07_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R07_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R07_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R08_C01",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R08_C02",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_middle_east_R08_C03",
+      "class": "storage_shelf",
+      "sector": "middle_east",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-MIDDLE_EAST-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R01_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R01_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R01_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R02_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R02_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R02_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R03_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R03_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R03_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R04_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R04_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R04_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R05_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R05_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R05_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R06_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R06_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R06_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R07_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R07_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R07_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R08_C01",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_WEST-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R08_C02",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_WEST-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_west_R08_C03",
+      "class": "storage_shelf",
+      "sector": "north_west",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_WEST-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R01_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R01_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R01_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R02_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R02_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R02_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R03_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R03_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R03_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R04_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R04_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R04_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R05_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R05_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R05_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R06_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R06_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R06_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R07_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R07_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R07_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R08_C01",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_CENTER-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R08_C02",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_CENTER-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_center_R08_C03",
+      "class": "storage_shelf",
+      "sector": "north_center",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_CENTER-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R01_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 1,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R01-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R01_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 1,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R01-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R01_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 1,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R01-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R02_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 2,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R02-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R02_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 2,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R02-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R02_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 2,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R02-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R03_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 3,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R03-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R03_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 3,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R03-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R03_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 3,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R03-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R04_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 4,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R04-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R04_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 4,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R04-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R04_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 4,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R04-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R05_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 5,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R05-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R05_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 5,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R05-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R05_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 5,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R05-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R06_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 6,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R06-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R06_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 6,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R06-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R06_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 6,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R06-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R07_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 7,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R07-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R07_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 7,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R07-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R07_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 7,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R07-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R08_C01",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 8,
+      "column": 1,
+      "qr_code": "QR-WH01-NORTH_EAST-R08-C01",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R08_C02",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 8,
+      "column": 2,
+      "qr_code": "QR-WH01-NORTH_EAST-R08-C02",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    },
+    {
+      "shelf_id": "shelf_north_east_R08_C03",
+      "class": "storage_shelf",
+      "sector": "north_east",
+      "row": 8,
+      "column": 3,
+      "qr_code": "QR-WH01-NORTH_EAST-R08-C03",
+      "bounding_box_3d": {
+        "length_m": 3.9172,
+        "width_m": 0.8,
+        "height_m": 2.5
+      }
+    }
+  ],
+  "corridors": [
+    {
+      "corridor_id": "NC-south_west-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R01-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R02-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R03-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R04-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R05-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R06-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R07-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R08-C01",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R08-C02",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_west-R08-C03",
+      "class": "narrow_corridor",
+      "sector": "south_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R01-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R02-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R03-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R04-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R05-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R06-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R07-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R08-C01",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R08-C02",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-south_east-R08-C03",
+      "class": "narrow_corridor",
+      "sector": "south_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R01-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R02-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R03-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R04-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R05-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R06-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_west-R07-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_center-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R01-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R02-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R03-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": -2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R04-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 0.0
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R05-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 2.035
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R06-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 4.07
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-middle_east-R07-C03",
+      "class": "narrow_corridor",
+      "sector": "middle_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 6.105
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-S",
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R01-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R02-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R03-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R04-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R05-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R06-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R07-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R08-C01",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -19.99,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R08-C02",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -15.67,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_west-R08-C03",
+      "class": "narrow_corridor",
+      "sector": "north_west",
+      "centre_pose": {
+        "x": -11.35,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R08-C01",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": -2.5363,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_center-R08-C02",
+      "class": "narrow_corridor",
+      "sector": "north_center",
+      "centre_pose": {
+        "x": 2.5363,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R01-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R01-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R01-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 13.5275
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R02-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R02-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R02-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 15.5625
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R03-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R03-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R03-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 17.5975
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R04-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R04-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R04-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 19.6325
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R05-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R05-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R05-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 21.6675
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R06-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R06-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R06-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 23.7025
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R07-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R07-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R07-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 25.7375
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R08-C01",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 11.35,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R08-C02",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 15.67,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "NC-north_east-R08-C03",
+      "class": "narrow_corridor",
+      "sector": "north_east",
+      "centre_pose": {
+        "x": 19.99,
+        "y": 27.7725
+      },
+      "clear_width_m": 1.1554,
+      "segment_length_m": 3.9172,
+      "connects_to": [
+        "MC-EW-N"
+      ]
+    },
+    {
+      "corridor_id": "MC-NS-W",
+      "class": "main_corridor",
+      "name": "main_north_south_west",
+      "direction": "bidirectional",
+      "width_m": 3.0,
+      "bounds_2d_m": {
+        "min_x": -9.0,
+        "min_y": -29.75,
+        "max_x": -6.0,
+        "max_y": 29.75
+      }
+    },
+    {
+      "corridor_id": "MC-NS-E",
+      "class": "main_corridor",
+      "name": "main_north_south_east",
+      "direction": "bidirectional",
+      "width_m": 3.0,
+      "bounds_2d_m": {
+        "min_x": 6.0,
+        "min_y": -29.75,
+        "max_x": 9.0,
+        "max_y": 29.75
+      }
+    },
+    {
+      "corridor_id": "MC-EW-S",
+      "class": "main_corridor",
+      "name": "main_east_west_south",
+      "direction": "bidirectional",
+      "width_m": 3.0,
+      "bounds_2d_m": {
+        "min_x": -22.25,
+        "min_y": -11.5,
+        "max_x": 22.25,
+        "max_y": -8.5
+      }
+    },
+    {
+      "corridor_id": "MC-EW-N",
+      "class": "main_corridor",
+      "name": "main_east_west_north",
+      "direction": "bidirectional",
+      "width_m": 3.0,
+      "bounds_2d_m": {
+        "min_x": -22.25,
+        "min_y": 8.5,
+        "max_x": 22.25,
+        "max_y": 11.5
+      }
+    }
+  ],
+  "junctions": [
+    {
+      "junction_id": "J-SW",
+      "class": "main_junction",
+      "connects": [
+        "MC-NS-W",
+        "MC-EW-S"
+      ],
+      "bounds_2d_m": {
+        "min_x": -9.0,
+        "min_y": -11.5,
+        "max_x": -6.0,
+        "max_y": -8.5
+      },
+      "control": "whca_reservation"
+    },
+    {
+      "junction_id": "J-SE",
+      "class": "main_junction",
+      "connects": [
+        "MC-NS-E",
+        "MC-EW-S"
+      ],
+      "bounds_2d_m": {
+        "min_x": 6.0,
+        "min_y": -11.5,
+        "max_x": 9.0,
+        "max_y": -8.5
+      },
+      "control": "whca_reservation"
+    },
+    {
+      "junction_id": "J-NW",
+      "class": "main_junction",
+      "connects": [
+        "MC-NS-W",
+        "MC-EW-N"
+      ],
+      "bounds_2d_m": {
+        "min_x": -9.0,
+        "min_y": 8.5,
+        "max_x": -6.0,
+        "max_y": 11.5
+      },
+      "control": "whca_reservation"
+    },
+    {
+      "junction_id": "J-NE",
+      "class": "main_junction",
+      "connects": [
+        "MC-NS-E",
+        "MC-EW-N"
+      ],
+      "bounds_2d_m": {
+        "min_x": 6.0,
+        "min_y": 8.5,
+        "max_x": 9.0,
+        "max_y": 11.5
+      },
+      "control": "whca_reservation"
+    },
+    {
+      "junction_id": "NJ-MC",
+      "class": "narrow_junction",
+      "connects": [
+        "NC-MC"
+      ],
+      "bounds_2d_m": {
+        "min_x": -0.5,
+        "min_y": -6.5,
+        "max_x": 0.5,
+        "max_y": 6.5
+      },
+      "control": "ricart_agrawala_mutex"
+    },
+    {
+      "junction_id": "NJ-NC",
+      "class": "narrow_junction",
+      "connects": [
+        "NC-NC"
+      ],
+      "bounds_2d_m": {
+        "min_x": -0.5,
+        "min_y": 12.5,
+        "max_x": 0.5,
+        "max_y": 29.5
+      },
+      "control": "ricart_agrawala_mutex"
+    }
+  ]
+}

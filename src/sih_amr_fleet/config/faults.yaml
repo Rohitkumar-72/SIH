@@ -1,0 +1,23 @@
+# Fault Injection Harness Profile Configuration
+schema_version: 1
+fault_injection_enabled: false
+
+probabilities:
+  # Evaluated per task assignment
+  robot_motor_stall_per_task: 0.01
+  # Evaluated per LiDAR scan frame
+  lidar_dropout_per_frame: 0.001
+  # Evaluated per peer broadcast packet
+  network_packet_drop_rate: 0.05
+
+fault_parameters:
+  robot_motor_stall:
+    min_duration_s: 5.0
+    max_duration_s: 20.0
+    recovery_behavior: "automatic_resume"
+  lidar_dropout:
+    burst_duration_frames: [3, 10]
+  network_latency:
+    mean_delay_ms: 50.0
+    jitter_std_dev_ms: 15.0
+    max_delay_ms: 300.0

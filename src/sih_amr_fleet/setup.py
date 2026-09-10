@@ -55,5 +55,8 @@ setup(
         'data_collection_node = sih_amr_fleet.data_collection_node:main',
         'corridor_sweep_node = sih_amr_fleet.corridor_sweep_node:main',
         'dashboard_bridge_node = sih_amr_fleet.dashboard_bridge_node:main',
+        'obstacle_spawner_node = sih_amr_fleet.obstacle_spawner_node:main',
+        'fault_injector_node = sih_amr_fleet.fault_injector_node:main',
+        'bounded_vision_recorder_node = sih_amr_fleet.bounded_vision_recorder_node:main',
     ]},
 )

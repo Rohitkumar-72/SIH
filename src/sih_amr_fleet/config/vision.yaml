@@ -1,0 +1,15 @@
+# Bounded Vision Bridge & Dataset Recording Configuration
+schema_version: 1
+enable_vision_bridge: false
+record_camera_images: false
+
+recording_bounds:
+  # Sampling rate per AMR camera stream
+  sample_rate_hz: 1.0
+  image_encoding: "jpeg"
+  jpeg_quality: 80
+  image_resolution: [640, 480]
+  # Hard cap on disk storage per benchmark run
+  max_storage_quota_mb: 200.0
+  synchronize_with_pose: true
+  synchronize_with_semantic_tags: true
