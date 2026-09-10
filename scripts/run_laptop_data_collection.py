@@ -344,7 +344,7 @@ def main():
     parser.add_argument("--tasks", type=int, default=200, help="Target tasks per cycle (default: 200)")
     parser.add_argument("--speed", type=float, default=4.0, help="AMR path tracking speed m/s (default: 4.0)")
     parser.add_argument("--seed", type=int, default=2000, help="Base random seed for Laptop (default: 2000)")
-    parser.add_argument("--timeout", type=int, default=4500, help="Per-run timeout seconds (default: 4500)")
+    parser.add_argument("--timeout", type=int, default=24750, help="Per-run timeout seconds (default: 24750, 5.5x extended)")
     parser.add_argument("--output-csv", default="laptop_fleet_8k_dataset.csv", help="Combined dataset CSV output name")
     args = parser.parse_args()
 
