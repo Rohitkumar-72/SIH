@@ -2,6 +2,7 @@ import math
 import random
 import rclpy
 from geometry_msgs.msg import Pose2D
+from std_msgs.msg import Bool
 from rclpy.node import Node
 from sih_amr_interfaces.msg import RobotState, TaskAssignment, TaskExecutionStatus
 
@@ -28,16 +29,36 @@ class TaskExecutionNode(Node):
         self.completed_publish_count = 0
         self._received_local_state = False
 
+        self.is_low_battery = False
         self.status_pub = self.create_publisher(
             TaskExecutionStatus, '/fleet/task_execution_status', FLEET_STATE_QOS
         )
         self.local_status_pub = self.create_publisher(
             TaskExecutionStatus, 'task_execution_status', FLEET_STATE_QOS
         )
+        self.need_dock_pub = self.create_publisher(
+            Bool, 'docking/need_dock', FLEET_STATE_QOS
+        )
         self.create_subscription(TaskAssignment, 'task_assignment', self.on_assignment, FLEET_STATE_QOS)
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_subscription(RobotState, 'state', self.on_local_state, POSE_QOS)
+        self.create_subscription(Bool, 'charging/low_battery', self.on_low_battery, 10)
         self.create_timer(0.1, self.tick)
+
+    def on_low_battery(self, msg):
+        was_low = self.is_low_battery
+        self.is_low_battery = bool(msg.data)
+        if self.is_low_battery and not was_low:
+            self.get_logger().warning(
+                f'[{self.robot_id}:TaskExecutor] LOW BATTERY WARNING (<20%). Will seek dock after current task.'
+            )
+            if self.current_assignment is None:
+                self.need_dock_pub.publish(Bool(data=True))
+        elif not self.is_low_battery and was_low:
+            self.get_logger().info(
+                f'[{self.robot_id}:TaskExecutor] Battery recharged. Resuming regular fleet operations.'
+            )
+            self.need_dock_pub.publish(Bool(data=False))
 
     def on_assignment(self, msg):
         if msg.owner_robot_id != self.robot_id or not msg.active:
@@ -71,6 +92,12 @@ class TaskExecutionNode(Node):
 
         # New task assignment or a lease/epoch refresh of the current task.
         if self.current_assignment is None:
+            if self.is_low_battery:
+                self.get_logger().warning(
+                    f'[{self.robot_id}:TaskExecutor] REJECT assignment {msg.task.task_id}: Low Battery (<20%). Seeking dock.'
+                )
+                self.need_dock_pub.publish(Bool(data=True))
+                return
             self.current_assignment = msg
             self.phase = TaskExecutionStatus.EN_ROUTE_PICKUP
             self.wait_until = 0.0
@@ -200,6 +227,11 @@ class TaskExecutionNode(Node):
                 )
                 self.current_assignment = None
                 self.phase = None
+                if self.is_low_battery:
+                    self.get_logger().warning(
+                        f'[{self.robot_id}:TaskExecutor] Low battery detected after task completion. Seeking charging dock.'
+                    )
+                    self.need_dock_pub.publish(Bool(data=True))
 
         self.status_pub.publish(status)
         self.local_status_pub.publish(status)

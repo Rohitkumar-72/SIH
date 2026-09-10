@@ -8,15 +8,23 @@ height: 120
 # only supplies simulated odometry; physical AMRs establish this same frame at
 # a dock anchor, then dead-reckon and correct from local perception.
 anchors:
-  charging_pad_1: {map_pose: [-3.6, -29.55, -1.5708], cell: [38, 1]}
-  charging_pad_2: {map_pose: [-1.2, -29.55, -1.5708], cell: [43, 1]}
-  charging_pad_3: {map_pose: [1.2, -29.55, -1.5708], cell: [47, 1]}
-  charging_pad_4: {map_pose: [3.6, -29.55, -1.5708], cell: [52, 1]}
+  charging_pad_1: {map_pose: [-5.25, -29.55, -1.5708], cell: [35, 1]}
+  charging_pad_2: {map_pose: [-3.75, -29.55, -1.5708], cell: [38, 1]}
+  charging_pad_3: {map_pose: [-2.25, -29.55, -1.5708], cell: [41, 1]}
+  charging_pad_4: {map_pose: [-0.75, -29.55, -1.5708], cell: [44, 1]}
+  charging_pad_5: {map_pose: [0.75, -29.55, -1.5708], cell: [47, 1]}
+  charging_pad_6: {map_pose: [2.25, -29.55, -1.5708], cell: [50, 1]}
+  charging_pad_7: {map_pose: [3.75, -29.55, -1.5708], cell: [53, 1]}
+  charging_pad_8: {map_pose: [5.25, -29.55, -1.5708], cell: [56, 1]}
 dock_resources:
   charging_pad_1: {approach_branch: RS-DOCK-1-BRANCH, centre_strip: DS-1}
   charging_pad_2: {approach_branch: RS-DOCK-2-BRANCH, centre_strip: DS-2}
   charging_pad_3: {approach_branch: RS-DOCK-3-BRANCH, centre_strip: DS-3}
   charging_pad_4: {approach_branch: RS-DOCK-4-BRANCH, centre_strip: DS-4}
+  charging_pad_5: {approach_branch: RS-DOCK-5-BRANCH, centre_strip: DS-5}
+  charging_pad_6: {approach_branch: RS-DOCK-6-BRANCH, centre_strip: DS-6}
+  charging_pad_7: {approach_branch: RS-DOCK-7-BRANCH, centre_strip: DS-7}
+  charging_pad_8: {approach_branch: RS-DOCK-8-BRANCH, centre_strip: DS-8}
 # Main corridors and their large junctions are multi-robot, time-reserved
 # graph resources.  They deliberately do not use a one-at-a-time mutex.
 map_graph:

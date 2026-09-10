@@ -58,5 +58,6 @@ setup(
         'obstacle_spawner_node = sih_amr_fleet.obstacle_spawner_node:main',
         'fault_injector_node = sih_amr_fleet.fault_injector_node:main',
         'bounded_vision_recorder_node = sih_amr_fleet.bounded_vision_recorder_node:main',
+        'robot_agent_process = sih_amr_fleet.robot_agent_process:main',
     ]},
 )

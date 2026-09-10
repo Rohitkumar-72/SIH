@@ -42,7 +42,12 @@ class DataCollectionNode(Node):
         self.map_origin_x = self.declare_parameter('map_origin_x', -22.5).value
         self.map_origin_y = self.declare_parameter('map_origin_y', -30.0).value
         self.map_resolution_m = self.declare_parameter('map_resolution_m', 0.5).value
-        self.robot_ids = self.declare_parameter('robot_ids', ['robot_1', 'robot_2', 'robot_3', 'robot_4']).value
+        self.lean_telemetry = self.declare_parameter('lean_telemetry', True).value
+        self.last_state_log_time = {}
+        self.robot_ids = self.declare_parameter('robot_ids', [
+            'robot_1', 'robot_2', 'robot_3', 'robot_4',
+            'robot_5', 'robot_6', 'robot_7', 'robot_8'
+        ]).value
 
         try:
             path = pathlib.Path(self.output_file)
@@ -151,6 +156,8 @@ class DataCollectionNode(Node):
 
     def publish_pipeline_diagnostics(self):
         """Explain the active gate from assignment through final actuation."""
+        if self.lean_telemetry:
+            return
         now = now_seconds(self)
         for robot_id in self.robot_ids:
             stages = self.pipeline.get(robot_id, {})
@@ -263,16 +270,23 @@ class DataCollectionNode(Node):
             pass  # Strictly passive; never fail or impede control
 
     def on_robot_state(self, msg):
-        self.remember_pipeline(msg.fleet_header.robot_id, 'state', {
+        robot_id = msg.fleet_header.robot_id
+        now = now_seconds(self)
+        self.remember_pipeline(robot_id, 'state', {
             'x': float(msg.pose.x), 'y': float(msg.pose.y),
             'theta': float(msg.pose.theta),
             'vx': float(msg.twist.linear.x), 'vy': float(msg.twist.linear.y),
             'wz': float(msg.twist.angular.z),
             'localization_valid': bool(msg.localization_valid),
         })
+        if self.lean_telemetry:
+            last_t = self.last_state_log_time.get(robot_id, 0.0)
+            if now - last_t < 1.0:
+                return
+            self.last_state_log_time[robot_id] = now
         self.write_record({
             'event_type': 'robot_state',
-            'robot_id': msg.fleet_header.robot_id,
+            'robot_id': robot_id,
             'session_id': msg.fleet_header.session_id,
             'seq': msg.fleet_header.sequence_no,
             'x': float(msg.pose.x),
@@ -284,7 +298,7 @@ class DataCollectionNode(Node):
             'map_pose': {'x': float(msg.pose.x), 'y': float(msg.pose.y), 'theta': float(msg.pose.theta),
                          'cell': [round((msg.pose.x-self.map_origin_x)/self.map_resolution_m), round((msg.pose.y-self.map_origin_y)/self.map_resolution_m)]},
             'map_twist': {'vx': float(msg.twist.linear.x), 'vy': float(msg.twist.linear.y), 'wz': float(msg.twist.angular.z)},
-            'gazebo_odom': self.raw_odom.get(msg.fleet_header.robot_id),
+            'gazebo_odom': None if self.lean_telemetry else self.raw_odom.get(robot_id),
             'localization_valid': msg.localization_valid,
         })
 
@@ -305,6 +319,8 @@ class DataCollectionNode(Node):
             'nearest_obstacle_m': float(msg.nearest_obstacle_m),
             'ttc_s': float(msg.time_to_collision_s),
         })
+        if self.lean_telemetry and int(msg.level) == 0:
+            return  # Suppress logging 40 Hz normal safety states
         self.write_record({
             'event_type': 'safety_state',
             'robot_id': msg.fleet_header.robot_id,

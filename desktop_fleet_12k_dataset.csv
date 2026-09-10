@@ -1,0 +1,2 @@
+run_id,task_id,robot_id,start_zone,goal_zone,static_path_length_m,candidate_corridor_count,mean_nearby_robot_count,max_corridor_queue_length,active_blockage_count,mean_peer_freshness_ms,task_load_count,actual_travel_time_s
+run_1789030083,rnd_task_003,robot_1,South,South,14.92,1,1.5,1,8296,120.0,6,96.94

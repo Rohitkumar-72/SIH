@@ -22,7 +22,7 @@ class OrcaNode(Node):
         self.create_subscription(RobotState, 'state', self.on_local_state, POSE_QOS)
         self.create_subscription(Twist, 'cmd_vel_desired', lambda msg: setattr(self, 'desired', msg), FLEET_STATE_QOS)
         self.create_subscription(PeerTrackArray, 'peer_tracks', lambda msg: setattr(self, 'tracks', msg.tracks), FLEET_STATE_QOS)
-        self.create_timer(0.05, self.control)
+        self.create_timer(0.1, self.control)
 
     def on_state(self, msg):
         if msg.fleet_header.robot_id == self.robot_id:

@@ -44,7 +44,13 @@ class ChargingPadNode(Node):
         self.settle_time_s = self.declare_parameter('settle_time_s', 2.0).value
         self.charge_rate_percent_per_min = self.declare_parameter(
             'charge_rate_percent_per_min', 10.0).value
-        self.battery_percent = self.declare_parameter('initial_battery_percent', 50.0).value
+        self.discharge_rate_active = self.declare_parameter(
+            'discharge_rate_percent_per_min', 1.5).value
+        self.discharge_rate_idle = self.declare_parameter(
+            'idle_discharge_rate_percent_per_min', 0.2).value
+        self.low_battery_threshold = self.declare_parameter(
+            'low_battery_threshold_percent', 20.0).value
+        self.battery_percent = self.declare_parameter('initial_battery_percent', 100.0).value
         self.odom_timeout_s = self.declare_parameter('odom_timeout_s', 0.5).value
         self.dock_id = self.declare_parameter('dock_id', f'charging_pad_{self.robot_id.rsplit("_", 1)[-1]}').value
 
@@ -56,6 +62,7 @@ class ChargingPadNode(Node):
         self.session_id, self.sequence, self.claim = new_session_id(), 0, None
         self.docked_pub = self.create_publisher(Bool, 'charging/is_docked', 10)
         self.percent_pub = self.create_publisher(Float32, 'charging/battery_percent', 10)
+        self.low_battery_pub = self.create_publisher(Bool, 'charging/low_battery', 10)
         self.battery_pub = self.create_publisher(BatteryState, 'charging/battery_state', 10)
         self.status_pub = self.create_publisher(String, 'charging/docking_status', 10)
         self.protocol_pub = self.create_publisher(DockProtocol, '/fleet/dock_protocol', PROTOCOL_QOS)
@@ -132,6 +139,15 @@ class ChargingPadNode(Node):
             self.battery_percent = clamp(
                 self.battery_percent + self.charge_rate_percent_per_min * elapsed_s / 60.0,
                 0.0, 100.0)
+        else:
+            is_moving = False
+            if self.odom is not None:
+                twist = self.odom.twist.twist
+                is_moving = math.hypot(twist.linear.x, twist.linear.y) > 0.05
+            drain_rate = self.discharge_rate_active if is_moving else self.discharge_rate_idle
+            self.battery_percent = clamp(
+                self.battery_percent - drain_rate * elapsed_s / 60.0,
+                0.0, 100.0)
         self.publish_state(now_ns)
         if self.is_docked and not was_docked:
             self.publish_confirmation()
@@ -139,6 +155,7 @@ class ChargingPadNode(Node):
     def publish_state(self, now_ns):
         self.docked_pub.publish(Bool(data=self.is_docked))
         self.percent_pub.publish(Float32(data=float(self.battery_percent)))
+        self.low_battery_pub.publish(Bool(data=bool(self.battery_percent <= self.low_battery_threshold)))
         self.status_pub.publish(String(data=self.docking_status))
         battery = BatteryState()
         battery.header.stamp.sec = now_ns // 1_000_000_000

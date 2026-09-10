@@ -2,25 +2,45 @@
 schema_version: 1
 
 robots:
-  count: 4
+  count: 8
   instances:
     - id: "robot_1"
       namespace: "/robot_1"
       model: "turtlebot4_lite"
       charging_pad: "charging_pad_1"
-      initial_pose: [-3.6, -29.55, -1.5708]
+      initial_pose: [-5.25, -29.55, -1.5708]
     - id: "robot_2"
       namespace: "/robot_2"
       model: "turtlebot4_lite"
       charging_pad: "charging_pad_2"
-      initial_pose: [-1.2, -29.55, -1.5708]
+      initial_pose: [-3.75, -29.55, -1.5708]
     - id: "robot_3"
       namespace: "/robot_3"
       model: "turtlebot4_lite"
       charging_pad: "charging_pad_3"
-      initial_pose: [1.2, -29.55, -1.5708]
+      initial_pose: [-2.25, -29.55, -1.5708]
     - id: "robot_4"
       namespace: "/robot_4"
       model: "turtlebot4_lite"
       charging_pad: "charging_pad_4"
-      initial_pose: [3.6, -29.55, -1.5708]
+      initial_pose: [-0.75, -29.55, -1.5708]
+    - id: "robot_5"
+      namespace: "/robot_5"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_5"
+      initial_pose: [0.75, -29.55, -1.5708]
+    - id: "robot_6"
+      namespace: "/robot_6"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_6"
+      initial_pose: [2.25, -29.55, -1.5708]
+    - id: "robot_7"
+      namespace: "/robot_7"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_7"
+      initial_pose: [3.75, -29.55, -1.5708]
+    - id: "robot_8"
+      namespace: "/robot_8"
+      model: "turtlebot4_lite"
+      charging_pad: "charging_pad_8"
+      initial_pose: [5.25, -29.55, -1.5708]

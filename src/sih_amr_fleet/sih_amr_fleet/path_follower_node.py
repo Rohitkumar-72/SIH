@@ -52,7 +52,7 @@ class PathFollowerNode(Node):
         self.create_subscription(SafetyState, '/fleet/safety_state', self.on_safety, FLEET_STATE_QOS)
         self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_subscription(TaskExecutionStatus, 'task_execution_status', self.on_execution, FLEET_STATE_QOS)
-        self.create_timer(0.05, self.control)
+        self.create_timer(0.1, self.control)
 
     def on_state(self, msg):
         if msg.fleet_header.robot_id == self.robot_id:

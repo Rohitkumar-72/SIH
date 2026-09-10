@@ -35,7 +35,7 @@ class SafetySupervisorNode(Node):
         self.create_subscription(LaserScan, 'scan', self.on_scan, POSE_QOS)
         self.create_subscription(Twist, 'cmd_vel_candidate', lambda msg: setattr(self, 'candidate', msg), FLEET_STATE_QOS)
         self.create_subscription(Bool, 'emergency_stop', lambda msg: setattr(self, 'estop', msg.data), FLEET_STATE_QOS)
-        self.create_timer(0.025, self.enforce)
+        self.create_timer(0.1, self.enforce)
 
     def on_state(self, msg):
         if msg.fleet_header.robot_id == self.robot_id:

@@ -93,14 +93,22 @@ floor_guidance_markings:
   - {id: RS-MC-NS-E, colour: red, geometry: dashed_line_segment, map_coordinates_m: [[7.5, -29.5], [7.5, 29.5]], width_m: 0.035, purpose: low_speed_recovery_reference}
   - {id: RS-MC-EW-S, colour: red, geometry: dashed_line_segment, map_coordinates_m: [[-22.0, -10.0], [22.0, -10.0]], width_m: 0.035, purpose: low_speed_recovery_reference}
   - {id: RS-MC-EW-N, colour: red, geometry: dashed_line_segment, map_coordinates_m: [[-22.0, 10.0], [22.0, 10.0]], width_m: 0.035, purpose: low_speed_recovery_reference}
-  - {id: RS-DOCK-1-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-3.6, -10.0], [-3.6, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
-  - {id: RS-DOCK-2-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-1.2, -10.0], [-1.2, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
-  - {id: RS-DOCK-3-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[1.2, -10.0], [1.2, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
-  - {id: RS-DOCK-4-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[3.6, -10.0], [3.6, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
-  - {id: DS-1, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-3.6, -29.95], [-3.6, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_1}
-  - {id: DS-2, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-1.2, -29.95], [-1.2, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_2}
-  - {id: DS-3, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[1.2, -29.95], [1.2, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_3}
-  - {id: DS-4, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[3.6, -29.95], [3.6, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_4}
+  - {id: RS-DOCK-1-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-5.25, -10.0], [-5.25, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-2-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-3.75, -10.0], [-3.75, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-3-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-2.25, -10.0], [-2.25, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-4-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[-0.75, -10.0], [-0.75, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-5-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[0.75, -10.0], [0.75, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-6-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[2.25, -10.0], [2.25, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-7-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[3.75, -10.0], [3.75, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: RS-DOCK-8-BRANCH, colour: red, geometry: line_segment, map_coordinates_m: [[5.25, -10.0], [5.25, -29.55]], width_m: 0.08, purpose: main_recovery_to_dock_approach}
+  - {id: DS-1, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-5.25, -29.95], [-5.25, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_1}
+  - {id: DS-2, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-3.75, -29.95], [-3.75, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_2}
+  - {id: DS-3, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-2.25, -29.95], [-2.25, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_3}
+  - {id: DS-4, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[-0.75, -29.95], [-0.75, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_4}
+  - {id: DS-5, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[0.75, -29.95], [0.75, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_5}
+  - {id: DS-6, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[2.25, -29.95], [2.25, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_6}
+  - {id: DS-7, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[3.75, -29.95], [3.75, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_7}
+  - {id: DS-8, colour: red, geometry: dock_centre_strip, map_coordinates_m: [[5.25, -29.95], [5.25, -29.15]], width_m: 0.10, purpose: final_docking_alignment_reference, anchor: charging_pad_8}
   - {id: tape-narrow-aisles, colour: green, geometry: centreline_and_intersection_marker, applies_to: [narrow_corridor_families, NJ-MC, NJ-NC], purpose: narrow_aisle_following_and_intersection_identification}
 docking_protocol:
   coordination: decentralized_lamport_lease
@@ -148,7 +156,7 @@ communication:
   trajectory_reservation_timeout_s: 1.5
   task_consensus_lease_s: 2.0
   retry_limit: null
-object_count: 212
+object_count: 216
 objects:
   - {id: warehouse_shell, name: warehouse_shell, type: static_environment, mobility: static, pose: {x: 0.0, y: 0.0, z: 0.0, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 45.0, y: 60.0, z: 6.0}, bounding_box_2d_m: {min_x: -22.5000, min_y: -30.0000, max_x: 22.5000, max_y: 30.0000}}
   - {id: warehouse_floor, name: warehouse_floor, type: floor, mobility: static, pose: {x: 0.0, y: 0.0, z: -0.1, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 45.0, y: 60.0, z: 0.2}, bounding_box_2d_m: {min_x: -22.5000, min_y: -30.0000, max_x: 22.5000, max_y: 30.0000}}
@@ -167,10 +175,14 @@ objects:
   - {id: corridor_y_south_inner, name: corridor_y_south_inner, type: green_main_corridor_boundary, mobility: static, pose: {x: 0.0, y: -8.5, z: 0.019, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 44.5, y: 0.12, z: 0.012}, bounding_box_2d_m: {min_x: -22.2500, min_y: -8.5600, max_x: 22.2500, max_y: -8.4400}}
   - {id: corridor_y_north_inner, name: corridor_y_north_inner, type: green_main_corridor_boundary, mobility: static, pose: {x: 0.0, y: 8.5, z: 0.019, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 44.5, y: 0.12, z: 0.012}, bounding_box_2d_m: {min_x: -22.2500, min_y: 8.4400, max_x: 22.2500, max_y: 8.5600}}
   - {id: corridor_y_north_outer, name: corridor_y_north_outer, type: green_main_corridor_boundary, mobility: static, pose: {x: 0.0, y: 11.5, z: 0.019, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 44.5, y: 0.12, z: 0.012}, bounding_box_2d_m: {min_x: -22.2500, min_y: 11.4400, max_x: 22.2500, max_y: 11.5600}}
-  - {id: charging_pad_1, name: charging_pad_1, type: charging_pad, mobility: static, pose: {x: -3.6, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: -3.9250, min_y: -30.0000, max_x: -3.2750, max_y: -29.1000}}
-  - {id: charging_pad_2, name: charging_pad_2, type: charging_pad, mobility: static, pose: {x: -1.2, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: -1.5250, min_y: -30.0000, max_x: -0.8750, max_y: -29.1000}}
-  - {id: charging_pad_3, name: charging_pad_3, type: charging_pad, mobility: static, pose: {x: 1.2, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: 0.8750, min_y: -30.0000, max_x: 1.5250, max_y: -29.1000}}
-  - {id: charging_pad_4, name: charging_pad_4, type: charging_pad, mobility: static, pose: {x: 3.6, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: 3.2750, min_y: -30.0000, max_x: 3.9250, max_y: -29.1000}}
+  - {id: charging_pad_1, name: charging_pad_1, type: charging_pad, mobility: static, pose: {x: -5.25, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: -5.5750, min_y: -30.0000, max_x: -4.9250, max_y: -29.1000}}
+  - {id: charging_pad_2, name: charging_pad_2, type: charging_pad, mobility: static, pose: {x: -3.75, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: -4.0750, min_y: -30.0000, max_x: -3.4250, max_y: -29.1000}}
+  - {id: charging_pad_3, name: charging_pad_3, type: charging_pad, mobility: static, pose: {x: -2.25, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: -2.5750, min_y: -30.0000, max_x: -1.9250, max_y: -29.1000}}
+  - {id: charging_pad_4, name: charging_pad_4, type: charging_pad, mobility: static, pose: {x: -0.75, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: -1.0750, min_y: -30.0000, max_x: -0.4250, max_y: -29.1000}}
+  - {id: charging_pad_5, name: charging_pad_5, type: charging_pad, mobility: static, pose: {x: 0.75, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: 0.4250, min_y: -30.0000, max_x: 1.0750, max_y: -29.1000}}
+  - {id: charging_pad_6, name: charging_pad_6, type: charging_pad, mobility: static, pose: {x: 2.25, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: 1.9250, min_y: -30.0000, max_x: 2.5750, max_y: -29.1000}}
+  - {id: charging_pad_7, name: charging_pad_7, type: charging_pad, mobility: static, pose: {x: 3.75, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: 3.4250, min_y: -30.0000, max_x: 4.0750, max_y: -29.1000}}
+  - {id: charging_pad_8, name: charging_pad_8, type: charging_pad, mobility: static, pose: {x: 5.25, y: -29.55, z: 0.02, roll: 0.0, pitch: 0.0, yaw: 1.5708}, dimensions_m: {x: 0.65, y: 0.9, z: 0.16}, bounding_box_2d_m: {min_x: 4.9250, min_y: -30.0000, max_x: 5.5750, max_y: -29.1000}}
   - {id: warehouse_light, name: warehouse_light, type: directional_light, mobility: static, pose: {x: 0.0, y: 0.0, z: 20.0, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 0.0, y: 0.0, z: 0.0}, bounding_box_2d_m: {min_x: 0.0000, min_y: 0.0000, max_x: 0.0000, max_y: 0.0000}}
   - {id: shelf_south_west_01_01, name: shelf_south_west_01_01, type: storage_shelf, mobility: dynamic, pose: {x: -19.99, y: -28.79, z: 0.0, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 3.9172, y: 0.8796, z: 2.6125}, bounding_box_2d_m: {min_x: -21.9486, min_y: -29.2298, max_x: -18.0314, max_y: -28.3502}}
   - {id: shelf_south_west_01_02, name: shelf_south_west_01_02, type: storage_shelf, mobility: dynamic, pose: {x: -15.67, y: -28.79, z: 0.0, roll: 0.0, pitch: 0.0, yaw: 0.0}, dimensions_m: {x: 3.9172, y: 0.8796, z: 2.6125}, bounding_box_2d_m: {min_x: -17.6286, min_y: -29.2298, max_x: -13.7114, max_y: -28.3502}}

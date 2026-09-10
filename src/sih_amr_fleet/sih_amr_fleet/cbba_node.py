@@ -632,7 +632,7 @@ class CbbaNode(Node):
             self.committed_claims[task.task_id] = claim_key
             self.get_logger().info(
                 f'[{self.robot_id}:CBBA] Decision: UNANIMOUS_COMMIT for task {task.task_id} -> Winner={winner}, '
-                f'Bid={winning_bid:.2f}, epoch={epoch}. Actor=CBBA:{self.robot_id}. Quorum=4/4 verified.'
+                f'Bid={winning_bid:.2f}, epoch={epoch}. Actor=CBBA:{self.robot_id}. Quorum={len(self.expected_robot_ids)}/{len(self.expected_robot_ids)} verified.'
             )
 
             if winner == self.robot_id and winning_bid < UNAVAILABLE_BID:

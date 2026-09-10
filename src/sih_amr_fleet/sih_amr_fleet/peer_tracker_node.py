@@ -16,7 +16,7 @@ class PeerTrackerNode(Node):
         self.last_publish = now_seconds(self)
         self.pub = self.create_publisher(PeerTrackArray, 'peer_tracks', FLEET_STATE_QOS)
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
-        self.create_timer(0.05, self.publish_tracks)
+        self.create_timer(0.2, self.publish_tracks)
 
     def on_state(self, msg):
         sender = msg.fleet_header.robot_id
