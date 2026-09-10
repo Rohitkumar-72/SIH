@@ -36,7 +36,7 @@ ARGUMENTS = [
                           description='Keep a model-local Sensors system (normally false: the warehouse loads one world-level system).'),
     DeclareLaunchArgument('sensor_profile', default_value='fleet', choices=['fleet', 'full'],
                           description='Fleet keeps navigation LiDAR/contact only; full preserves every vendor sensor.'),
-    DeclareLaunchArgument('lidar_update_rate_hz', default_value='20.0',
+    DeclareLaunchArgument('lidar_update_rate_hz', default_value='10.0',
                           description='Navigation LiDAR rate for the fleet sensor profile.'),
     DeclareLaunchArgument('description_wait_s', default_value='5.0',
                           description='Delay insertion so the transient robot description is available.'),

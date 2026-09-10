@@ -281,6 +281,7 @@ class WorkCycleRun:
         env["RENDER_ENGINE"] = "ogre2"
         env["GUI_RENDER_ENGINE"] = "ogre2"
         env["SENSOR_PROFILE"] = "fleet"  # Lean 2D lidar profile (avoids 44 GPU depth camera rendering pipelines)
+        env["LIDAR_UPDATE_RATE_HZ"] = os.environ.get("LIDAR_UPDATE_RATE_HZ", "10.0")
         env["FLEET_TRACKING_SPEED_MPS"] = str(tracking_speed)
         env["SETTLE_SECONDS"] = str(settle_s)
         env["LOG_DIR"] = str(self.log_dir)

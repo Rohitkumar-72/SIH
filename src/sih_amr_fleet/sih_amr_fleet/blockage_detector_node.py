@@ -20,10 +20,10 @@ class BlockageDetectorNode(Node):
     def __init__(self):
         super().__init__('blockage_detector_node')
         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
-        # Ten 20 Hz observations reject one-frame edges and moving scan smear
+        # Five 10 Hz observations reject one-frame edges and moving scan smear
         # while adding only 0.5 simulated seconds before a real fixed obstacle
         # is shared. Local safety still reacts to every scan immediately.
-        self.persistence = self.declare_parameter('persistence_frames', 10).value
+        self.persistence = self.declare_parameter('persistence_frames', 5).value
         self.observation_ttl_s = self.declare_parameter(
             'blockage_observation_ttl_s', 0.75).value
         self.static_clearance = self.declare_parameter(
