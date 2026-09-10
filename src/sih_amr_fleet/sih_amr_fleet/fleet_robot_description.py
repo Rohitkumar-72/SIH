@@ -79,6 +79,15 @@ def main() -> None:
                     visualize = sensor.find('visualize')
                     if visualize is not None:
                         visualize.text = 'false'
+                    lidar_elem = sensor.find('lidar') or sensor.find('ray')
+                    if lidar_elem is not None:
+                        scan = lidar_elem.find('scan')
+                        if scan is not None:
+                            horizontal = scan.find('horizontal')
+                            if horizontal is not None:
+                                samples = horizontal.find('samples')
+                                if samples is not None and int(samples.text) > 360:
+                                    samples.text = '360'
     sys.stdout.write(ElementTree.tostring(root, encoding='unicode'))
 
 

@@ -378,6 +378,12 @@ class DataCollectionNode(Node):
         })
 
     def on_consensus(self, msg):
+        sig = (msg.fleet_header.robot_id, msg.task_id, msg.winner_robot_id, int(msg.assignment_epoch), int(msg.event))
+        if self.lean_telemetry and sig in getattr(self, 'seen_consensus_sigs', set()):
+            return
+        if not hasattr(self, 'seen_consensus_sigs'):
+            self.seen_consensus_sigs = set()
+        self.seen_consensus_sigs.add(sig)
         self.write_record({
             'event_type': 'task_consensus',
             'robot_id': msg.fleet_header.robot_id,
@@ -525,6 +531,13 @@ class DataCollectionNode(Node):
             'wait_remaining_s': float(msg.wait_time_remaining_s),
             'valid_until_s': stamp_seconds(msg.fleet_header.valid_until),
         })
+        if self.lean_telemetry:
+            if not hasattr(self, 'last_logged_phase'):
+                self.last_logged_phase = {}
+            if self.last_logged_phase.get((msg.owner_robot_id, msg.task_id)) == int(msg.phase):
+                return
+            self.last_logged_phase[(msg.owner_robot_id, msg.task_id)] = int(msg.phase)
+
         self.write_record({
             'event_type': 'task_execution',
             'task_id': msg.task_id,
@@ -536,6 +549,14 @@ class DataCollectionNode(Node):
         })
 
     def on_blockage(self, msg):
+        if self.lean_telemetry:
+            if not hasattr(self, 'last_blockage_times'):
+                self.last_blockage_times = {}
+            now = now_seconds(self)
+            if now - self.last_blockage_times.get(msg.fleet_header.robot_id, 0.0) < 1.0:
+                return
+            self.last_blockage_times[msg.fleet_header.robot_id] = now
+
         self.write_record({
             'event_type': 'blockage_observation',
             'robot_id': msg.fleet_header.robot_id,

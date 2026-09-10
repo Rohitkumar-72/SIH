@@ -1,0 +1,10 @@
+run_id,task_id,robot_id,start_zone,goal_zone,static_path_length_m,candidate_corridor_count,mean_nearby_robot_count,max_corridor_queue_length,active_blockage_count,mean_peer_freshness_ms,task_load_count,actual_travel_time_s
+run_1789035953,rnd_task_001,robot_8,North,South,69.49,2,1.5,1,36817,120.0,15,527.7
+run_1789035953,rnd_task_003,robot_1,South,South,14.92,1,1.5,1,36817,120.0,15,410.9
+run_1789035953,rnd_task_004,robot_5,North,North,21.2,1,1.5,1,36817,120.0,15,162.6
+run_1789035953,rnd_task_005,robot_2,South,South,44.48,1,1.5,1,36817,120.0,15,680.0
+run_1789035953,rnd_task_007,robot_3,South,North,58.79,2,1.5,1,36817,120.0,15,269.7
+run_1789035953,rnd_task_008,robot_4,North,North,40.35,1,1.5,1,36817,120.0,15,491.3
+run_1789035953,rnd_task_009,robot_1,South,South,5.49,1,1.5,1,36817,120.0,15,182.7
+run_1789035953,rnd_task_010,robot_7,South,North,40.66,2,1.5,1,36817,120.0,15,224.3
+run_1789035953,rnd_task_012,robot_5,North,North,14.28,1,1.5,1,36817,120.0,15,139.0

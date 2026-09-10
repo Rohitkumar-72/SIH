@@ -121,8 +121,7 @@ class PathFollowerNode(Node):
         # translating.  Moving while rotating from the south-facing docks was
         # the direct cause of robots 2 and 3 arcing into the south wall.
         if abs(angular_error) < self.turn_in_place_threshold:
-            cmd.linear.x = min(self.kp * math.hypot(dx, dy), max(0.0, speed_limit))
-            cmd.linear.x *= max(0.0, math.cos(angular_error))
+            cmd.linear.x = max(0.0, speed_limit) * max(0.0, math.cos(angular_error))
         return cmd
 
     def task_speed_limit(self):

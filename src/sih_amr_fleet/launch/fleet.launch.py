@@ -123,7 +123,14 @@ def generate_launch_description():
              condition=IfCondition(enable_spawner), output='screen'),
         Node(package='sih_amr_fleet', executable='task_scenario_node', name='task_scenario_node', parameters=[{'scenario_file': LaunchConfiguration('scenario_file'), 'use_sim_time': True}], condition=UnlessCondition(LaunchConfiguration('random_tasks')), output='screen'),
         Node(package='sih_amr_fleet', executable='random_task_generator_node', name='random_task_generator_node',
-             parameters=[{'use_sim_time': True}], condition=IfCondition(random_tasks), output='screen'),
+             parameters=[{
+                 'use_sim_time': True,
+                 'expected_robot_ids': expected_ids,
+                 'max_active_tasks': len(expected_ids) * 3,
+                 'min_interval_s': 0.5,
+                 'max_interval_s': 1.5,
+                 'seed': random_seed_value
+             }], condition=IfCondition(random_tasks), output='screen'),
         Node(package='sih_amr_fleet', executable='data_collection_node', name='data_collection_node',
              parameters=[{'output_file': LaunchConfiguration('data_file'), 'use_sim_time': True, 'lean_telemetry': True, 'robot_ids': expected_ids}],
              condition=IfCondition(LaunchConfiguration('record_data')), output='screen'),
