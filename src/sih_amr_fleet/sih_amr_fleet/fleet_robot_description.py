@@ -2,7 +2,10 @@
 
 import subprocess
 import sys
+import warnings
 import xml.etree.ElementTree as ElementTree
+
+warnings.filterwarnings('ignore')
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -79,7 +82,9 @@ def main() -> None:
                     visualize = sensor.find('visualize')
                     if visualize is not None:
                         visualize.text = 'false'
-                    lidar_elem = sensor.find('lidar') or sensor.find('ray')
+                    lidar_elem = sensor.find('lidar')
+                    if lidar_elem is None:
+                        lidar_elem = sensor.find('ray')
                     if lidar_elem is not None:
                         scan = lidar_elem.find('scan')
                         if scan is not None:

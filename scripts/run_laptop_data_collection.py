@@ -14,10 +14,12 @@ import argparse
 import datetime
 import json
 import os
+import queue
 import re
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Set
@@ -56,6 +58,15 @@ RE_TASK_COMPLETED = re.compile(
 )
 RE_ROBOT_READY = re.compile(
     r"(?:\[(?P<robot>robot_\d)\.interface_readiness\]:\s*Interface readiness passed|(?P<robot2>robot_\d) passed all gates)"
+)
+RE_SPAWN_START = re.compile(
+    r"Starting (?P<robot>robot_\d) at x=(?P<x>[-\d.]+) y=(?P<y>[-\d.]+) yaw=(?P<yaw>[-\d.]+)"
+)
+RE_GZ_SERVER = re.compile(
+    r"Starting unthrottled Gazebo server with (?P<engine>\w+)"
+)
+RE_FLEET_DONE = re.compile(
+    r"All (?P<count>\d+) AMRs passed bring-up"
 )
 
 
@@ -109,7 +120,9 @@ class LaptopCycleRun:
         patterns = [
             "gz sim", "gz-sim", "ros_gz_bridge", "parameter_bridge",
             "robot_agent_process", "data_collection_node", "obstacle_spawner_node",
-            "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr"
+            "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr",
+            "twist_stamper", "localization_node", "interface_readiness",
+            "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner"
         ]
         for pat in patterns:
             try:
@@ -131,6 +144,39 @@ class LaptopCycleRun:
             sys.stdout.write("\r\033[K")
         print(f" {C_DIM}{timestamp_str}{C_RESET} {color}{C_BOLD}{symbol} [{tag:<14}]{C_RESET} {message}")
         sys.stdout.flush()
+
+    def parse_launcher_line(self, line: str):
+        line = line.strip()
+        if not line:
+            return
+        
+        m = RE_GZ_SERVER.search(line)
+        if m:
+            self.print_stage_event("⚙", C_YELLOW, "GAZEBO SERVER", f"Starting physics server ({m.group('engine')})...")
+            return
+
+        m = RE_SPAWN_START.search(line)
+        if m:
+            robot = m.group("robot")
+            x, y, yaw = m.group("x"), m.group("y"), m.group("yaw")
+            self.print_stage_event("⚙", C_BLUE, "SPAWNING AMR", f"Spawning {robot} at ({x}, {y}, yaw={yaw})...")
+            return
+
+        m = RE_ROBOT_READY.search(line)
+        if m:
+            robot = m.group("robot") or m.group("robot2")
+            if robot and robot not in self.ready_robots:
+                self.ready_robots.add(robot)
+                self.print_stage_event("✔", C_CYAN, "GATE PASSED", f"{robot} interfaces ready ({len(self.ready_robots)}/{self.fleet_count})")
+            return
+
+        m = RE_FLEET_DONE.search(line)
+        if m:
+            self.print_stage_event("🚀", C_GREEN, "FLEET READY", f"All {self.fleet_count} AMRs online! Starting task generation & CBBA auction...")
+            return
+
+        if "ERROR:" in line or "fail" in line.lower():
+            self.print_stage_event("✖", C_RED, "ERROR", line)
 
     def parse_log_line(self, line: str):
         m = RE_ROBOT_READY.search(line)
@@ -269,12 +315,33 @@ class LaptopCycleRun:
             bufsize=1
         )
 
+        output_queue = queue.Queue()
+
+        def stream_reader():
+            try:
+                for line in iter(self.process.stdout.readline, ''):
+                    output_queue.put(line)
+                self.process.stdout.close()
+            except Exception:
+                pass
+
+        reader_thread = threading.Thread(target=stream_reader, daemon=True)
+        reader_thread.start()
+
         fleet_log_fd = None
         last_ticker_s = -1
         first_sim_s = None
         
         try:
             while self.process.poll() is None:
+                # Read stdout from launcher script
+                while not output_queue.empty():
+                    try:
+                        lline = output_queue.get_nowait()
+                        self.parse_launcher_line(lline)
+                    except queue.Empty:
+                        break
+
                 if len(self.completed_tasks) >= self.target_tasks:
                     self.status = "PASSED"
                     break
@@ -344,11 +411,10 @@ def main():
     parser.add_argument("--tasks", type=int, default=200, help="Target tasks per cycle (default: 200)")
     parser.add_argument("--speed", type=float, default=4.0, help="AMR path tracking speed m/s (default: 4.0)")
     parser.add_argument("--seed", type=int, default=2000, help="Base random seed for Laptop (default: 2000)")
-    parser.add_argument("--timeout", type=int, default=24750, help="Per-run timeout seconds (default: 24750, 5.5x extended)")
+    parser.add_argument("--timeout", type=int, default=22000, help="Per-run timeout seconds (default: 22000, 5.5x extended)")
     parser.add_argument("--output-csv", default="laptop_fleet_8k_dataset.csv", help="Combined dataset CSV output name")
     args = parser.parse_args()
 
-    # Dynamic log base directory fallback to user home amr_ws/log
     workspace_log = os.environ.get("AMR_WS_LOG_DIR")
     if workspace_log:
         base_dir = Path(workspace_log) / f"laptop_data_collection_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -357,8 +423,8 @@ def main():
     base_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{C_BOLD}{C_GREEN}======================================================================{C_RESET}")
-    print(f"{C_BOLD}{C_GREEN}  SIH LAPTOP AUTOMATED DATA COLLECTION: 6 AMRs, {args.runs} RUNS × {args.tasks} TASKS  {C_RESET}")
-    print(f"{C_BOLD}{C_GREEN}  TARGET: {args.runs * args.tasks} DATASET TASKS FOR ML CONGESTION MODEL  {C_RESET}")
+    print(f"{C_BOLD}{C_GREEN}  SIH LAPTOP AUTOMATED DATA COLLECTION: 6 AMRs, {args.runs} RUNS × {args.tasks} TASKS   {C_RESET}")
+    print(f"{C_BOLD}{C_GREEN}  TARGET: {args.runs * args.tasks} DATASET TASKS FOR ML CONGESTION MODEL   {C_RESET}")
     print(f"{C_BOLD}{C_GREEN}======================================================================{C_RESET}\n")
 
     telemetry_files = []
