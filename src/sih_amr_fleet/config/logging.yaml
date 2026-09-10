@@ -1,0 +1,17 @@
+# Telemetry & Logging Configuration
+schema_version: 1
+
+logging:
+  format: "JSONL"
+  default_output_file: "/tmp/sih_amr_fleet_telemetry.jsonl"
+  lean_telemetry: true
+  robot_state_rate_hz: 1.0
+  record_events:
+    run_manifest: true
+    task_announcements: true
+    task_assignments: true
+    task_executions: true
+    blockage_observations: true
+    corridor_mutex_events: true
+    safety_events: true
+    charging_events: true

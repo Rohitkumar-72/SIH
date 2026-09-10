@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+import subprocess
 import time
 import rclpy
 from geometry_msgs.msg import Twist
@@ -53,9 +54,31 @@ class DataCollectionNode(Node):
             path = pathlib.Path(self.output_file)
             path.parent.mkdir(parents=True, exist_ok=True)
             self.file_handle = open(path, 'a', buffering=1, encoding='utf-8')
+            git_rev = ''
+            try:
+                git_rev = subprocess.check_output(
+                    ['git', 'rev-parse', 'HEAD'],
+                    cwd=str(pathlib.Path(__file__).resolve().parent),
+                    text=True,
+                    stderr=subprocess.DEVNULL
+                ).strip()
+            except Exception:
+                pass
+
             manifest = {
                 'event_type': 'run_manifest',
                 'run_id': self.run_id,
+                'git_revision': git_rev,
+                'world_layout_version': '1.2.0',
+                'map_version': '0.3.0',
+                'robot_count': len(self.robot_ids),
+                'random_seed': int(os.environ.get('FLEET_RANDOM_SEED', '42')),
+                'speed_limits': {
+                    'tracking_speed_mps': float(os.environ.get('FLEET_TRACKING_SPEED_MPS', '1.0'))
+                },
+                'fault_profile_enabled': os.environ.get('FLEET_ENABLE_FAULTS', 'false') == 'true',
+                'randomization_profile_enabled': os.environ.get('FLEET_RANDOM_TASKS', 'false') == 'true',
+                'dds_domain_id': int(os.environ.get('ROS_DOMAIN_ID', '0')),
                 'start_time_iso': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                 'start_epoch_s': time.time(),
                 'schema_version': '0.6.0',
@@ -68,6 +91,10 @@ class DataCollectionNode(Node):
             }
             self.write_record(manifest)
             self.get_logger().info(f'DataCollectionNode logging to {self.output_file}')
+            self.start_epoch = time.time()
+            self.completed_tasks = set()
+            self.safety_stops = 0
+            self.blockage_count = 0
         except Exception as e:
             self.get_logger().error(f'Failed to open telemetry log {self.output_file}: {e}')
 
@@ -547,6 +574,23 @@ class DataCollectionNode(Node):
     def destroy_node(self):
         if self.file_handle:
             try:
+                now_epoch = time.time()
+                makespan = max(1.0, now_epoch - getattr(self, 'start_epoch', now_epoch))
+                completed_cnt = len(getattr(self, 'completed_tasks', set()))
+                throughput = (completed_cnt / makespan) * 3600.0
+                summary = {
+                    'event_type': 'run_summary',
+                    'run_id': self.run_id,
+                    'end_time_iso': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                    'end_epoch_s': now_epoch,
+                    'makespan_s': round(makespan, 2),
+                    'throughput_tasks_per_hour': round(throughput, 2),
+                    'completed_task_count': completed_cnt,
+                    'safety_stop_count': getattr(self, 'safety_stops', 0),
+                    'active_blockage_count': getattr(self, 'blockage_count', 0),
+                    'termination_reason': 'NORMAL_SHUTDOWN',
+                }
+                self.write_record(summary)
                 self.file_handle.close()
             except Exception:
                 pass
