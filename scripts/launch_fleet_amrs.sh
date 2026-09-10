@@ -13,9 +13,9 @@ OVERLAY="${OVERLAY:-$WORKSPACE/install}"
 WORLD_FILE="${WORLD_FILE:-$WAREHOUSE_DIR/worlds/small_warehouse/warehouse_clean.sdf}"
 WORLD_NAME="${WORLD_NAME:-default}"
 MODEL="${MODEL:-lite}"
-FLEET_COUNT="${FLEET_COUNT:-8}"
+FLEET_COUNT="${FLEET_COUNT:-6}"
 SENSOR_PROFILE="${SENSOR_PROFILE:-fleet}"
-LIDAR_UPDATE_RATE_HZ="${LIDAR_UPDATE_RATE_HZ:-10.0}"
+LIDAR_UPDATE_RATE_HZ="${LIDAR_UPDATE_RATE_HZ:-5.0}"
 RENDER_ENGINE="${RENDER_ENGINE:-ogre2}"
 GUI_RENDER_ENGINE="${GUI_RENDER_ENGINE:-ogre2}"
 GUI_CONFIG="${GZ_GUI_CONFIG:-/opt/ros/jazzy/opt/gz_sim_vendor/share/gz/gz-sim8/gui/gui.config}"
@@ -28,7 +28,7 @@ FLEET_SCENARIO_FILE="${FLEET_SCENARIO_FILE:-}"
 FLEET_TRACKING_SPEED_MPS="${FLEET_TRACKING_SPEED_MPS:-4.0}"
 FLEET_RESERVATION_SLOT_S="${FLEET_RESERVATION_SLOT_S:-0.0}"
 SPAWN_WAIT_SECONDS="${SPAWN_WAIT_SECONDS:-180}"
-SETTLE_SECONDS="${SETTLE_SECONDS:-3}"
+SETTLE_SECONDS="${SETTLE_SECONDS:-1}"
 RUN_ID="$(date +%Y%m%d_%H%M%S)"
 LOG_DIR="${LOG_DIR:-$WORKSPACE/log/fleet_runs/$RUN_ID}"
 FLEET_DATA_FILE="${FLEET_DATA_FILE:-$LOG_DIR/fleet_telemetry.jsonl}"
@@ -153,7 +153,7 @@ spawn_robot() {
   local robot="$1" x="$2" y="$3" yaw="$4" keep_sensors="$5" log_file="$LOG_DIR/$1.log"
   echo "Starting $robot at x=$x y=$y yaw=$yaw..."
   start_group "$log_file" ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py \
-    namespace:="$robot" model:="$MODEL" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.05 yaw:="$yaw" \
+    namespace:="$robot" model:="$MODEL" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.03 yaw:="$yaw" \
     spawn_dock:=false keep_sensors_system:="$keep_sensors" \
     sensor_profile:="$SENSOR_PROFILE" lidar_update_rate_hz:="$LIDAR_UPDATE_RATE_HZ"
   ROBOT_PIDS+=("$STARTED_PID")
@@ -161,7 +161,9 @@ spawn_robot() {
   wait_for entity "$SPAWN_WAIT_SECONDS" model_exists "$robot" || fail "$robot body was not created"
   wait_for controller 120 grep -Fq "[$robot.diffdrive_spawner]: Configured and activated diffdrive_controller" "$log_file" || fail "$robot controller did not activate"
   wait_for interfaces 90 grep -Fq "[$robot.interface_readiness]: Interface readiness passed:" "$log_file" || fail "$robot interfaces are not ready"
-  echo "$robot passed all gates; settling for ${SETTLE_SECONDS}s."
+  echo "Verifying $robot physical coordinates and orientation in Gazebo..."
+  python3 "$SCRIPT_DIR/verify_gazebo_pose.py" --robot "$robot" --expected-x "$x" --expected-y "$y" --expected-yaw "$yaw" --timeout 15.0 || fail "$robot failed Gazebo physical pose verification"
+  echo "$robot passed all gates (including Gazebo pose verification); settling for ${SETTLE_SECONDS}s."
   write_run_event robot_interface_gate_passed "$robot"
   sleep "$SETTLE_SECONDS"
 }
@@ -173,6 +175,16 @@ for r in $(seq 1 "$FLEET_COUNT"); do
   yaw_var="ROBOT_${r}_YAW"
   spawn_robot "robot_${r}" "${!x_var}" "${!y_var}" "${!yaw_var}" false
 done
+
+# Verify all fleet members simultaneously in Gazebo before releasing control
+echo "Verifying all $FLEET_COUNT AMRs at dock locations in Gazebo..."
+for r in $(seq 1 "$FLEET_COUNT"); do
+  x_var="ROBOT_${r}_X"
+  y_var="ROBOT_${r}_Y"
+  yaw_var="ROBOT_${r}_YAW"
+  python3 "$SCRIPT_DIR/verify_gazebo_pose.py" --robot "robot_${r}" --expected-x "${!x_var}" --expected-y "${!y_var}" --expected-yaw "${!yaw_var}" --tol-xy 0.45 --tol-yaw 0.75 --timeout 5.0 || fail "robot_${r} failed final Gazebo pre-launch check"
+done
+echo "All $FLEET_COUNT AMRs successfully verified at correct coordinates and angles in Gazebo."
 
 if [[ "$START_FLEET" == true ]]; then
   declare -a FLEET_SCENARIO_ARGS=()

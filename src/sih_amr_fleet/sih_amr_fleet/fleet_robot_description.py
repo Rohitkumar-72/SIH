@@ -59,6 +59,39 @@ def main() -> None:
             if parameters is None:
                 raise RuntimeError('gz_ros2_control plugin has no parameters element')
             parameters.text = control_file
+            hold_joints = plugin.find('hold_joints')
+            if hold_joints is None:
+                hold_joints = ElementTree.SubElement(plugin, 'hold_joints')
+            hold_joints.text = 'true'
+            p_gain = plugin.find('position_proportional_gain')
+            if p_gain is None:
+                p_gain = ElementTree.SubElement(plugin, 'position_proportional_gain')
+            p_gain.text = '20.0'
+
+    # Convert prismatic wheel_drop joints into rigid fixed mounts to eliminate spring-loaded
+    # wheel lifting that causes the AMR to balance on its caster and slowly slide while parked.
+    for joint in root.iter('joint'):
+        if joint.get('name') in ('wheel_drop_left_joint', 'wheel_drop_right_joint'):
+            joint.set('type', 'fixed')
+            for child in list(joint):
+                if child.tag in ('limit', 'axis', 'dynamics'):
+                    joint.remove(child)
+
+    # Remove wheel_drop spring simulation elements
+    for gazebo in list(root.findall('gazebo')):
+        if gazebo.get('reference') in ('wheel_drop_left_joint', 'wheel_drop_right_joint'):
+            root.remove(gazebo)
+
+    # Ensure continuous drive wheel joints have damping and friction to halt uncommanded rolling
+    for joint in root.iter('joint'):
+        if joint.get('name') in ('left_wheel_joint', 'right_wheel_joint'):
+            if joint.find('parent') is not None:
+                dynamics = joint.find('dynamics')
+                if dynamics is None:
+                    dynamics = ElementTree.SubElement(joint, 'dynamics')
+                dynamics.set('damping', '0.1')
+                dynamics.set('friction', '0.2')
+
     if not keep_sensors:
         for gazebo in list(root.findall('gazebo')):
             if any(plugin.get('filename') == SENSORS_PLUGIN

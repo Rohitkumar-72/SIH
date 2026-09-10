@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Laptop Automated Data Collection Runner (6 AMRs, 200 Tasks/Run, 8k Total).
+"""Laptop Automated Data Collection Runner (5 AMRs, 200 Tasks/Run).
 
 Runs sequential work-cycle benchmarks on Laptop (Ryzen 5 7235HS 4C/8T + RTX 3050):
-- 6 TurtleBot 4 AMRs
+- 5 TurtleBot 4 AMRs
 - Unthrottled Gazebo physics (50 Hz, ~3.0x - 3.5x RTF)
 - Consolidated robot agent processes (low CPU footprint)
 - DDS Domain IDs cycling in [60, 99] (disjoint from Desktop [10, 49])
@@ -38,6 +38,9 @@ C_WHITE = "\033[37m"
 C_BG_BLUE = "\033[44m"
 C_BG_DARK = "\033[100m"
 
+RE_CBBA_BID = re.compile(
+    r"\[(?P<robot>robot_\d):CBBA\]\s*Decision:\s*SUBMIT_BID for task (?P<task>[a-zA-Z0-9_-]+)"
+)
 RE_CBBA_COMMIT = re.compile(
     r"\[(?P<robot>robot_\d):CBBA\]\s*Decision:\s*UNANIMOUS_COMMIT for task (?P<task>[a-zA-Z0-9_-]+) -> Winner=(?P<winner>robot_\d),\s*Bid=(?P<bid>[\d.]+),\s*epoch=(?P<epoch>\d+)\..*Quorum=(?P<quorum>\d+/\d+)"
 )
@@ -92,7 +95,7 @@ class TaskState:
 
 
 class LaptopCycleRun:
-    def __init__(self, run_index: int, total_runs: int, target_tasks: int, base_dir: Path, timeout_s: int, fleet_count: int = 6):
+    def __init__(self, run_index: int, total_runs: int, target_tasks: int, base_dir: Path, timeout_s: int, fleet_count: int = 5):
         self.run_index = run_index
         self.total_runs = total_runs
         self.target_tasks = target_tasks
@@ -110,6 +113,7 @@ class LaptopCycleRun:
         self.tasks: Dict[str, TaskState] = {}
         self.completed_tasks: List[str] = []
         self.ready_robots: Set[str] = set()
+        self.robot_status: Dict[str, str] = {f"robot_{i}": "IDLE" for i in range(1, self.fleet_count + 1)}
         self.start_time: float = 0.0
         self.end_time: float = 0.0
         self.sim_time_s: float = 0.0
@@ -122,7 +126,8 @@ class LaptopCycleRun:
             "robot_agent_process", "data_collection_node", "obstacle_spawner_node",
             "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr",
             "twist_stamper", "localization_node", "interface_readiness",
-            "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner"
+            "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner",
+            "dashboard_bridge_node", "dashboard_bridge"
         ]
         for pat in patterns:
             try:
@@ -142,8 +147,30 @@ class LaptopCycleRun:
         timestamp_str = f"[{elapsed:6.1f}s]"
         if sys.stdout.isatty():
             sys.stdout.write("\r\033[K")
+        else:
+            sys.stdout.write("\r")
         print(f" {C_DIM}{timestamp_str}{C_RESET} {color}{C_BOLD}{symbol} [{tag:<14}]{C_RESET} {message}")
         sys.stdout.flush()
+
+    def format_status_line(self, elapsed: float, rtf: float) -> str:
+        parts = []
+        for i in range(1, self.fleet_count + 1):
+            rid = f"robot_{i}"
+            st = self.robot_status.get(rid, "IDLE")
+            if st.startswith("TO_PICKUP"):
+                c = C_BLUE
+            elif st.startswith("DWELL"):
+                c = C_YELLOW
+            elif st.startswith("TO_DROPOFF"):
+                c = C_CYAN
+            elif st == "BIDDING":
+                c = C_MAGENTA
+            else:
+                c = C_GREEN
+            parts.append(f"R{i}:{c}{st}{C_RESET}")
+        robots_str = " ".join(parts)
+        pct = int((len(self.completed_tasks) / max(1, self.target_tasks)) * 100)
+        return f"\r\033[K {C_DIM}[{elapsed:6.1f}s]{C_RESET} {C_YELLOW}⚡ RTF:{rtf:.2f}x{C_RESET} | {C_BOLD}{C_GREEN}Tasks:{len(self.completed_tasks)}/{self.target_tasks}({pct}%){C_RESET} | {robots_str} "
 
     def parse_launcher_line(self, line: str):
         line = line.strip()
@@ -167,6 +194,7 @@ class LaptopCycleRun:
             robot = m.group("robot") or m.group("robot2")
             if robot and robot not in self.ready_robots:
                 self.ready_robots.add(robot)
+                self.robot_status[robot] = "IDLE"
                 self.print_stage_event("✔", C_CYAN, "GATE PASSED", f"{robot} interfaces ready ({len(self.ready_robots)}/{self.fleet_count})")
             return
 
@@ -184,7 +212,14 @@ class LaptopCycleRun:
             robot = m.group("robot") or m.group("robot2")
             if robot and robot not in self.ready_robots:
                 self.ready_robots.add(robot)
+                self.robot_status[robot] = "IDLE"
                 self.print_stage_event("✔", C_CYAN, "ROBOT READY", f"{robot} interfaces ready ({len(self.ready_robots)}/{self.fleet_count})")
+
+        m = RE_CBBA_BID.search(line)
+        if m:
+            robot = m.group("robot")
+            if self.robot_status.get(robot, "IDLE") in ("IDLE", "WAIT_BID", "BIDDING"):
+                self.robot_status[robot] = "BIDDING"
 
         m = RE_CBBA_COMMIT.search(line)
         if m:
@@ -206,6 +241,10 @@ class LaptopCycleRun:
             robot_id = m.group("robot")
             px, py = m.group("px"), m.group("py")
             dx, dy = m.group("dx"), m.group("dy")
+            self.robot_status[robot_id] = f"TO_PICKUP({task_id})"
+            for r in self.robot_status:
+                if self.robot_status[r] == "BIDDING":
+                    self.robot_status[r] = "IDLE"
             t = self.tasks.setdefault(task_id, TaskState(task_id))
             if t.stage in ("ANNOUNCED", "CBBA_COMMITTED"):
                 t.assigned_robot = robot_id
@@ -219,6 +258,7 @@ class LaptopCycleRun:
             task_id = m.group("task")
             robot_id = m.group("robot")
             dwell = m.group("dwell")
+            self.robot_status[robot_id] = f"DWELL_PICKUP({task_id})"
             t = self.tasks.setdefault(task_id, TaskState(task_id))
             if t.stage == "ACCEPTED":
                 t.stage = "AT_PICKUP"
@@ -229,6 +269,7 @@ class LaptopCycleRun:
         if m:
             task_id = m.group("task")
             robot_id = m.group("robot")
+            self.robot_status[robot_id] = f"TO_DROPOFF({task_id})"
             t = self.tasks.setdefault(task_id, TaskState(task_id))
             if t.stage in ("ACCEPTED", "AT_PICKUP"):
                 t.stage = "EN_ROUTE_DROPOFF"
@@ -239,6 +280,7 @@ class LaptopCycleRun:
             task_id = m.group("task")
             robot_id = m.group("robot")
             dwell = m.group("dwell")
+            self.robot_status[robot_id] = f"DWELL_DROPOFF({task_id})"
             t = self.tasks.setdefault(task_id, TaskState(task_id))
             if t.stage in ("ACCEPTED", "AT_PICKUP", "EN_ROUTE_DROPOFF"):
                 t.stage = "AT_DROPOFF"
@@ -248,6 +290,9 @@ class LaptopCycleRun:
         m = RE_TASK_COMPLETED.search(line)
         if m:
             task_id = m.group("task") or m.group("task2")
+            robot_id = m.group("robot")
+            if robot_id:
+                self.robot_status[robot_id] = "IDLE"
             t = self.tasks.setdefault(task_id, TaskState(task_id))
             if t.stage != "COMPLETED":
                 t.stage = "COMPLETED"
@@ -274,7 +319,7 @@ class LaptopCycleRun:
         env["FLEET_COUNT"] = str(self.fleet_count)
         env["RENDER_ENGINE"] = "ogre2"
         env["SENSOR_PROFILE"] = "fleet"
-        env["LIDAR_UPDATE_RATE_HZ"] = "10.0"
+        env["LIDAR_UPDATE_RATE_HZ"] = "5.0"
         env["FLEET_TRACKING_SPEED_MPS"] = str(tracking_speed)
         env["SETTLE_SECONDS"] = str(settle_s)
         env["LOG_DIR"] = str(self.log_dir)
@@ -329,6 +374,7 @@ class LaptopCycleRun:
         reader_thread.start()
 
         fleet_log_fd = None
+        telemetry_fd = None
         last_ticker_s = -1
         first_sim_s = None
         
@@ -359,26 +405,30 @@ class LaptopCycleRun:
                     for line in fleet_log_fd:
                         self.parse_log_line(line)
 
-                # Track RTF from telemetry
-                if self.telemetry_file.exists() and int(elapsed) % 15 == 0 and int(elapsed) != last_ticker_s:
-                    last_ticker_s = int(elapsed)
-                    try:
-                        with open(self.telemetry_file, "r", encoding="utf-8", errors="ignore") as tf:
-                            for tline in tf:
-                                if tline.strip():
-                                    rec = json.loads(tline)
-                                    sim_t = float(rec.get("logged_at", 0.0))
-                                    if sim_t > 0.0:
-                                        if first_sim_s is None: first_sim_s = sim_t
-                                        self.sim_time_s = sim_t
-                    except Exception:
-                        pass
-                    
-                    if first_sim_s is not None and self.sim_time_s > first_sim_s:
-                        d_sim = self.sim_time_s - first_sim_s
-                        rtf = d_sim / max(1.0, elapsed)
-                        sys.stdout.write(f"\r {C_DIM}[{elapsed:6.1f}s]{C_RESET} {C_YELLOW}⚡ Active RTF: {rtf:.2f}x | Completed: {len(self.completed_tasks)}/{self.target_tasks}{C_RESET}  ")
-                        sys.stdout.flush()
+                # Tail telemetry file incrementally
+                if telemetry_fd is None and self.telemetry_file.exists():
+                    telemetry_fd = open(self.telemetry_file, "r", encoding="utf-8", errors="ignore")
+
+                if telemetry_fd is not None:
+                    for tline in telemetry_fd:
+                        if tline.strip():
+                            try:
+                                rec = json.loads(tline)
+                                sim_t = float(rec.get("logged_at", 0.0))
+                                if sim_t > 0.0:
+                                    if first_sim_s is None:
+                                        first_sim_s = sim_t
+                                    self.sim_time_s = sim_t
+                            except Exception:
+                                pass
+
+                # Update live ticker and AMR status line every 1s
+                now_s = int(elapsed)
+                if now_s != last_ticker_s:
+                    last_ticker_s = now_s
+                    rtf = ((self.sim_time_s - first_sim_s) / max(1.0, elapsed)) if (first_sim_s and self.sim_time_s > first_sim_s) else 0.0
+                    sys.stdout.write(self.format_status_line(elapsed, rtf))
+                    sys.stdout.flush()
 
                 time.sleep(0.1)
 
@@ -387,6 +437,10 @@ class LaptopCycleRun:
         finally:
             if fleet_log_fd:
                 fleet_log_fd.close()
+            if telemetry_fd:
+                telemetry_fd.close()
+            sys.stdout.write("\n")
+            sys.stdout.flush()
             self.end_time = time.time()
             if self.process and self.process.poll() is None:
                 try:
@@ -406,9 +460,10 @@ class LaptopCycleRun:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Laptop Fleet Data Collection Runner (6 AMRs)")
+    parser = argparse.ArgumentParser(description="Laptop Fleet Data Collection Runner (5 AMRs)")
     parser.add_argument("--runs", type=int, default=40, help="Number of simulation work cycles (default: 40)")
     parser.add_argument("--tasks", type=int, default=200, help="Target tasks per cycle (default: 200)")
+    parser.add_argument("--fleet-size", type=int, default=5, help="Fleet AMR count (default: 5)")
     parser.add_argument("--speed", type=float, default=4.0, help="AMR path tracking speed m/s (default: 4.0)")
     parser.add_argument("--seed", type=int, default=2000, help="Base random seed for Laptop (default: 2000)")
     parser.add_argument("--timeout", type=int, default=22000, help="Per-run timeout seconds (default: 22000, 5.5x extended)")
@@ -423,14 +478,14 @@ def main():
     base_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{C_BOLD}{C_GREEN}======================================================================{C_RESET}")
-    print(f"{C_BOLD}{C_GREEN}  SIH LAPTOP AUTOMATED DATA COLLECTION: 6 AMRs, {args.runs} RUNS × {args.tasks} TASKS   {C_RESET}")
+    print(f"{C_BOLD}{C_GREEN}  SIH LAPTOP AUTOMATED DATA COLLECTION: {args.fleet_size} AMRs, {args.runs} RUNS × {args.tasks} TASKS   {C_RESET}")
     print(f"{C_BOLD}{C_GREEN}  TARGET: {args.runs * args.tasks} DATASET TASKS FOR ML CONGESTION MODEL   {C_RESET}")
     print(f"{C_BOLD}{C_GREEN}======================================================================{C_RESET}\n")
 
     telemetry_files = []
     passed = 0
     for idx in range(1, args.runs + 1):
-        run = LaptopCycleRun(idx, args.runs, args.tasks, base_dir, args.timeout, fleet_count=6)
+        run = LaptopCycleRun(idx, args.runs, args.tasks, base_dir, args.timeout, fleet_count=args.fleet_size)
         success = run.execute(tracking_speed=args.speed, settle_s=3, seed=args.seed)
         if run.telemetry_file.exists():
             telemetry_files.append(str(run.telemetry_file))

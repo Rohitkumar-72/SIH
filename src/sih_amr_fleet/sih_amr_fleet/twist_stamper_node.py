@@ -45,11 +45,12 @@ class TwistStamper(Node):
             self.get_logger().warning('Rejected nonfinite cmd_vel before controller bridge')
             self.publish(Twist())
             return
-        self.last_command_at = time.monotonic()
+        self.last_command_at = self.get_clock().now().nanoseconds * 1e-9
         self.publish(command)
 
     def publish_idle_stop(self):
-        if self.last_command_at is None or time.monotonic() - self.last_command_at >= 0.2:
+        now = self.get_clock().now().nanoseconds * 1e-9
+        if self.last_command_at is None or now - self.last_command_at >= 0.2:
             self.publish(Twist())
 
 

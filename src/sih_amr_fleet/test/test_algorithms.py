@@ -612,3 +612,321 @@ def test_static_grid_path_distance_navigates_around_obstacles():
 def test_static_grid_path_distance_same_cell():
     assert static_grid_path_distance((5, 5), (5, 5), blocked=set(), width=10, height=10, resolution=0.5) == 0.0
 
+
+def test_protocol_qos_depth_is_scaled_for_burst_traffic():
+    from sih_amr_fleet.common import PROTOCOL_QOS
+    assert PROTOCOL_QOS.depth >= 100
+
+
+def test_random_task_generator_throttling_counts_only_unassigned_tasks():
+    package_root = pathlib.Path(__file__).parents[1].joinpath('sih_amr_fleet')
+    generator = package_root.joinpath('random_task_generator_node.py').read_text()
+    assert 'unassigned_count = len([t for t in self.active_tasks if t not in self.executing_tasks])' in generator
+    assert 'unassigned_count >= self.max_active_tasks' in generator
+
+
+def test_cbba_single_task_bundle_capacity_penalty():
+    import rclpy
+    from geometry_msgs.msg import Pose2D
+    from sih_amr_interfaces.msg import Task
+    from sih_amr_fleet.cbba_node import CbbaNode
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
+        t2 = Task()
+        t2.task_id = 'task_target'
+        t2.pickup = Pose2D(x=2.0, y=2.0, theta=0.0)
+        t2.dropoff = Pose2D(x=4.0, y=4.0, theta=0.0)
+
+        # Baseline bid without existing claims
+        base_bid = node.bid(t2)
+        assert base_bid < 1000.0
+
+        # With an existing claim on another task, single-task bundle constraint must apply penalty
+        node.busy_robots[node.robot_id] = ('task_claimed', 100.0)
+        node.own_claims['task_claimed'] = (node.robot_id, node.session_id, 10.0, 1)
+        penalized_bid = node.bid(t2)
+        assert penalized_bid >= 1000.0
+    finally:
+        node.destroy_node()
+
+
+def test_cbba_unfreezes_bid_penalty_immediately_when_idle():
+    import rclpy
+    from geometry_msgs.msg import Pose2D
+    from sih_amr_interfaces.msg import Task
+    from sih_amr_fleet.cbba_node import CbbaNode
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
+        t2 = Task()
+        t2.task_id = 'task_avail'
+        t2.expires_at.sec = int(node.get_clock().now().nanoseconds / 1e9) + 600
+        t2.pickup = Pose2D(x=2.0, y=2.0, theta=0.0)
+        t2.dropoff = Pose2D(x=4.0, y=4.0, theta=0.0)
+        node.tasks[t2.task_id] = t2
+
+        # Simulate robot had an old busy penalty bid in own_bids while working on another task
+        node.own_bids[t2.task_id] = (1015.0, 1)
+        assert node.busy_robots.get(node.robot_id) is None  # Robot is now idle
+
+        # run_round must clear penalty and bid true competitive cost immediately
+        node.run_round()
+        assert t2.task_id in node.own_bids
+        assert node.own_bids[t2.task_id][0] < 1000.0
+    finally:
+        node.destroy_node()
+
+
+def test_cbba_purges_unconfirmed_phantom_commitments_on_execution_conflict():
+    import rclpy
+    from sih_amr_interfaces.msg import TaskExecutionStatus
+    from sih_amr_fleet.cbba_node import CbbaNode
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        # Simulate an unconfirmed split-brain phantom commitment on robot_3
+        node.executing_tasks['t_phantom'] = ('robot_3', 100.0)
+        node.committed_claims['t_phantom'] = ('robot_3', 'sess_3', 15.0, 1)
+        node.own_claims['t_phantom'] = ('robot_3', 'sess_3', 15.0, 1)
+
+        # Status arrives confirming robot_3 is actually executing a different task
+        status = TaskExecutionStatus()
+        status.task_id = 't_actual'
+        status.owner_robot_id = 'robot_3'
+        status.phase = TaskExecutionStatus.EN_ROUTE_PICKUP
+        node.on_execution(status)
+
+        # The unconfirmed phantom commitment must be purged immediately
+        assert 't_phantom' not in node.executing_tasks
+        assert 't_phantom' not in node.committed_claims
+        assert 't_phantom' not in node.own_claims
+    finally:
+        node.destroy_node()
+
+
+def test_cbba_evicts_stale_peer_claims_differing_from_winner_view():
+    import rclpy
+    from geometry_msgs.msg import Pose2D
+    from sih_amr_interfaces.msg import Task, TaskConsensus
+    from sih_amr_fleet.cbba_node import CbbaNode
+    from sih_amr_fleet.common import header
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
+        t = Task()
+        t.task_id = 't_auction'
+        now_s = int(node.get_clock().now().nanoseconds / 1e9)
+        t.expires_at.sec = now_s + 600
+        node.tasks[t.task_id] = t
+
+        # Peer robot_2 signed a stale claim with an outdated bid of 1015.0
+        stale_claim = TaskConsensus()
+        stale_claim.fleet_header = header(node, 'robot_2', 'sess_2', 1, 120.0)
+        stale_claim.task_id = t.task_id
+        stale_claim.winner_robot_id = 'robot_1'
+        stale_claim.winner_session_id = node.session_id
+        stale_claim.winning_bid = 1015.0
+        stale_claim.assignment_epoch = 1
+        stale_claim.lease_until = stale_claim.fleet_header.valid_until
+        stale_claim.event = TaskConsensus.CLAIM
+        node.claim_views[t.task_id] = {'robot_2': stale_claim}
+
+        # Current bids show true cost of 1.0
+        node.bid_views[t.task_id] = {
+            'robot_1': node.consensus_message(t.task_id, 'robot_1', node.session_id, 1.0, 1, TaskConsensus.BID),
+            'robot_2': node.consensus_message(t.task_id, 'robot_2', 'sess_2', 10.0, 1, TaskConsensus.BID),
+            'robot_3': node.consensus_message(t.task_id, 'robot_3', 'sess_3', 12.0, 1, TaskConsensus.BID),
+            'robot_4': node.consensus_message(t.task_id, 'robot_4', 'sess_4', 14.0, 1, TaskConsensus.BID),
+        }
+        node.task_seen_at[t.task_id] = now_s - 5.0
+
+        node.run_round()
+        # Outdated peer claim must be evicted so it doesn't cause a false lease deadlock
+        assert 'robot_2' not in node.claim_views[t.task_id]
+    finally:
+        node.destroy_node()
+
+
+def test_cbba_unanimous_commit_purges_unconfirmed_commitments_for_same_winner():
+    import rclpy
+    from geometry_msgs.msg import Pose2D
+    from sih_amr_interfaces.msg import Task, TaskConsensus
+    from sih_amr_fleet.cbba_node import CbbaNode
+    from sih_amr_fleet.common import header
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
+        # Unconfirmed phantom commitment on t1 for robot_2
+        node.executing_tasks['t1'] = ('robot_2', 100.0)
+        node.committed_claims['t1'] = ('robot_2', 'sess_2', 15.0, 1)
+
+        t2 = Task()
+        t2.task_id = 't2'
+        t2.pickup = Pose2D(x=50.0, y=50.0, theta=0.0)
+        t2.dropoff = Pose2D(x=50.0, y=50.0, theta=0.0)
+        now_s = int(node.get_clock().now().nanoseconds / 1e9)
+        t2.expires_at.sec = now_s + 600
+        node.tasks['t2'] = t2
+
+        bids = {}
+        for r_id, s_id, b in [('robot_1', node.session_id, 30.0), ('robot_2', 'sess_2', 5.0), ('robot_3', 'sess_3', 12.0), ('robot_4', 'sess_4', 14.0)]:
+            bm = TaskConsensus()
+            bm.fleet_header = header(node, r_id, s_id, 1, 120.0)
+            bm.task_id = 't2'
+            bm.winner_robot_id = r_id
+            bm.winner_session_id = s_id
+            bm.winning_bid = b
+            bm.assignment_epoch = 1
+            bm.lease_until = bm.fleet_header.valid_until
+            bm.event = TaskConsensus.BID
+            bids[r_id] = bm
+
+        node.bid_views['t2'] = bids
+        node.task_seen_at['t2'] = now_s - 5.0
+
+        for r_id, s_id in [('robot_2', 'sess_2'), ('robot_3', 'sess_3'), ('robot_4', 'sess_4')]:
+            c = TaskConsensus()
+            c.fleet_header = header(node, r_id, s_id, 2, 120.0)
+            c.task_id = 't2'
+            c.winner_robot_id = 'robot_2'
+            c.winner_session_id = 'sess_2'
+            c.winning_bid = 5.0
+            c.assignment_epoch = 1
+            c.lease_until = c.fleet_header.valid_until
+            c.event = TaskConsensus.CLAIM
+            node.claim_views.setdefault('t2', {})[r_id] = c
+
+        node.run_round()
+        assert 't1' not in node.executing_tasks
+        assert 't1' not in node.committed_claims
+        assert 't2' in node.executing_tasks
+        assert node.executing_tasks['t2'][0] == 'robot_2'
+    finally:
+        node.destroy_node()
+
+
+def test_cbba_post_completion_rebid_and_allocation():
+    import rclpy
+    from geometry_msgs.msg import Pose2D
+    from sih_amr_interfaces.msg import Task, TaskConsensus, TaskExecutionStatus
+    from sih_amr_fleet.cbba_node import CbbaNode
+    from sih_amr_fleet.common import header
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        node.pose = Pose2D(x=1.0, y=1.0, theta=0.0)
+        now_s = int(node.get_clock().now().nanoseconds / 1e9)
+
+        # 1. Simulate completion of a prior task
+        comp_status = TaskExecutionStatus()
+        comp_status.task_id = 't_done'
+        comp_status.owner_robot_id = node.robot_id
+        comp_status.phase = TaskExecutionStatus.COMPLETED
+        node.on_execution(comp_status)
+
+        assert node.robot_id not in node.busy_robots
+        assert 't_done' in node.completed_tasks
+
+        # 2. Add a new available task
+        t_next = Task()
+        t_next.task_id = 't_next'
+        t_next.pickup = Pose2D(x=2.0, y=2.0, theta=0.0)
+        t_next.dropoff = Pose2D(x=3.0, y=3.0, theta=0.0)
+        t_next.expires_at.sec = now_s + 600
+        node.tasks['t_next'] = t_next
+        node.task_seen_at['t_next'] = now_s - 5.0
+
+        # Robot 1 bid must be clean without busy penalty
+        bid_val = node.bid(t_next)
+        assert bid_val < 1000.0
+
+        # 3. Populate peer bids where robot 1 is best bidder
+        bids = {}
+        for r_id, s_id, b in [
+            ('robot_1', node.session_id, bid_val),
+            ('robot_2', 'sess_2', bid_val + 10.0),
+            ('robot_3', 'sess_3', bid_val + 20.0),
+            ('robot_4', 'sess_4', bid_val + 30.0)
+        ]:
+            bm = TaskConsensus()
+            bm.fleet_header = header(node, r_id, s_id, 1, 120.0)
+            bm.task_id = 't_next'
+            bm.winner_robot_id = r_id
+            bm.winner_session_id = s_id
+            bm.winning_bid = b
+            bm.assignment_epoch = 1
+            bm.lease_until = bm.fleet_header.valid_until
+            bm.event = TaskConsensus.BID
+            bids[r_id] = bm
+        node.bid_views['t_next'] = bids
+
+        # Populate peer claims matching robot 1
+        for r_id, s_id in [('robot_2', 'sess_2'), ('robot_3', 'sess_3'), ('robot_4', 'sess_4')]:
+            c = TaskConsensus()
+            c.fleet_header = header(node, r_id, s_id, 2, 120.0)
+            c.task_id = 't_next'
+            c.winner_robot_id = 'robot_1'
+            c.winner_session_id = node.session_id
+            c.winning_bid = bid_val
+            c.assignment_epoch = 1
+            c.lease_until = c.fleet_header.valid_until
+            c.event = TaskConsensus.CLAIM
+            node.claim_views.setdefault('t_next', {})[r_id] = c
+
+        node.run_round()
+        assert 't_next' in node.executing_tasks
+        assert node.executing_tasks['t_next'][0] == 'robot_1'
+    finally:
+        node.destroy_node()
+
+
+def test_cbba_consensus_evicts_unconfirmed_on_differing_peer_winner():
+    import rclpy
+    from sih_amr_interfaces.msg import TaskConsensus
+    from sih_amr_fleet.cbba_node import CbbaNode
+    from sih_amr_fleet.common import header
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        # Simulate unconfirmed commitment on t_split for robot_2
+        node.executing_tasks['t_split'] = ('robot_2', 100.0)
+        node.committed_claims['t_split'] = ('robot_2', 'sess_2', 15.0, 1)
+
+        # Peer robot_3 sends a claim for robot_3
+        msg = TaskConsensus()
+        msg.fleet_header = header(node, 'robot_3', 'sess_3', 10, 120.0)
+        msg.task_id = 't_split'
+        msg.winner_robot_id = 'robot_3'
+        msg.winner_session_id = 'sess_3'
+        msg.winning_bid = 5.0
+        msg.assignment_epoch = 1
+        msg.lease_until = msg.fleet_header.valid_until
+        msg.event = TaskConsensus.CLAIM
+
+        node.on_consensus(msg)
+        # Unconfirmed phantom commitment must be evicted rather than dropping the message
+        assert 't_split' not in node.executing_tasks
+        assert 't_split' not in node.committed_claims
+    finally:
+        node.destroy_node()
+
+

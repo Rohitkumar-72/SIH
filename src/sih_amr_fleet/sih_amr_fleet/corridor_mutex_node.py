@@ -38,6 +38,8 @@ class CorridorMutexNode(Node):
         self.communication_degraded = False
         self.approach_distance_m = self.declare_parameter('approach_distance_m', 2.0).value
         self.approach_speed_mps = self.declare_parameter('approach_speed_mps', 0.4).value
+        self.last_exited_corridor = None
+        self.last_exited_time = 0.0
 
         if map_file:
             self.load_map(map_file)
@@ -151,7 +153,8 @@ class CorridorMutexNode(Node):
             'ts': self.clock,
             'grants': set(),
             'entered': False,
-            'was_inside': False
+            'was_inside': False,
+            'created_at': now_seconds(self)
         }
         self.send(CorridorProtocol.REQUEST, corridor_id, request_id)
         self.get_logger().info(
@@ -195,8 +198,14 @@ class CorridorMutexNode(Node):
         # cannot retain the corridor speed cap indefinitely.
         if self.request is not None:
             requested_cells = self.corridors.get(self.request['corridor'], set())
-            still_planned = route.route_feasible and any(
-                (cell.x, cell.y) in requested_cells for cell in route.cells[1:])
+            in_requested_approach = (
+                getattr(self, 'cell', None) in self.approach_cells.get(self.request['corridor'], set()) or
+                self.in_approach
+            )
+            route_touches_corridor = any((cell.x, cell.y) in requested_cells for cell in route.cells)
+            recent_request = (now_seconds(self) - self.request.get('created_at', 0.0) < 5.0)
+            still_planned = route.route_feasible and (
+                in_requested_approach or route_touches_corridor or (recent_request and not self.request.get('entered', False)))
             if self.request['was_inside'] or still_planned:
                 return
             self.get_logger().info(
@@ -206,26 +215,50 @@ class CorridorMutexNode(Node):
         if not route.route_feasible:
             self.armed_corridor = None
             return
+        if self.request is not None:
+            self.armed_corridor = self.request['corridor']
+            return
         next_corridor = None
         for cell in route.cells[1:]:
             corridor = next((name for name, cells in self.corridors.items() if (cell.x, cell.y) in cells), '')
             if corridor:
                 next_corridor = corridor
                 break
-        self.armed_corridor = next_corridor
+        if next_corridor is None and len(route.cells) == 1:
+            cell = route.cells[0]
+            corridor = next((name for name, cells in self.corridors.items() if (cell.x, cell.y) in cells), '')
+            if corridor:
+                next_corridor = corridor
+        if next_corridor is not None:
+            self.armed_corridor = next_corridor
 
     def on_state(self, state):
         cell = (
             round((state.pose.x - self.origin_x) / self.resolution),
             round((state.pose.y - self.origin_y) / self.resolution)
         )
-        self.in_approach = bool(self.armed_corridor and cell in self.approach_cells.get(self.armed_corridor, set()))
+        self.cell = cell
+        now = now_seconds(self)
+        recently_exited = (
+            self.last_exited_corridor == self.armed_corridor and
+            now - self.last_exited_time < 3.0
+        )
+        self.in_approach = bool(
+            self.armed_corridor and not recently_exited and
+            cell in self.approach_cells.get(self.armed_corridor, set())
+        )
         if self.in_approach and self.request is None:
             self.begin_request(self.armed_corridor)
         if not self.request or not self.request['entered']:
             return
         corridor_cells = self.corridors.get(self.request['corridor'], set())
-        if cell in corridor_cells:
+        inside_corridor = (
+            cell in corridor_cells or
+            any((cx == cell[0] and abs(cy - cell[1]) <= 1) or
+                (cy == cell[1] and abs(cx - cell[0]) <= 1)
+                for cx, cy in corridor_cells)
+        )
+        if inside_corridor:
             self.request['was_inside'] = True
         elif self.request['was_inside']:
             # Exited the corridor
@@ -233,7 +266,10 @@ class CorridorMutexNode(Node):
                 f"[{self.robot_id}:CorridorMutex] Decision: EXIT_CORRIDOR {self.request['corridor']}. "
                 f"Actor=CorridorMutex:{self.robot_id}. Info: releasing mutex and unblocking deferred peers."
             )
+            exited_corridor = self.request['corridor']
             self.release_request(CorridorProtocol.EXIT)
+            self.last_exited_corridor = exited_corridor
+            self.last_exited_time = now
             # The exited cell is normally still inside this corridor's broad
             # approach band. Clearing the old arm prevents the next 20 Hz
             # state sample from immediately requesting the corridor again
@@ -244,22 +280,25 @@ class CorridorMutexNode(Node):
             return
         self.clock = max(self.clock, msg.lamport_time) + 1
 
+        source = msg.fleet_header.robot_id
         if msg.event == CorridorProtocol.REQUEST:
-            incoming = (msg.lamport_time, msg.fleet_header.robot_id)
+            # Grant immediately if this robot does not claim the corridor, or
+            # if the incoming request has strict Lamport precedence and this
+            # robot has not yet entered the physical resource.
+            incoming = (msg.lamport_time, source)
             mine = (self.request['ts'], self.robot_id) if self.request and self.request['corridor'] == msg.corridor_id else None
             if mine is None or (not self.request.get('entered', False) and incoming < mine):
-                self.send(CorridorProtocol.GRANT, msg.corridor_id, msg.request_id, msg.fleet_header.robot_id)
+                self.send(CorridorProtocol.GRANT, msg.corridor_id, msg.request_id, source)
             else:
-                self.deferred[(msg.corridor_id, msg.request_id)] = msg.fleet_header.robot_id
+                self.deferred[(msg.corridor_id, msg.request_id)] = source
 
         elif msg.event == CorridorProtocol.GRANT and self.request:
             if msg.target_robot_id == self.robot_id and msg.request_id == self.request['id']:
                 self.request['grants'].add(msg.fleet_header.robot_id)
 
-        elif msg.event in (CorridorProtocol.EXIT, CorridorProtocol.RELEASE, CorridorProtocol.CANCEL):
-            if self.peer_corridors.get(msg.fleet_header.robot_id) == msg.corridor_id:
-                self.peer_corridors.pop(msg.fleet_header.robot_id, None)
-            self.suspect_corridors.discard(msg.corridor_id)
+        elif msg.event in (CorridorProtocol.RELEASE, CorridorProtocol.CANCEL, CorridorProtocol.EXIT):
+            if self.peer_corridors.get(source) == msg.corridor_id:
+                self.peer_corridors.pop(source, None)
             for (corridor, request_id), peer in list(self.deferred.items()):
                 if corridor == msg.corridor_id:
                     self.send(CorridorProtocol.GRANT, corridor, request_id, peer)
@@ -286,7 +325,16 @@ class CorridorMutexNode(Node):
         }
         active_peers = {robot for robot, until in self.peers.items() if until >= now}
         suspected = self.request['corridor'] in self.suspect_corridors
-        permitted = active_peers.issubset(self.request['grants']) and not suspected and not (self.in_approach and self.communication_degraded)
+
+        # Once granted and entered, exclusive corridor ownership is secured.
+        # Do not allow communication jitter at the approach boundary to revoke
+        # permission for an AMR already operating inside the corridor.
+        if self.request.get('entered', False):
+            permitted = True
+        else:
+            permitted = (active_peers.issubset(self.request['grants']) and
+                         not suspected and
+                         not (self.in_approach and self.communication_degraded))
 
         if permitted and self.entrance_clear and not self.request['entered']:
             self.request['entered'] = True
@@ -297,7 +345,7 @@ class CorridorMutexNode(Node):
                 f"entrance physical clearance confirmed."
             )
 
-        allowed = permitted and self.entrance_clear
+        allowed = permitted if self.request.get('entered', False) else (permitted and self.entrance_clear)
         # The conservative speed cap applies in the approach band while
         # entering or waiting for grants. Once inside with exclusive ownership,
         # the AMR tracks at nominal path velocity.

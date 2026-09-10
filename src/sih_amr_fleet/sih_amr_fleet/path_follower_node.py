@@ -19,8 +19,8 @@ class PathFollowerNode(Node):
         self.kp = self.declare_parameter('linear_kp', 0.8).value
         self.turn_in_place_threshold = self.declare_parameter('turn_in_place_threshold_rad', 0.40).value
         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance_m', 0.18).value
-        self.task_stop_radius = self.declare_parameter('task_stop_radius_m', 0.35).value
-        self.task_slow_radius = self.declare_parameter('task_slow_radius_m', 1.25).value
+        self.task_stop_radius = self.declare_parameter('task_stop_radius_m', 0.40).value
+        self.task_slow_radius = self.declare_parameter('task_slow_radius_m', 2.0).value
         self.recovery_reverse_m = self.declare_parameter('recovery_reverse_distance_m', 2.0).value
         self.recovery_speed_mps = self.declare_parameter('recovery_speed_mps', 0.20).value
         self.recovery_margin_m = self.declare_parameter('recovery_margin_m', 0.5).value
@@ -100,8 +100,10 @@ class PathFollowerNode(Node):
         self.event_pub.publish(msg)
 
     def route_target(self):
-        if self.pose is None or self.route is None or len(self.route.waypoints) < 2:
+        if self.pose is None or self.route is None or not self.route.waypoints:
             return None
+        if len(self.route.waypoints) == 1:
+            return self.route.waypoints[0]
         distances = [math.hypot(point.x - self.pose.x, point.y - self.pose.y)
                      for point in self.route.waypoints]
         nearest_index = min(range(len(distances)), key=distances.__getitem__)
@@ -138,7 +140,9 @@ class PathFollowerNode(Node):
             return 0.0, True
         if distance < self.task_slow_radius:
             span = max(self.task_slow_radius - self.task_stop_radius, 1e-3)
-            limit = min(limit, self.tracking_speed * (distance - self.task_stop_radius) / span)
+            ratio = (distance - self.task_stop_radius) / span
+            scaled = max(0.20, self.tracking_speed * ratio)
+            limit = min(limit, scaled)
         return limit, False
 
     def control(self):

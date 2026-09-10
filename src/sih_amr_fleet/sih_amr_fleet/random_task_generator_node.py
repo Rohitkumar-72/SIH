@@ -18,9 +18,9 @@ class RandomTaskGeneratorNode(Node):
         self.seed = self.declare_parameter('seed', 42).value
         self.min_interval_s = self.declare_parameter('min_interval_s', 2.0).value
         self.max_interval_s = self.declare_parameter('max_interval_s', 5.0).value
-        self.task_ttl_s = self.declare_parameter('task_ttl_s', 300.0).value
+        self.task_ttl_s = self.declare_parameter('task_ttl_s', 1800.0).value
         self.max_active_tasks = self.declare_parameter('max_active_tasks', 5).value
-        self.reannounce_interval_s = self.declare_parameter('reannounce_interval_s', 1.0).value
+        self.reannounce_interval_s = self.declare_parameter('reannounce_interval_s', 3.0).value
         self.expected_robot_ids = set(self.declare_parameter(
             'expected_robot_ids', ['robot_1', 'robot_2', 'robot_3', 'robot_4']).value)
         random.seed(self.seed)
@@ -66,7 +66,7 @@ class RandomTaskGeneratorNode(Node):
         self.get_logger().info(f'RandomTaskGeneratorNode initialized (seed={self.seed})')
 
     def on_execution(self, msg):
-        if msg.phase == TaskExecutionStatus.COMPLETED:
+        if msg.phase in (TaskExecutionStatus.COMPLETED, TaskExecutionStatus.FAILED):
             self.executing_tasks.discard(msg.task_id)
             self.active_tasks.pop(msg.task_id, None)
             self.task_receipts.pop(msg.task_id, None)
@@ -194,8 +194,8 @@ class RandomTaskGeneratorNode(Node):
         if counts != self._last_transport_counts:
             self.get_logger().info(
                 f'Task inbox transport ready; counts={counts}')
-            self._last_transport_counts = counts
-        if now < self.next_spawn_time or len(self.active_tasks) >= self.max_active_tasks:
+        unassigned_count = len([t for t in self.active_tasks if t not in self.executing_tasks])
+        if now < self.next_spawn_time or unassigned_count >= self.max_active_tasks:
             return
 
         self.task_count += 1
@@ -203,8 +203,8 @@ class RandomTaskGeneratorNode(Node):
 
         # Pick two distinct locations from safe points
         pick_pt, drop_pt = random.sample(self.safe_aisle_points, 2)
-        p_wait = random.uniform(2.0, 5.0)
-        d_wait = random.uniform(2.0, 5.0)
+        p_wait = random.uniform(0.5, 1.0)
+        d_wait = random.uniform(0.5, 1.0)
         priority = random.choice([50, 75, 100])
 
         task = Task()

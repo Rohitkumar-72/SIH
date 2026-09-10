@@ -5,7 +5,7 @@ from geometry_msgs.msg import Pose2D, PoseStamped
 from nav_msgs.msg import Path
 from rclpy.node import Node
 from sih_amr_interfaces.msg import (
-    BlockageObservation, GridCell, RobotState, RoutePlan, TaskAssignment,
+    BlockageObservation, CorridorProtocol, GridCell, RobotState, RoutePlan, TaskAssignment,
     TaskExecutionStatus, TrajectoryIntent
 )
 
@@ -48,12 +48,14 @@ class WhcaPlannerNode(Node):
         self.docking_target = None
         self._received_local_state = False
 
+        self.corridors = {}
+        self.occupied_corridors = {}
+
         if map_file:
             self.load_map(map_file)
 
         self.pub = self.create_publisher(RoutePlan, 'planned_route', FLEET_STATE_QOS)
         self.path_pub = self.create_publisher(Path, 'path', FLEET_STATE_QOS)
-
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_subscription(RobotState, 'state', self.on_local_state, POSE_QOS)
         self.create_subscription(TaskAssignment, 'task_assignment', self.on_assignment, FLEET_STATE_QOS)
@@ -61,6 +63,7 @@ class WhcaPlannerNode(Node):
         self.create_subscription(TaskExecutionStatus, 'task_execution_status', self.on_execution, FLEET_STATE_QOS)
         self.create_subscription(TrajectoryIntent, '/fleet/trajectory_intent', self.on_intent, PROTOCOL_QOS)
         self.create_subscription(BlockageObservation, '/fleet/blockage_observation', self.on_blockage, PROTOCOL_QOS)
+        self.create_subscription(CorridorProtocol, '/fleet/corridor_protocol', self.on_corridor, PROTOCOL_QOS)
         self.create_subscription(Pose2D, 'docking/target', lambda msg: setattr(self, 'docking_target', msg), FLEET_STATE_QOS)
         self.create_timer(1.0, self.plan)
 
@@ -75,9 +78,50 @@ class WhcaPlannerNode(Node):
                 default_origin=(self.origin_x, self.origin_y))
             self.lane_waypoints = lane_waypoint_overrides(
                 narrow_lanes(), (self.origin_x, self.origin_y), self.resolution)
-            self.get_logger().info(f'Loaded map in WhcaPlannerNode: {self.width}x{self.height}, {len(self.static_blocked)} blocked cells')
+            raw_corridors = data.get('mutex_resources', data.get('corridors', {}))
+            for name, resource in raw_corridors.items():
+                cells = resource.get('cells', []) if isinstance(resource, dict) else resource
+                cell_set = set()
+                if len(cells) == 2 and isinstance(cells[0], list) and isinstance(cells[1], list):
+                    x1, y1 = cells[0]; x2, y2 = cells[1]
+                    for x in range(min(x1, x2), max(x1, x2) + 1):
+                        for y in range(min(y1, y2), max(y1, y2) + 1):
+                            cell_set.add((x, y))
+                else:
+                    for c in cells: cell_set.add(tuple(c))
+                self.corridors[name] = cell_set
+            if data.get('generate_narrow_lane_mutex_resources', False):
+                zones = data.get('shelf_layout', {}).get('y_zones', {})
+                for zone, rows in zones.items():
+                    for side, x_start, x_end in (('WEST', -7.5, -21.5), ('EAST', 7.5, 21.5)):
+                        for index, (lower, upper) in enumerate(zip(rows, rows[1:]), start=1):
+                            y = (float(lower) + float(upper)) / 2.0
+                            cy = round((y - self.origin_y) / self.resolution)
+                            left = round((min(x_start, x_end) - self.origin_x) / self.resolution)
+                            right = round((max(x_start, x_end) - self.origin_x) / self.resolution)
+                            self.corridors[f'NC-{zone.upper()}-{side}-{index:02d}'] = {
+                                (x, cy) for x in range(left, right + 1)
+                            }
+                for name, y_start, y_end in (
+                    ('NC-MIDDLE-CENTRE', -7.8, 7.8),
+                    ('NC-NORTH-CENTRE', 12.2, 29.0),
+                ):
+                    cx = round((0.0 - self.origin_x) / self.resolution)
+                    lower = round((y_start - self.origin_y) / self.resolution)
+                    upper = round((y_end - self.origin_y) / self.resolution)
+                    self.corridors[name] = {(cx, y) for y in range(lower, upper + 1)}
+            self.get_logger().info(f'Loaded map in WhcaPlannerNode: {self.width}x{self.height}, {len(self.static_blocked)} blocked cells, {len(self.corridors)} corridors')
         except Exception as e:
             self.get_logger().error(f'Failed loading map in WhcaPlannerNode: {e}')
+
+    def on_corridor(self, msg):
+        if msg.fleet_header.robot_id == self.robot_id:
+            return
+        if msg.event == CorridorProtocol.ENTER:
+            self.occupied_corridors[msg.fleet_header.robot_id] = msg.corridor_id
+        elif msg.event in (CorridorProtocol.EXIT, CorridorProtocol.RELEASE, CorridorProtocol.CANCEL):
+            if self.occupied_corridors.get(msg.fleet_header.robot_id) == msg.corridor_id:
+                self.occupied_corridors.pop(msg.fleet_header.robot_id, None)
 
     def on_state(self, msg):
         if msg.fleet_header.robot_id != self.robot_id:
@@ -204,9 +248,13 @@ class WhcaPlannerNode(Node):
         # quantized endpoint beside the station from making
         # the goal topologically unreachable while preserving distant dynamic
         # obstacle avoidance.
+        occupied_corridor_cells = set()
+        for peer_id, corridor_name in self.occupied_corridors.items():
+            occupied_corridor_cells.update(self.corridors.get(corridor_name, set()))
+
         planning_blockages = clear_nearfield_blockages(
-            set(self.blockages), start, goal,
-            clear_goal=True,
+            set(self.blockages) | occupied_corridor_cells, start, goal,
+            clear_goal=False if goal in occupied_corridor_cells else True,
             clearance_cells=1,
         )
 
@@ -247,6 +295,12 @@ class WhcaPlannerNode(Node):
         msg.failure_reason = '' if path else 'no conflict-free route in current WHCA* window'
         msg.cells = [GridCell(x=x, y=y, time_slot=t) for x, y, t in path]
         msg.waypoints = [self.to_pose((x, y)) for x, y, _ in path]
+        if path and (path[-1][0], path[-1][1]) == goal and target is not None:
+            msg.waypoints[-1] = Pose2D(
+                x=float(target.x),
+                y=float(target.y),
+                theta=float(getattr(target, 'theta', 0.0))
+            )
         self.pub.publish(msg)
 
         nav_path = Path()

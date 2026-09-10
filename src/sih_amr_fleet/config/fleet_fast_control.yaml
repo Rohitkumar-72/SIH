@@ -4,6 +4,8 @@
       # 100 Hz is sufficient for the simulated drivetrain and avoids
       # overwhelming DDS with a 1 kHz multi-robot control stream.
       update_rate: 100
+      hold_joints: true
+      position_proportional_gain: 20.0
 
       joint_state_broadcaster:
         type: joint_state_broadcaster/JointStateBroadcaster

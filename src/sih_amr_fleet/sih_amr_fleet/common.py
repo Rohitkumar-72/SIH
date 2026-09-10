@@ -11,7 +11,7 @@ FLEET_STATE_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST, depth=1, reliability=ReliabilityPolicy.RELIABLE,
     durability=DurabilityPolicy.TRANSIENT_LOCAL)
 PROTOCOL_QOS = QoSProfile(
-    history=HistoryPolicy.KEEP_LAST, depth=30, reliability=ReliabilityPolicy.RELIABLE)
+    history=HistoryPolicy.KEEP_LAST, depth=100, reliability=ReliabilityPolicy.RELIABLE)
 TASK_SOURCE_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST, depth=30, reliability=ReliabilityPolicy.RELIABLE,
     durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -47,3 +47,29 @@ def clamp(value, lower, upper):
 
 def distance(a, b):
     return math.hypot(a.x - b.x, a.y - b.y)
+
+
+def wrap_angle(angle):
+    while angle > math.pi:
+        angle -= 2.0 * math.pi
+    while angle < -math.pi:
+        angle += 2.0 * math.pi
+    return angle
+
+
+def quaternion_to_euler(q):
+    x, y, z, w = q.x, q.y, q.z, q.w
+    sinr_cosp = 2.0 * (w * x + y * z)
+    cosr_cosp = 1.0 - 2.0 * (x * x + y * y)
+    roll = math.atan2(sinr_cosp, cosr_cosp)
+
+    sinp = 2.0 * (w * y - z * x)
+    if abs(sinp) >= 1.0:
+        pitch = math.copysign(math.pi / 2.0, sinp)
+    else:
+        pitch = math.asin(sinp)
+
+    siny_cosp = 2.0 * (w * z + x * y)
+    cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
+    yaw = math.atan2(siny_cosp, cosy_cosp)
+    return roll, pitch, yaw

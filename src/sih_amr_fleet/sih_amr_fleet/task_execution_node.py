@@ -15,8 +15,8 @@ class TaskExecutionNode(Node):
     def __init__(self):
         super().__init__('task_execution_node')
         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
-        self.arrival_tolerance_m = self.declare_parameter('arrival_tolerance_m', 0.45).value
-        self.arrival_speed_threshold_mps = self.declare_parameter('arrival_speed_threshold_mps', 0.15).value
+        self.arrival_tolerance_m = self.declare_parameter('arrival_tolerance_m', 0.75).value
+        self.arrival_speed_threshold_mps = self.declare_parameter('arrival_speed_threshold_mps', 0.20).value
 
         self.session_id = new_session_id()
         self.sequence = 0
@@ -27,6 +27,7 @@ class TaskExecutionNode(Node):
         self.wait_until = 0.0
         self.dwell_duration = 0.0
         self.completed_publish_count = 0
+        self.completed_task_ids = set()
         self._received_local_state = False
 
         self.is_low_battery = False
@@ -61,6 +62,8 @@ class TaskExecutionNode(Node):
             self.need_dock_pub.publish(Bool(data=False))
 
     def on_assignment(self, msg):
+        if msg.task.task_id in self.completed_task_ids:
+            return
         if msg.owner_robot_id != self.robot_id or not msg.active:
             if self.current_assignment and not msg.active and msg.task.task_id == self.current_assignment.task.task_id:
                 self.get_logger().info(
@@ -221,6 +224,7 @@ class TaskExecutionNode(Node):
             status.target = task.dropoff
             self.completed_publish_count += 1
             if self.completed_publish_count >= 10:  # Publish completed for 1.0s before resetting
+                self.completed_task_ids.add(task.task_id)
                 self.get_logger().info(
                     f'[{self.robot_id}:TaskExecutor] Decision: RESET executor after publishing completion for task {task.task_id}. '
                     f'Actor=TaskExecutor:{self.robot_id}. Robot is now IDLE and available for next task.'

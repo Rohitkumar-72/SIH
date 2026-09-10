@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import pathlib
 import subprocess
@@ -16,7 +17,10 @@ from sih_amr_interfaces.msg import (
     TaskConsensus, TaskExecutionStatus, TrajectoryIntent
 )
 
-from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, TASK_SOURCE_QOS, now_seconds, stamp_seconds
+from .common import (
+    FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, TASK_SOURCE_QOS,
+    now_seconds, stamp_seconds, quaternion_to_euler, wrap_angle
+)
 
 
 ROSOUT_QOS = QoSProfile(
@@ -49,6 +53,17 @@ class DataCollectionNode(Node):
             'robot_1', 'robot_2', 'robot_3', 'robot_4',
             'robot_5', 'robot_6', 'robot_7', 'robot_8'
         ]).value
+        self.gazebo_ground_truth_poses = {}
+        self.gz_node = None
+        try:
+            from gz.transport13 import Node as GzNode
+            from gz.msgs10.pose_v_pb2 import Pose_V
+            self.gz_node = GzNode()
+            self.gz_node.subscribe(Pose_V, '/world/default/pose/info', self.on_gz_poses)
+            self.gz_node.subscribe(Pose_V, '/world/default/dynamic_pose/info', self.on_gz_poses)
+            self.get_logger().info('DataCollectionNode subscribed to Gazebo ground truth pose stream')
+        except Exception as exc:
+            self.get_logger().warning(f'Could not subscribe to Gazebo ground truth transport: {exc}')
 
         try:
             path = pathlib.Path(self.output_file)
@@ -286,6 +301,40 @@ class DataCollectionNode(Node):
             'stamp_s': float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec) * 1e-9,
         }
 
+    def on_gz_poses(self, msg):
+        for p in msg.pose:
+            name = p.name
+            matched_robot = None
+            for rid in self.robot_ids:
+                if name in (rid, f"{rid}/turtlebot4"):
+                    matched_robot = rid
+                    break
+            if matched_robot:
+                roll, pitch, yaw = quaternion_to_euler(p.orientation)
+                self.gazebo_ground_truth_poses[matched_robot] = {
+                    'x': round(float(p.position.x), 4),
+                    'y': round(float(p.position.y), 4),
+                    'z': round(float(p.position.z), 4),
+                    'roll': round(float(roll), 4),
+                    'pitch': round(float(pitch), 4),
+                    'yaw': round(float(yaw), 4),
+                    'tilt': round(float(math.hypot(roll, pitch)), 4),
+                }
+
+    def compute_pose_error(self, map_pose, gz_pose):
+        if gz_pose is None:
+            return None
+        dx = float(map_pose.x) - float(gz_pose['x'])
+        dy = float(map_pose.y) - float(gz_pose['y'])
+        dyaw = wrap_angle(float(map_pose.theta) - float(gz_pose['yaw']))
+        return {
+            'error_xy_m': round(math.hypot(dx, dy), 4),
+            'error_x_m': round(dx, 4),
+            'error_y_m': round(dy, 4),
+            'error_yaw_rad': round(dyaw, 4),
+            'is_tilted': bool(gz_pose.get('tilt', 0.0) > 0.15),
+        }
+
     def write_record(self, record):
         if not self.file_handle:
             return
@@ -311,6 +360,8 @@ class DataCollectionNode(Node):
             if now - last_t < 1.0:
                 return
             self.last_state_log_time[robot_id] = now
+        gz_gt = self.gazebo_ground_truth_poses.get(robot_id)
+        pose_err = self.compute_pose_error(msg.pose, gz_gt)
         self.write_record({
             'event_type': 'robot_state',
             'robot_id': robot_id,
@@ -325,7 +376,9 @@ class DataCollectionNode(Node):
             'map_pose': {'x': float(msg.pose.x), 'y': float(msg.pose.y), 'theta': float(msg.pose.theta),
                          'cell': [round((msg.pose.x-self.map_origin_x)/self.map_resolution_m), round((msg.pose.y-self.map_origin_y)/self.map_resolution_m)]},
             'map_twist': {'vx': float(msg.twist.linear.x), 'vy': float(msg.twist.linear.y), 'wz': float(msg.twist.angular.z)},
-            'gazebo_odom': None if self.lean_telemetry else self.raw_odom.get(robot_id),
+            'gazebo_ground_truth': gz_gt,
+            'pose_error': pose_err,
+            'gazebo_odom': self.raw_odom.get(robot_id),
             'localization_valid': msg.localization_valid,
         })
 

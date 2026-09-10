@@ -126,9 +126,10 @@ def generate_launch_description():
              parameters=[{
                  'use_sim_time': True,
                  'expected_robot_ids': expected_ids,
-                 'max_active_tasks': len(expected_ids) * 3,
-                 'min_interval_s': 0.5,
-                 'max_interval_s': 1.5,
+                 'max_active_tasks': len(expected_ids) * 2,
+                 'min_interval_s': 0.8,
+                 'max_interval_s': 2.0,
+                 'task_ttl_s': 1800.0,
                  'seed': random_seed_value
              }], condition=IfCondition(random_tasks), output='screen'),
         Node(package='sih_amr_fleet', executable='data_collection_node', name='data_collection_node',

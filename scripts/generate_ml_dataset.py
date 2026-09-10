@@ -1,253 +1,355 @@
 #!/usr/bin/env python3
-"""Generate Tabular ML Datasets matching Master Data Collection Architecture.pdf.
+"""Generate Unified Tabular ML Dataset for Multi-AMR Warehouse Fleet Congestion and ETA Modeling.
 
-Extracts:
-1. Main ETA Regression Dataset CSV
-2. Full multi-table dataset directory matching Master Data Collection Architecture.pdf:
-   - task_log.csv
-   - robot_state.csv
-   - corridor_log.csv
-   - reservation_log.csv
-   - congestion_log.csv
-   - navigation_log.csv
-   - battery_log.csv
-   - safety_log.csv
-   - benchmark.csv
+Extracts the definitive 22-column ML dataset incorporating all routing, spatial congestion,
+reservation, queue, velocity, stop time, and dwell metrics:
+ 1. run_id
+ 2. task_id
+ 3. robot_id
+ 4. start_zone
+ 5. goal_zone
+ 6. static_path_length_m
+ 7. turn_count
+ 8. junction_crossings_count
+ 9. nominal_speed_mps
+10. fleet_size
+11. candidate_corridor_count
+12. mean_nearby_robot_count
+13. avg_nearby_robot_speed_mps
+14. max_corridor_queue_length
+15. reservation_count
+16. corridor_occupancy_ratio
+17. active_blockage_count
+18. waiting_time_s
+19. total_stop_time_s
+20. mean_peer_freshness_ms
+21. task_load_count
+22. actual_travel_time_s (Target)
 """
 
 import argparse
 import csv
+import glob
 import json
 import math
 import os
 import pathlib
 import sys
+from collections import defaultdict
 
 
-def parse_telemetry_to_dataset(jsonl_paths, output_csv_path, dataset_dir=None):
-    task_rows = []
-    robot_state_rows = []
-    task_log_rows = []
-    corridor_rows = []
-    reservation_rows = []
-    battery_rows = []
-    safety_rows = []
-    benchmark_rows = []
+def compute_topological_distance(px, py, dx, dy):
+    """Compute true warehouse topological path distance through aisle egress and main transit lanes."""
+    start_zone = "South" if py < 0 else "North"
+    goal_zone = "South" if dy < 0 else "North"
 
-    for path in jsonl_paths:
-        p = pathlib.Path(path)
+    if start_zone == goal_zone:
+        aisle_egress_y = -20.0 if start_zone == "South" else 20.0
+        dist = abs(py - aisle_egress_y) + abs(dx - px) + abs(dy - aisle_egress_y)
+        turns = 2
+        junctions = 0 if abs(dx - px) < 10.0 else 1
+    else:
+        egress_y1 = -20.0 if start_zone == "South" else 20.0
+        ingress_y2 = -20.0 if goal_zone == "South" else 20.0
+        dist = abs(py - egress_y1) + abs(dx - px) + abs(egress_y1 - ingress_y2) + abs(dy - ingress_y2)
+        turns = 4
+        junctions = 2
+
+    return max(round(dist, 2), round(math.hypot(dx - px, dy - py) * 1.1, 2)), turns, junctions
+
+
+def parse_telemetry_to_dataset(jsonl_paths, output_csv_path):
+    all_dataset_rows = []
+    total_files_processed = 0
+    total_runs_processed = 0
+
+    for path_str in jsonl_paths:
+        p = pathlib.Path(path_str)
         if not p.exists():
             continue
 
         run_manifest = {}
-        run_summary = {}
         task_announcements = {}
         task_assignments = {}
+        task_routes = {}
         task_starts = {}
         task_completions = {}
-        blockage_events = []
-        corridor_events = []
-        reservation_events = []
-        safety_events = []
-        battery_events = []
-        robot_states = []
+        task_dwells = {}  # tid -> (pickup_wait_s, dropoff_wait_s)
+        robot_state_by_time = defaultdict(list)  # t_bucket -> list of (robot_id, x, y, theta, vx, vy)
+        robot_state_timestamps = defaultdict(list)  # robot_id -> list of timestamps
+        robot_states_timeline = defaultdict(list)  # robot_id -> list of (t, x, y, speed)
+        blockage_intervals = []  # list of (t_start, t_valid_until)
+        corridor_events = []  # list of (t_event, corridor_id, robot_id, event_type)
+        all_robots_seen = set()
 
-        with open(p, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    record = json.loads(line)
-                except Exception:
-                    continue
+        try:
+            with open(p, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        record = json.loads(line)
+                    except Exception:
+                        continue
 
-                event_type = record.get('event_type')
+                    event_type = record.get('event_type')
+                    t = record.get('logged_at', record.get('wall_logged_at', 0.0))
 
-                if event_type == 'run_manifest':
-                    run_manifest = record
-                elif event_type == 'run_summary':
-                    run_summary = record
-                elif event_type == 'task_announcement':
-                    task_announcements[record['task_id']] = record
-                elif event_type == 'task_assignment':
-                    task_assignments[record['task_id']] = record
-                elif event_type == 'task_execution':
-                    phase = record.get('phase')
-                    task_id = record.get('task_id')
-                    logged_at = record.get('logged_at', record.get('wall_logged_at', 0.0))
+                    if event_type == 'run_manifest':
+                        run_manifest = record
+                    elif event_type == 'task_announcement':
+                        tid = record.get('task_id')
+                        if tid:
+                            task_announcements[tid] = record
+                            p_wait = record.get('pickup_wait_s', 2.0)
+                            d_wait = record.get('dropoff_wait_s', 2.0)
+                            task_dwells[tid] = (float(p_wait), float(d_wait))
+                    elif event_type == 'task_assignment':
+                        tid = record.get('task_id')
+                        if tid:
+                            task_assignments[tid] = record
+                    elif event_type == 'planned_route':
+                        tid = record.get('task_id')
+                        if tid and 'waypoints' in record:
+                            task_routes[tid] = record['waypoints']
+                    elif event_type == 'task_execution':
+                        phase = record.get('phase')
+                        tid = record.get('task_id')
+                        rid = record.get('robot_id')
+                        if rid:
+                            all_robots_seen.add(rid)
 
-                    if phase == 0:  # EN_ROUTE_PICKUP
-                        task_starts.setdefault(task_id, logged_at)
-                    elif phase in (3, 4):  # DROPOFF_WAIT or COMPLETED
-                        task_completions[task_id] = logged_at
-                elif event_type == 'robot_state':
-                    robot_states.append(record)
-                elif event_type == 'blockage_observation':
-                    blockage_events.append(record)
-                elif event_type == 'corridor_protocol':
-                    corridor_events.append(record)
-                elif event_type == 'safety_state':
-                    safety_events.append(record)
-                elif event_type == 'health':
-                    battery_events.append(record)
+                        if phase == 0:  # EN_ROUTE_PICKUP
+                            task_starts.setdefault(tid, (t, rid))
+                        elif phase in (3, 4):  # DROPOFF_WAIT or COMPLETED
+                            task_completions[tid] = (t, rid)
+                    elif event_type == 'robot_state':
+                        rid = record.get('robot_id')
+                        if rid:
+                            all_robots_seen.add(rid)
+                            rx, ry = record.get('x', 0.0), record.get('y', 0.0)
+                            vx, vy = record.get('vx', 0.0), record.get('vy', 0.0)
+                            spd = math.hypot(vx, vy)
+                            robot_state_timestamps[rid].append(t)
+                            robot_states_timeline[rid].append((t, rx, ry, spd))
+                            t_bucket = round(t * 2) / 2.0  # 0.5s resolution bucket
+                            robot_state_by_time[t_bucket].append((rid, rx, ry, spd))
+                    elif event_type == 'blockage_observation':
+                        valid_until = record.get('valid_until_s', t + 25.0)
+                        blockage_intervals.append((t, valid_until))
+                    elif event_type == 'corridor_protocol':
+                        cid = record.get('corridor_id', '')
+                        rid = record.get('robot_id', '')
+                        ev = record.get('event', 0)
+                        corridor_events.append((t, cid, rid, ev))
+        except Exception as e:
+            print(f"Warning: error reading {p}: {e}")
+            continue
 
+        total_files_processed += 1
         run_id = run_manifest.get('run_id', p.parent.name)
+        if run_id.startswith('desktop_run_') or run_id.startswith('laptop_run_') or run_id.startswith('run_01_'):
+            run_id = p.parent.name
 
-        # 1. Generate Task ETA Regression Rows & task_log.csv
-        for task_id, t_start in task_starts.items():
-            if task_id not in task_completions:
+        nominal_speed = float(run_manifest.get('speed_limits', {}).get('tracking_speed_mps', 4.0))
+        fleet_size = int(run_manifest.get('robot_count', len(all_robots_seen) or 8))
+
+        # Match completed tasks
+        completed_tasks_in_run = []
+        for tid, (t_start, start_robot) in task_starts.items():
+            if tid not in task_completions:
                 continue
-            t_end = task_completions[task_id]
-            actual_duration = max(1.0, t_end - t_start)
+            t_end, end_robot = task_completions[tid]
+            if t_end <= t_start:
+                continue
+            duration = max(1.0, t_end - t_start)
+            completed_tasks_in_run.append((tid, t_start, t_end, duration, end_robot or start_robot))
 
-            ann = task_announcements.get(task_id, {})
-            assign = task_assignments.get(task_id, {})
-            robot_id = assign.get('robot_id', ann.get('source_robot_id', 'robot_1'))
+        if not completed_tasks_in_run:
+            continue
 
-            px, py = ann.get('pickup_x', 0.0), ann.get('pickup_y', 0.0)
-            dx, dy = ann.get('dropoff_x', 0.0), ann.get('dropoff_y', 0.0)
+        total_runs_processed += 1
 
-            path_length = math.hypot(dx - px, dy - py) * 1.35
-            start_zone = "South" if py < 0 else "North"
-            goal_zone = "South" if dy < 0 else "North"
+        # Extract features for each completed task
+        for tid, t_start, t_end, duration, assigned_robot in completed_tasks_in_run:
+            ann = task_announcements.get(tid, {})
+            assign = task_assignments.get(tid, {})
+            robot_id = assigned_robot or assign.get('robot_id', ann.get('source_robot_id', 'robot_1'))
 
-            task_rows.append({
+            px, py = ann.get('pickup_x', 0.0), ann.get('pickup_y', -20.0)
+            dx, dy = ann.get('dropoff_x', 0.0), ann.get('dropoff_y', 20.0)
+
+            start_zone = "South" if py < -5.0 else ("North" if py > 5.0 else "Central")
+            goal_zone = "South" if dy < -5.0 else ("North" if dy > 5.0 else "Central")
+
+            # 1. Static Path Length & Turns
+            if tid in task_routes and len(task_routes[tid]) >= 2:
+                wps = task_routes[tid]
+                path_len = sum(
+                    math.hypot(wps[i+1][0] - wps[i][0], wps[i+1][1] - wps[i][1])
+                    for i in range(len(wps) - 1)
+                )
+                path_len = round(path_len, 2)
+                turns = 0
+                for i in range(len(wps) - 2):
+                    dx1, dy1 = wps[i+1][0] - wps[i][0], wps[i+1][1] - wps[i][1]
+                    dx2, dy2 = wps[i+2][0] - wps[i+1][0], wps[i+2][1] - wps[i+1][1]
+                    angle1 = math.atan2(dy1, dx1)
+                    angle2 = math.atan2(dy2, dx2)
+                    diff = abs((angle2 - angle1 + math.pi) % (2 * math.pi) - math.pi)
+                    if diff > 0.6:  # > 35 degrees
+                        turns += 1
+                junction_crossings = 2 if start_zone != goal_zone else (1 if abs(dx - px) > 10.0 else 0)
+            else:
+                path_len, turns, junction_crossings = compute_topological_distance(px, py, dx, dy)
+
+            # 2. Candidate Corridor Count
+            candidate_corridors = 2 if start_zone != goal_zone else 1
+
+            # 3. Spatial Density & Nearby Robot Speed
+            nearby_counts = []
+            nearby_speeds = []
+            start_b = round(t_start * 2) / 2.0
+            end_b = round(t_end * 2) / 2.0
+            cur_b = start_b
+            while cur_b <= end_b:
+                states = robot_state_by_time.get(cur_b, [])
+                this_pos = next(((x, y) for (rid, x, y, spd) in states if rid == robot_id), None)
+                if this_pos:
+                    tx, ty = this_pos
+                    for (rid, ox, oy, ospd) in states:
+                        if rid != robot_id and math.hypot(ox - tx, oy - ty) <= 4.0:
+                            nearby_speeds.append(ospd)
+                    cnt = sum(1 for (rid, ox, oy, ospd) in states if rid != robot_id and math.hypot(ox - tx, oy - ty) <= 3.5)
+                    nearby_counts.append(cnt)
+                cur_b += 1.0
+
+            mean_nearby = round(sum(nearby_counts) / max(1, len(nearby_counts)), 2) if nearby_counts else 0.0
+            avg_nearby_spd = round(sum(nearby_speeds) / max(1, len(nearby_speeds)), 2) if nearby_speeds else round(nominal_speed * 0.4, 2)
+
+            # 4. Corridor Reservations, Queue & Occupancy Ratio
+            res_events_in_window = [
+                (t_ev, cid, r_ev, ev) for (t_ev, cid, r_ev, ev) in corridor_events
+                if t_start - 2.0 <= t_ev <= t_end + 2.0
+            ]
+            reservation_count = len(res_events_in_window)
+            
+            peer_res = [cid for (t_ev, cid, r_ev, ev) in res_events_in_window if r_ev != robot_id]
+            max_queue = max(1, len(set(peer_res)))
+
+            # Corridor occupancy ratio: fraction of time other robots reserved candidate corridors
+            candidate_res_events = [t_ev for (t_ev, cid, r_ev, ev) in res_events_in_window if r_ev != robot_id]
+            corridor_occupancy_ratio = min(1.0, round(len(candidate_res_events) * 2.0 / max(1.0, duration), 3))
+
+            # 5. Stop Time & Waiting Time
+            my_timeline = [
+                (ts, spd) for (ts, rx, ry, spd) in robot_states_timeline.get(robot_id, [])
+                if t_start <= ts <= t_end
+            ]
+            total_stop_time = 0.0
+            if len(my_timeline) >= 2:
+                for idx in range(len(my_timeline) - 1):
+                    dt = my_timeline[idx+1][0] - my_timeline[idx][0]
+                    if my_timeline[idx][1] < 0.05:
+                        total_stop_time += dt
+            else:
+                total_stop_time = max(0.0, duration - (path_len / max(0.5, nominal_speed)))
+
+            total_stop_time = round(min(duration, total_stop_time), 2)
+            p_dwell, d_dwell = task_dwells.get(tid, (1.0, 1.0))
+            waiting_time = round(min(duration, total_stop_time + (p_dwell + d_dwell)), 2)
+
+            # 6. Active Dynamic Blockage Count in window
+            active_blockages = sum(
+                1 for (t_obs, t_valid) in blockage_intervals
+                if max(t_start, t_obs) <= min(t_end, t_valid)
+            )
+
+            # 7. Mean Peer Telemetry Freshness (ms)
+            intervals_ms = []
+            for other_rid, t_stamps in robot_state_timestamps.items():
+                if other_rid == robot_id:
+                    continue
+                window_stamps = [ts for ts in t_stamps if t_start <= ts <= t_end]
+                if len(window_stamps) >= 2:
+                    diffs = [(window_stamps[i+1] - window_stamps[i]) * 1000.0 for i in range(len(window_stamps) - 1)]
+                    intervals_ms.extend(diffs)
+
+            mean_freshness = round(sum(intervals_ms) / len(intervals_ms), 1) if intervals_ms else 100.0
+            mean_freshness = min(500.0, max(50.0, mean_freshness))
+
+            # 8. Concurrent Task Load Count
+            concurrent_tasks = sum(
+                1 for (other_tid, (ot_start, _)) in task_starts.items()
+                if other_tid != tid and other_tid in task_completions
+                and not (task_completions[other_tid][0] < t_start or ot_start > t_end)
+            )
+
+            all_dataset_rows.append({
                 'run_id': run_id,
-                'task_id': task_id,
+                'task_id': tid,
                 'robot_id': robot_id,
                 'start_zone': start_zone,
                 'goal_zone': goal_zone,
-                'static_path_length_m': round(path_length, 2),
-                'candidate_corridor_count': 2 if start_zone != goal_zone else 1,
-                'mean_nearby_robot_count': 1.5,
-                'max_corridor_queue_length': 1,
-                'active_blockage_count': len(blockage_events),
-                'mean_peer_freshness_ms': 120.0,
-                'task_load_count': len(task_announcements),
-                'actual_travel_time_s': round(actual_duration, 2)
+                'static_path_length_m': path_len,
+                'turn_count': turns,
+                'junction_crossings_count': junction_crossings,
+                'nominal_speed_mps': nominal_speed,
+                'fleet_size': fleet_size,
+                'candidate_corridor_count': candidate_corridors,
+                'mean_nearby_robot_count': mean_nearby,
+                'avg_nearby_robot_speed_mps': avg_nearby_spd,
+                'max_corridor_queue_length': max_queue,
+                'reservation_count': reservation_count,
+                'corridor_occupancy_ratio': corridor_occupancy_ratio,
+                'active_blockage_count': active_blockages,
+                'waiting_time_s': waiting_time,
+                'total_stop_time_s': total_stop_time,
+                'mean_peer_freshness_ms': mean_freshness,
+                'task_load_count': concurrent_tasks,
+                'actual_travel_time_s': round(duration, 2)
             })
 
-            task_log_rows.append({
-                'task_id': task_id,
-                'run_id': run_id,
-                'pickup_location': f"({px:.2f}, {py:.2f})",
-                'drop_location': f"({dx:.2f}, {dy:.2f})",
-                'priority': 100,
-                'creation_time': ann.get('logged_at', 0.0),
-                'assignment_time': assign.get('logged_at', t_start),
-                'start_time': t_start,
-                'completion_time': t_end,
-                'assigned_robot': robot_id,
-                'travel_distance': round(path_length, 2),
-                'travel_time': round(actual_duration, 2),
-                'waiting_time': 6.0,
-                'success': True,
-                'failure_reason': 'None'
-            })
-
-        # 2. Benchmark row per simulation
-        if run_manifest or run_summary:
-            benchmark_rows.append({
-                'run_id': run_id,
-                'robots': run_manifest.get('robot_count', 8),
-                'tasks': len(task_completions),
-                'makespan': run_summary.get('makespan_s', 0.0),
-                'average_wait': 3.0,
-                'throughput': run_summary.get('throughput_tasks_per_hour', 0.0),
-                'collisions': 0,
-                'deadlocks': 0,
-                'energy': 'Normal',
-                'success_rate': 100.0
-            })
-
-        # 3. Robot State downsampled
-        for rs in robot_states[::5]:
-            robot_state_rows.append({
-                'timestamp': rs.get('logged_at', 0.0),
-                'run_id': run_id,
-                'robot_id': rs.get('robot_id', ''),
-                'x': round(rs.get('x', 0.0), 3),
-                'y': round(rs.get('y', 0.0), 3),
-                'yaw': round(rs.get('theta', 0.0), 3),
-                'linear_velocity': round(rs.get('vx', 0.0), 3),
-                'angular_velocity': round(rs.get('wz', 0.0), 3),
-                'battery': 100.0,
-                'current_task': '',
-                'robot_state': 'MOVING' if abs(rs.get('vx', 0.0)) > 0.05 else 'IDLE',
-                'goal_x': 0.0,
-                'goal_y': 0.0,
-                'remaining_distance': 0.0,
-                'planner_state': 'EXECUTING',
-                'corridor_id': '',
-                'junction_id': '',
-                'queue_length': 0,
-                'nearby_robot_count': 1
-            })
-
-        # 4. Safety events
-        for se in safety_events:
-            safety_rows.append({
-                'timestamp': se.get('logged_at', 0.0),
-                'robot': se.get('robot_id', ''),
-                'event': f"SAFETY_LEVEL_{se.get('level', 0)}",
-                'distance': se.get('nearest_obstacle_m', 0.0),
-                'speed': 0.0,
-                'reaction_time': 0.1,
-                'stop_time': se.get('logged_at', 0.0)
-            })
-
-        # 5. Battery events
-        for be in battery_events:
-            battery_rows.append({
-                'timestamp': be.get('logged_at', 0.0),
-                'robot': be.get('robot_id', ''),
-                'battery': be.get('battery_percent', 100.0),
-                'current': 1.2,
-                'voltage': 14.8,
-                'charging': be.get('comm_state', 0) == 1,
-                'energy_used': round(100.0 - be.get('battery_percent', 100.0), 2)
-            })
-
-    # Export main ETA Regression Dataset CSV
-    if task_rows:
-        headers = list(task_rows[0].keys())
-        with open(output_csv_path, 'w', newline='', encoding='utf-8') as f:
+    # Write output master dataset CSV
+    if all_dataset_rows:
+        headers = list(all_dataset_rows[0].keys())
+        out_p = pathlib.Path(output_csv_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_p, 'w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
-            writer.writerows(task_rows)
-        print(f"Successfully exported {len(task_rows)} task examples to {output_csv_path}")
-
-    # Export full multi-table dataset directory if requested
-    if dataset_dir:
-        out_dir = pathlib.Path(dataset_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        
-        tables = [
-            ('task_log.csv', task_log_rows),
-            ('robot_state.csv', robot_state_rows),
-            ('safety_log.csv', safety_rows),
-            ('battery_log.csv', battery_rows),
-            ('benchmark.csv', benchmark_rows),
-        ]
-        for fname, data in tables:
-            if data:
-                fpath = out_dir / fname
-                with open(fpath, 'w', newline='', encoding='utf-8') as f:
-                    w = csv.DictWriter(f, fieldnames=list(data[0].keys()))
-                    w.writeheader()
-                    w.writerows(data)
-                print(f"Exported {len(data)} rows to {fpath}")
+            writer.writerows(all_dataset_rows)
+        print(f"\n========================================================")
+        print(f"SUCCESS: Compiled {len(all_dataset_rows)} completed task rows from {total_runs_processed} runs ({total_files_processed} files)")
+        print(f"Destination: {output_csv_path}")
+        print(f"Columns ({len(headers)}): {', '.join(headers)}")
+        print(f"========================================================")
+    else:
+        print("Warning: No completed tasks found in provided telemetry files.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate ML dataset CSVs matching Master Data Collection Architecture.')
-    parser.add_argument('telemetry_files', nargs='+', help='Path to one or more fleet_telemetry.jsonl files.')
-    parser.add_argument('--output', '-o', default='all_collected_dataset.csv', help='Main ETA dataset CSV output path.')
-    parser.add_argument('--dataset-dir', default=None, help='Directory to export full multi-table CSVs (task_log, robot_state, benchmark, etc.)')
+    parser = argparse.ArgumentParser(description='Generate Unified 22-Column Tabular ML Dataset.')
+    parser.add_argument('telemetry_files', nargs='*', default=[], help='Paths or glob patterns to fleet_telemetry.jsonl files.')
+    parser.add_argument('--output', '-o', default='all_collected_dataset.csv', help='Output master ML CSV path.')
     args = parser.parse_args()
 
-    parse_telemetry_to_dataset(args.telemetry_files, args.output, args.dataset_dir)
+    files = []
+    if args.telemetry_files:
+        for pattern in args.telemetry_files:
+            matches = glob.glob(pattern, recursive=True) if '*' in pattern else [pattern]
+            files.extend(matches)
+    else:
+        files = sorted(pathlib.Path('/home/rtsws/amr_ws/log').rglob('fleet_telemetry.jsonl'))
+        files = [str(f) for f in files]
+
+    if not files:
+        print("No fleet_telemetry.jsonl files found.")
+        sys.exit(1)
+
+    print(f"Processing {len(files)} telemetry files...")
+    parse_telemetry_to_dataset(files, args.output)
 
 
 if __name__ == '__main__':
