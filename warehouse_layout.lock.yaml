@@ -26,25 +26,33 @@ warehouse:
   dimensions_m: {x: 45.0, y: 60.0, wall_height: 6.0}
   floor_object_id: warehouse_floor
 robots:
-  metadata_source: {spawn_pose_file: ~/.config/sih_amr_poses.env, launch_variable_prefix: ROBOT_N_, launcher: scripts/launch_four_amrs.sh}
+  metadata_source: {spawn_pose_file: ~/.config/sih_amr_poses.env, launch_variable_prefix: ROBOT_N_, launcher: scripts/launch_fleet_amrs.sh}
   common_model_metadata: {model: turtlebot4_lite, physical_body_dimensions_m: {x: 0.342, y: 0.339, z: 0.286}, planning_collision_radius_m: 0.35, planning_collision_diameter_m: 0.70, lidar_dimensions_m: {x: 0.071, y: 0.100, z: 0.060}, camera_dimensions_m: {x: 0.0225, y: 0.097, z: 0.030}, controller_max_speed_mps: 6.0, speed_scope: gazebo_only}
   instances:
-    - {id: R1, name: robot_1, namespace: /robot_1, spawn_charging_pad_id: charging_pad_1, spawn_env: {x: ROBOT_1_X, y: ROBOT_1_Y, yaw: ROBOT_1_YAW}, spawn: {x: -3.6, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 50.0}, payload_capacity_kg: null}
-    - {id: R2, name: robot_2, namespace: /robot_2, spawn_charging_pad_id: charging_pad_2, spawn_env: {x: ROBOT_2_X, y: ROBOT_2_Y, yaw: ROBOT_2_YAW}, spawn: {x: -1.2, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 50.0}, payload_capacity_kg: null}
-    - {id: R3, name: robot_3, namespace: /robot_3, spawn_charging_pad_id: charging_pad_3, spawn_env: {x: ROBOT_3_X, y: ROBOT_3_Y, yaw: ROBOT_3_YAW}, spawn: {x: 1.2, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 50.0}, payload_capacity_kg: null}
-    - {id: R4, name: robot_4, namespace: /robot_4, spawn_charging_pad_id: charging_pad_4, spawn_env: {x: ROBOT_4_X, y: ROBOT_4_Y, yaw: ROBOT_4_YAW}, spawn: {x: 3.6, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 50.0}, payload_capacity_kg: null}
+    - {id: R1, name: robot_1, namespace: /robot_1, spawn_charging_pad_id: charging_pad_1, spawn_env: {x: ROBOT_1_X, y: ROBOT_1_Y, yaw: ROBOT_1_YAW}, spawn: {x: -5.25, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
+    - {id: R2, name: robot_2, namespace: /robot_2, spawn_charging_pad_id: charging_pad_2, spawn_env: {x: ROBOT_2_X, y: ROBOT_2_Y, yaw: ROBOT_2_YAW}, spawn: {x: -3.75, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
+    - {id: R3, name: robot_3, namespace: /robot_3, spawn_charging_pad_id: charging_pad_3, spawn_env: {x: ROBOT_3_X, y: ROBOT_3_Y, yaw: ROBOT_3_YAW}, spawn: {x: -2.25, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
+    - {id: R4, name: robot_4, namespace: /robot_4, spawn_charging_pad_id: charging_pad_4, spawn_env: {x: ROBOT_4_X, y: ROBOT_4_Y, yaw: ROBOT_4_YAW}, spawn: {x: -0.75, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
+    - {id: R5, name: robot_5, namespace: /robot_5, spawn_charging_pad_id: charging_pad_5, spawn_env: {x: ROBOT_5_X, y: ROBOT_5_Y, yaw: ROBOT_5_YAW}, spawn: {x: 0.75, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
+    - {id: R6, name: robot_6, namespace: /robot_6, spawn_charging_pad_id: charging_pad_6, spawn_env: {x: ROBOT_6_X, y: ROBOT_6_Y, yaw: ROBOT_6_YAW}, spawn: {x: 2.25, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
+    - {id: R7, name: robot_7, namespace: /robot_7, spawn_charging_pad_id: charging_pad_7, spawn_env: {x: ROBOT_7_X, y: ROBOT_7_Y, yaw: ROBOT_7_YAW}, spawn: {x: 3.75, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
+    - {id: R8, name: robot_8, namespace: /robot_8, spawn_charging_pad_id: charging_pad_8, spawn_env: {x: ROBOT_8_X, y: ROBOT_8_Y, yaw: ROBOT_8_YAW}, spawn: {x: 5.25, y: -29.55, z: 0.05, yaw: -1.5708}, battery: {capacity_percent: 100.0, initial_level_percent: 100.0}, payload_capacity_kg: null}
 charging_station:
   id: CH-01
-  charging_pad_ids: [charging_pad_1, charging_pad_2, charging_pad_3, charging_pad_4]
-  chargers: 4
+  charging_pad_ids: [charging_pad_1, charging_pad_2, charging_pad_3, charging_pad_4, charging_pad_5, charging_pad_6, charging_pad_7, charging_pad_8]
+  chargers: 8
   queue_capacity: 0
   charging_rate_percent_per_minute: 10.0
   location: {wall: south, min_x: -6.0, max_x: 6.0, min_y: -30.0, max_y: -29.1}
   map_anchors:
-    - {id: charging_pad_1, pose: {x: -3.6, y: -29.55, yaw: -1.5708}, cell: [38, 1]}
-    - {id: charging_pad_2, pose: {x: -1.2, y: -29.55, yaw: -1.5708}, cell: [43, 1]}
-    - {id: charging_pad_3, pose: {x: 1.2, y: -29.55, yaw: -1.5708}, cell: [47, 1]}
-    - {id: charging_pad_4, pose: {x: 3.6, y: -29.55, yaw: -1.5708}, cell: [52, 1]}
+    - {id: charging_pad_1, pose: {x: -5.25, y: -29.55, yaw: -1.5708}, cell: [35, 1]}
+    - {id: charging_pad_2, pose: {x: -3.75, y: -29.55, yaw: -1.5708}, cell: [38, 1]}
+    - {id: charging_pad_3, pose: {x: -2.25, y: -29.55, yaw: -1.5708}, cell: [41, 1]}
+    - {id: charging_pad_4, pose: {x: -0.75, y: -29.55, yaw: -1.5708}, cell: [44, 1]}
+    - {id: charging_pad_5, pose: {x: 0.75, y: -29.55, yaw: -1.5708}, cell: [47, 1]}
+    - {id: charging_pad_6, pose: {x: 2.25, y: -29.55, yaw: -1.5708}, cell: [50, 1]}
+    - {id: charging_pad_7, pose: {x: 3.75, y: -29.55, yaw: -1.5708}, cell: [53, 1]}
+    - {id: charging_pad_8, pose: {x: 5.25, y: -29.55, yaw: -1.5708}, cell: [56, 1]}
 corridor_id_system:
   main_prefix: MC
   narrow_prefix: NC
