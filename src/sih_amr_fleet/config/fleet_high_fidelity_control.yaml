@@ -1,10 +1,13 @@
 /**:
   controller_manager:
     ros__parameters:
-      # 50 Hz matches Gazebo physics max_step_size (0.02s = 50 Hz),
-      # satisfying the invariant controller_update_rate_hz <= 1 / max_step_size_s
-      # without adding CPU load on 12-core host.
-      update_rate: 50
+      # OPTIONAL HIGH-FIDELITY PROFILE (100 Hz controller update rate).
+      # INVARIANT REQUIREMENT: Must be paired with a world configured with
+      # max_step_size <= 0.01s (physics frequency >= 100 Hz).
+      # WARNING: This approximately doubles physics step calculations per simulated
+      # second and is expected to require substantially more CPU on the 12-core host.
+      # Explicit opt-in profile for user benchmarking only.
+      update_rate: 100
       hold_joints: true
       position_proportional_gain: 20.0
 
@@ -32,17 +35,11 @@
       open_loop: false
       enable_odom_tf: true
       cmd_vel_timeout: 0.5
-      # The project-owned twist_stamper publishes TwistStamped at
-      # ~/cmd_vel.  The unstamped mode instead listens on cmd_vel_unstamped
-      # and leaves the controller command contract disconnected.
       use_stamped_vel: true
       preserve_turning_radius: true
-      # These high-rate diagnostics are unused by the fleet.  Suppressing
-      # them reduces four-robot DDS pressure without affecting odometry.
       publish_cmd: false
       publish_wheel_data: false
 
-      # Gazebo-only baseline limits.  Never use this profile on physical AMRs.
       linear.x.has_velocity_limits: true
       linear.x.has_acceleration_limits: true
       linear.x.max_velocity: 6.0

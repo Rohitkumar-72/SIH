@@ -10,3 +10,5 @@ uint8 COMPLETED=4
 uint8 FAILED=5
 geometry_msgs/Pose2D target
 float32 wait_time_remaining_s
+uint32 assignment_epoch
+string owner_session_id

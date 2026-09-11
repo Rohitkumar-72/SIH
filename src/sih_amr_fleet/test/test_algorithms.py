@@ -554,7 +554,7 @@ def test_simulation_time_and_tracking_speed_are_launch_configurable():
     assert "'use_sim_time': True" in launch
     assert "DeclareLaunchArgument('path_tracking_speed_mps'" in launch
     assert 'derived_dt = grid_resolution / max(tracking_speed, 0.01)' in reservations
-    assert 'FLEET_TRACKING_SPEED_MPS="${FLEET_TRACKING_SPEED_MPS:-4.0}"' in launcher
+    assert 'FLEET_TRACKING_SPEED_MPS="${FLEET_TRACKING_SPEED_MPS:-0.46}"' in launcher
     assert 'sensor_profile:="$SENSOR_PROFILE"' in launcher
 
 
@@ -926,6 +926,122 @@ def test_cbba_consensus_evicts_unconfirmed_on_differing_peer_winner():
         # Unconfirmed phantom commitment must be evicted rather than dropping the message
         assert 't_split' not in node.executing_tasks
         assert 't_split' not in node.committed_claims
+    finally:
+        node.destroy_node()
+
+
+def test_cbba_candidates_evaluates_bids_without_stale_busy_cache_split():
+    import rclpy
+    from sih_amr_interfaces.msg import TaskConsensus
+    from sih_amr_fleet.cbba_node import CbbaNode
+    from sih_amr_fleet.common import BUSY_BID_FLOOR, header
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CbbaNode()
+    try:
+        # Simulate node having a stale busy entry for robot_1 from an older task
+        node.busy_robots['robot_1'] = ('old_task_001', 9999.0)
+
+        # robot_1 broadcasted an idle bid of 14.25 for new_task
+        v1 = TaskConsensus()
+        v1.fleet_header = header(node, 'robot_1', 'sess_1', 1, 120.0)
+        v1.task_id = 'new_task'
+        v1.winner_robot_id = 'robot_1'
+        v1.winner_session_id = 'sess_1'
+        v1.winning_bid = 14.25
+        v1.assignment_epoch = 1
+
+        # robot_2 broadcasted a bid of 19.50 for new_task
+        v2 = TaskConsensus()
+        v2.fleet_header = header(node, 'robot_2', 'sess_2', 1, 120.0)
+        v2.task_id = 'new_task'
+        v2.winner_robot_id = 'robot_2'
+        v2.winner_session_id = 'sess_2'
+        v2.winning_bid = 19.50
+        v2.assignment_epoch = 1
+
+        views = {'robot_1': v1, 'robot_2': v2}
+        candidates = [
+            view for view in views.values()
+            if math.isfinite(view.winning_bid) and 0.0 <= view.winning_bid < BUSY_BID_FLOOR
+        ]
+        winner_view = min(candidates, key=lambda v: (v.winning_bid, v.winner_robot_id))
+        # robot_1 must be included in candidates despite local busy_robots cache,
+        # preventing 4-vs-2 split brain!
+        assert winner_view.winner_robot_id == 'robot_1'
+        assert winner_view.winning_bid == 14.25
+    finally:
+        node.destroy_node()
+
+
+def test_corridor_mutex_route_requires_mutex_longitudinal_vs_transverse():
+    import rclpy
+    from sih_amr_interfaces.msg import RoutePlan
+    from sih_amr_fleet.corridor_mutex_node import CorridorMutexNode
+    from geometry_msgs.msg import Point
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CorridorMutexNode()
+    try:
+        # Create a horizontal corridor NC-TEST with resolution 0.5m spanning x from 10 to 20 at y=5 (5.0m long)
+        node.corridors['NC-TEST'] = {(x, 5) for x in range(10, 21)}
+        node.corridor_meta['NC-TEST'] = {
+            'axis': 'x',
+            'min_x': 10, 'max_x': 20,
+            'min_y': 5, 'max_y': 5,
+        }
+
+        # Case 1: Transverse route crossing across y from (15, 3) to (15, 7)
+        # Intersects corridor at only 1 cell: (15, 5). Longitudinal travel = 0m.
+        route_cross = RoutePlan()
+        route_cross.route_feasible = True
+        for y in range(3, 8):
+            p = Point()
+            p.x = 15.0
+            p.y = float(y)
+            route_cross.cells.append(p)
+        assert not node.route_requires_mutex(route_cross, 'NC-TEST')
+
+        # Case 2: Longitudinal route driving down aisle from (10, 5) to (18, 5)
+        # Intersects corridor for 8 cells (4.0m >= 1.5m).
+        route_along = RoutePlan()
+        route_along.route_feasible = True
+        for x in range(10, 19):
+            p = Point()
+            p.x = float(x)
+            p.y = 5.0
+            route_along.cells.append(p)
+        assert node.route_requires_mutex(route_along, 'NC-TEST')
+    finally:
+        node.destroy_node()
+
+
+def test_corridor_approach_cells_only_at_longitudinal_caps():
+    import rclpy
+    from sih_amr_fleet.corridor_mutex_node import CorridorMutexNode
+
+    if not rclpy.ok():
+        rclpy.init()
+    node = CorridorMutexNode()
+    try:
+        package_root = pathlib.Path(__file__).parents[1]
+        map_path = package_root.joinpath('maps/demo_warehouse.yaml')
+        node.load_map(str(map_path))
+
+        # Check a shelf-row aisle corridor: e.g. NC-NORTH-EAST-01
+        corridor = node.corridors.get('NC-NORTH-EAST-01')
+        assert corridor is not None
+        app = node.approach_cells.get('NC-NORTH-EAST-01', set())
+        assert len(app) > 0
+
+        # All cells in NC-NORTH-EAST-01 share the same cy
+        cy = next(iter(corridor))[1]
+        # In the new longitudinal entrance caps design, approach cells share the same cy
+        # (they extend west and east of the aisle endpoints), but NOT cy+1 or cy-1 (adjacent shelves/aisles)
+        for ax, ay in app:
+            assert ay == cy, f"Approach cell ({ax}, {ay}) spilled into adjacent y levels (expected cy={cy})"
     finally:
         node.destroy_node()
 

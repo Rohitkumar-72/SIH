@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Laptop Automated Data Collection Runner (5 AMRs, 200 Tasks/Run).
+"""Laptop Automated Data Collection Runner (4 AMRs, 0.46 m/s Standard Speed).
 
-Runs sequential work-cycle benchmarks on Laptop (Ryzen 5 7235HS 4C/8T + RTX 3050):
-- 5 TurtleBot 4 AMRs
-- Unthrottled Gazebo physics (50 Hz, ~3.0x - 3.5x RTF)
-- Consolidated robot agent processes (low CPU footprint)
-- DDS Domain IDs cycling in [60, 99] (disjoint from Desktop [10, 49])
-- Disjoint random seeds in [2000, 2039]
+Runs sequential work-cycle benchmarks on Laptop (60 FPS headless):
+- 4 TurtleBot 4 AMRs (optimal non-congested fleet density)
+- Standard 0.46 m/s physical_max velocity profile
+- Consolidated robot agent processes
+- DDS Domain IDs cycling in [60, 99]
 - Auto-exports ML dataset CSV upon completion.
 """
 
@@ -95,7 +94,7 @@ class TaskState:
 
 
 class LaptopCycleRun:
-    def __init__(self, run_index: int, total_runs: int, target_tasks: int, base_dir: Path, timeout_s: int, fleet_count: int = 5):
+    def __init__(self, run_index: int, total_runs: int, target_tasks: int, base_dir: Path, timeout_s: int, fleet_count: int = 4):
         self.run_index = run_index
         self.total_runs = total_runs
         self.target_tasks = target_tasks
@@ -460,11 +459,11 @@ class LaptopCycleRun:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Laptop Fleet Data Collection Runner (5 AMRs)")
+    parser = argparse.ArgumentParser(description="Laptop Fleet Data Collection Runner (4 AMRs, 0.46 m/s)")
     parser.add_argument("--runs", type=int, default=40, help="Number of simulation work cycles (default: 40)")
     parser.add_argument("--tasks", type=int, default=200, help="Target tasks per cycle (default: 200)")
-    parser.add_argument("--fleet-size", type=int, default=5, help="Fleet AMR count (default: 5)")
-    parser.add_argument("--speed", type=float, default=4.0, help="AMR path tracking speed m/s (default: 4.0)")
+    parser.add_argument("--fleet-size", type=int, default=4, help="Fleet AMR count (default: 4)")
+    parser.add_argument("--speed", type=float, default=0.46, help="AMR path tracking speed m/s (default: 0.46 m/s physical_max)")
     parser.add_argument("--seed", type=int, default=2000, help="Base random seed for Laptop (default: 2000)")
     parser.add_argument("--timeout", type=int, default=22000, help="Per-run timeout seconds (default: 22000, 5.5x extended)")
     parser.add_argument("--output-csv", default="laptop_fleet_8k_dataset.csv", help="Combined dataset CSV output name")

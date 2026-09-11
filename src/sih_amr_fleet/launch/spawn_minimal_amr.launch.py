@@ -42,6 +42,8 @@ ARGUMENTS = [
                           description='Delay insertion so the transient robot description is available.'),
     DeclareLaunchArgument('controller_wait_s', default_value='10.0',
                           description='Delay controller spawners until Gazebo has created the model.'),
+    DeclareLaunchArgument('control_config', default_value='',
+                          description='Path to controller YAML configuration; defaults to fleet_fast_control.yaml.'),
 ]
 
 

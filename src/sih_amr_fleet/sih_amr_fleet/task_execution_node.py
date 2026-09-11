@@ -6,7 +6,7 @@ from std_msgs.msg import Bool
 from rclpy.node import Node
 from sih_amr_interfaces.msg import RobotState, TaskAssignment, TaskExecutionStatus
 
-from .common import FLEET_STATE_QOS, POSE_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, TASK_EXECUTION_QOS, header, new_session_id, now_seconds, stamp_seconds
 
 
 class TaskExecutionNode(Node):
@@ -32,7 +32,7 @@ class TaskExecutionNode(Node):
 
         self.is_low_battery = False
         self.status_pub = self.create_publisher(
-            TaskExecutionStatus, '/fleet/task_execution_status', FLEET_STATE_QOS
+            TaskExecutionStatus, '/fleet/task_execution_status', TASK_EXECUTION_QOS
         )
         self.local_status_pub = self.create_publisher(
             TaskExecutionStatus, 'task_execution_status', FLEET_STATE_QOS
@@ -159,6 +159,8 @@ class TaskExecutionNode(Node):
         status.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, 0.5)
         status.task_id = task.task_id
         status.owner_robot_id = self.robot_id
+        status.assignment_epoch = int(getattr(self.current_assignment, 'assignment_epoch', 1))
+        status.owner_session_id = str(getattr(self.current_assignment, 'owner_session_id', self.session_id))
         status.wait_time_remaining_s = 0.0
 
         if self.phase == TaskExecutionStatus.EN_ROUTE_PICKUP:

@@ -89,7 +89,7 @@ class DataCollectionNode(Node):
                 'robot_count': len(self.robot_ids),
                 'random_seed': int(os.environ.get('FLEET_RANDOM_SEED', '42')),
                 'speed_limits': {
-                    'tracking_speed_mps': float(os.environ.get('FLEET_TRACKING_SPEED_MPS', '1.0'))
+                    'tracking_speed_mps': float(os.environ.get('FLEET_TRACKING_SPEED_MPS', '0.46'))
                 },
                 'fault_profile_enabled': os.environ.get('FLEET_ENABLE_FAULTS', 'false') == 'true',
                 'randomization_profile_enabled': os.environ.get('FLEET_RANDOM_TASKS', 'false') == 'true',

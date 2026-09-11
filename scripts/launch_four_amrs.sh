@@ -22,11 +22,12 @@ START_GUI="${START_GUI:-true}"
 START_CHARGING="${START_CHARGING:-false}"
 START_FLEET="${START_FLEET:-false}"
 FLEET_RANDOM_TASKS="${FLEET_RANDOM_TASKS:-true}"
+CONTROL_CONFIG="${SIH_CONTROL_CONFIG:-$SIH_ROOT/src/sih_amr_fleet/config/fleet_fast_control.yaml}"
+export SIH_CONTROL_CONFIG="$CONTROL_CONFIG"
 FLEET_RECORD_DATA="${FLEET_RECORD_DATA:-true}"
 FLEET_SCENARIO_FILE="${FLEET_SCENARIO_FILE:-}"
-# The four-AMR launcher is simulation-only and defaults to accelerated task
-# throughput.  Set FLEET_TRACKING_SPEED_MPS=1.0 for real-world-like timing.
-FLEET_TRACKING_SPEED_MPS="${FLEET_TRACKING_SPEED_MPS:-4.0}"
+# Tracking speed profile; default 0.46 m/s (physical_max test point)
+FLEET_TRACKING_SPEED_MPS="${FLEET_TRACKING_SPEED_MPS:-0.46}"
 FLEET_RESERVATION_SLOT_S="${FLEET_RESERVATION_SLOT_S:-0.0}"
 SPAWN_WAIT_SECONDS="${SPAWN_WAIT_SECONDS:-180}"
 SETTLE_SECONDS="${SETTLE_SECONDS:-20}"
@@ -170,6 +171,9 @@ if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn' >/
   fail 'A Gazebo or AMR launch is already running. Stop it before starting a clean run.'
 fi
 
+echo "Validating physics timing invariant (controller_update_rate <= 1 / max_step_size)..."
+python3 -m sih_amr_fleet.physics_validator --world "$WORLD_FILE" --control-config "$CONTROL_CONFIG" || fail 'Physics and controller timing invariant failed'
+
 echo "Run logs: $LOG_DIR"
 echo "Starting server with $RENDER_ENGINE..."
 start_group "$LOG_DIR/gazebo_server.log" gz sim -s -r --render-engine "$RENDER_ENGINE" "$WORLD_FILE"
@@ -201,7 +205,8 @@ spawn_robot() {
   start_group "$log_file" ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py \
     namespace:="$robot" model:="$MODEL" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.05 yaw:="$yaw" \
     spawn_dock:=false keep_sensors_system:="$keep_sensors" \
-    sensor_profile:="$SENSOR_PROFILE" lidar_update_rate_hz:="$LIDAR_UPDATE_RATE_HZ"
+    sensor_profile:="$SENSOR_PROFILE" lidar_update_rate_hz:="$LIDAR_UPDATE_RATE_HZ" \
+    control_config:="$CONTROL_CONFIG"
   ROBOT_PIDS+=("$STARTED_PID")
   write_run_event robot_launch_started "$robot pid=$STARTED_PID"
   wait_for entity "$SPAWN_WAIT_SECONDS" model_exists "$robot" || fail "$robot body was not created"

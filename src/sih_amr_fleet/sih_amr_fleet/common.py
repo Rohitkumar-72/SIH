@@ -10,11 +10,15 @@ POSE_QOS = QoSProfile(
 FLEET_STATE_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST, depth=1, reliability=ReliabilityPolicy.RELIABLE,
     durability=DurabilityPolicy.TRANSIENT_LOCAL)
+TASK_EXECUTION_QOS = QoSProfile(
+    history=HistoryPolicy.KEEP_LAST, depth=25, reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL)
 PROTOCOL_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST, depth=100, reliability=ReliabilityPolicy.RELIABLE)
 TASK_SOURCE_QOS = QoSProfile(
     history=HistoryPolicy.KEEP_LAST, depth=30, reliability=ReliabilityPolicy.RELIABLE,
     durability=DurabilityPolicy.TRANSIENT_LOCAL)
+BUSY_BID_FLOOR = 1000.0
 def new_session_id():
     return str(uuid.uuid4())
 

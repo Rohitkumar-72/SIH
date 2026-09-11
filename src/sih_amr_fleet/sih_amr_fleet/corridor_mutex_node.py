@@ -32,6 +32,7 @@ class CorridorMutexNode(Node):
         self.suspect_corridors = set()
         self.entrance_clear = True
         self.corridors = {}
+        self.corridor_meta = {}
         self.approach_cells = {}
         self.armed_corridor = None
         self.in_approach = False
@@ -109,12 +110,32 @@ class CorridorMutexNode(Node):
                     upper = round((y_end - self.origin_y) / self.resolution)
                     self.corridors[name] = {(cx, y) for y in range(lower, upper + 1)}
             radius_cells = max(1, round(self.approach_distance_m / self.resolution))
+            self.corridor_meta = {}
             for name, cells in self.corridors.items():
-                self.approach_cells[name] = {
-                    (x + dx, y + dy) for x, y in cells
-                    for dx in range(-radius_cells, radius_cells + 1)
-                    for dy in range(-radius_cells, radius_cells + 1)
-                } - cells
+                xs = [c[0] for c in cells]
+                ys = [c[1] for c in cells]
+                min_x, max_x = min(xs), max(xs)
+                min_y, max_y = min(ys), max(ys)
+                span_x = (max_x - min_x) * self.resolution
+                span_y = (max_y - min_y) * self.resolution
+                axis = 'x' if span_x >= span_y else 'y'
+                self.corridor_meta[name] = {
+                    'axis': axis,
+                    'min_x': min_x, 'max_x': max_x,
+                    'min_y': min_y, 'max_y': max_y,
+                }
+                app_cells = set()
+                if axis == 'x':
+                    for y in range(min_y, max_y + 1):
+                        for dx in range(1, radius_cells + 1):
+                            app_cells.add((min_x - dx, y))
+                            app_cells.add((max_x + dx, y))
+                else:
+                    for x in range(min_x, max_x + 1):
+                        for dy in range(1, radius_cells + 1):
+                            app_cells.add((x, min_y - dy))
+                            app_cells.add((x, max_y + dy))
+                self.approach_cells[name] = app_cells - cells
             self.get_logger().info(f'Loaded {len(self.corridors)} corridors from {map_file}')
         except Exception as e:
             self.get_logger().error(f'Failed loading corridors from {map_file}: {e}')
@@ -191,6 +212,23 @@ class CorridorMutexNode(Node):
         self.request = None
         self.armed_corridor = None
 
+    def route_requires_mutex(self, route, corridor_name):
+        corridor_cells = self.corridors.get(corridor_name, set())
+        if not corridor_cells or not route.cells:
+            return False
+        intersecting = [c for c in route.cells if (c.x, c.y) in corridor_cells]
+        if not intersecting:
+            return False
+        meta = getattr(self, 'corridor_meta', {}).get(corridor_name, {})
+        axis = meta.get('axis', 'x')
+        if axis == 'x':
+            long_span = (max(c.x for c in intersecting) - min(c.x for c in intersecting)) * self.resolution
+            trans_span = (max(c.y for c in intersecting) - min(c.y for c in intersecting)) * self.resolution
+        else:
+            long_span = (max(c.y for c in intersecting) - min(c.y for c in intersecting)) * self.resolution
+            trans_span = (max(c.x for c in intersecting) - min(c.x for c in intersecting)) * self.resolution
+        return (long_span >= 1.5 and long_span >= trans_span)
+
     def on_route(self, route):
         # A grant permits entry; it does not prove that the robot physically
         # entered. Rolling replans can abandon an armed corridor while the
@@ -204,8 +242,9 @@ class CorridorMutexNode(Node):
             )
             route_touches_corridor = any((cell.x, cell.y) in requested_cells for cell in route.cells)
             recent_request = (now_seconds(self) - self.request.get('created_at', 0.0) < 5.0)
+            inside_corridor = (getattr(self, 'cell', None) in requested_cells)
             still_planned = route.route_feasible and (
-                in_requested_approach or route_touches_corridor or (recent_request and not self.request.get('entered', False)))
+                inside_corridor or in_requested_approach or route_touches_corridor or (recent_request and not self.request.get('entered', False)))
             if self.request['was_inside'] or still_planned:
                 return
             self.get_logger().info(
@@ -221,16 +260,15 @@ class CorridorMutexNode(Node):
         next_corridor = None
         for cell in route.cells[1:]:
             corridor = next((name for name, cells in self.corridors.items() if (cell.x, cell.y) in cells), '')
-            if corridor:
+            if corridor and self.route_requires_mutex(route, corridor):
                 next_corridor = corridor
                 break
         if next_corridor is None and len(route.cells) == 1:
             cell = route.cells[0]
             corridor = next((name for name, cells in self.corridors.items() if (cell.x, cell.y) in cells), '')
-            if corridor:
+            if corridor and self.route_requires_mutex(route, corridor):
                 next_corridor = corridor
-        if next_corridor is not None:
-            self.armed_corridor = next_corridor
+        self.armed_corridor = next_corridor
 
     def on_state(self, state):
         cell = (
@@ -247,7 +285,11 @@ class CorridorMutexNode(Node):
             self.armed_corridor and not recently_exited and
             cell in self.approach_cells.get(self.armed_corridor, set())
         )
-        if self.in_approach and self.request is None:
+        inside_armed = bool(
+            self.armed_corridor and not recently_exited and
+            cell in self.corridors.get(self.armed_corridor, set())
+        )
+        if (self.in_approach or inside_armed) and self.request is None:
             self.begin_request(self.armed_corridor)
         if not self.request or not self.request['entered']:
             return

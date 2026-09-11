@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Desktop Automated Data Collection Runner (6 AMRs, 200 Tasks/Run).
+"""Desktop Automated Data Collection Runner (4 AMRs, 0.46 m/s Standard Speed).
 
 Runs sequential work-cycle benchmarks on Desktop (Ryzen 5 5600X + RTX 3070):
-- 6 TurtleBot 4 AMRs
-- Unthrottled Gazebo physics (50 Hz, 3.5x RTF)
+- 4 TurtleBot 4 AMRs (standard non-congested fleet size)
+- Standard 0.46 m/s physical_max velocity profile
+- Unthrottled Gazebo physics (50 Hz, 3.1x RTF)
 - Consolidated robot agent processes (low CPU footprint)
 - DDS Domain IDs cycling in [10, 49]
 - Disjoint random seeds in [1000, 1059]
@@ -95,7 +96,7 @@ class TaskState:
 
 
 class DesktopCycleRun:
-    def __init__(self, run_index: int, total_runs: int, target_tasks: int, base_dir: Path, timeout_s: int, fleet_count: int = 6):
+    def __init__(self, run_index: int, total_runs: int, target_tasks: int, base_dir: Path, timeout_s: int, fleet_count: int = 4):
         self.run_index = run_index
         self.total_runs = total_runs
         self.target_tasks = target_tasks
@@ -476,11 +477,11 @@ class DesktopCycleRun:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Desktop Fleet Data Collection Runner (6 AMRs)")
+    parser = argparse.ArgumentParser(description="Desktop Fleet Data Collection Runner (4 AMRs, 0.46 m/s)")
     parser.add_argument("--runs", type=int, default=60, help="Number of simulation work cycles (default: 60)")
     parser.add_argument("--tasks", type=int, default=200, help="Target tasks per cycle (default: 200)")
-    parser.add_argument("--fleet-size", type=int, default=6, help="Fleet AMR count (default: 6)")
-    parser.add_argument("--speed", type=float, default=4.0, help="AMR path tracking speed m/s (default: 4.0)")
+    parser.add_argument("--fleet-size", type=int, default=4, help="Fleet AMR count (default: 4)")
+    parser.add_argument("--speed", type=float, default=0.46, help="AMR path tracking speed m/s (default: 0.46 m/s physical_max)")
     parser.add_argument("--seed", type=int, default=1000, help="Base random seed for Desktop (default: 1000)")
     parser.add_argument("--timeout", type=int, default=22000, help="Per-run timeout seconds (default: 22000, 5.5x extended)")
     parser.add_argument("--output-csv", default="desktop_fleet_12k_dataset.csv", help="Combined dataset CSV output name")

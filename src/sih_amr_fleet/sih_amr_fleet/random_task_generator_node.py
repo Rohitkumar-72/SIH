@@ -6,7 +6,7 @@ from rclpy.node import Node
 from sih_amr_interfaces.msg import FleetHeader, RobotState, Task, TaskAnnouncement, TaskExecutionStatus
 from std_msgs.msg import String
 
-from .common import FLEET_STATE_QOS, POSE_QOS, TASK_SOURCE_QOS, new_session_id, now_seconds
+from .common import FLEET_STATE_QOS, POSE_QOS, TASK_EXECUTION_QOS, TASK_SOURCE_QOS, new_session_id, now_seconds
 from .warehouse_tasks import aisle_points
 
 
@@ -50,14 +50,14 @@ class RandomTaskGeneratorNode(Node):
             for robot_id in sorted(self.expected_robot_ids)
         }
         self.create_subscription(
-            TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS
+            TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, TASK_EXECUTION_QOS
         )
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
         self.create_subscription(String, '/fleet/task_receipt', self.on_task_receipt, FLEET_STATE_QOS)
         for robot_id in sorted(self.expected_robot_ids):
             self.create_subscription(
                 TaskExecutionStatus, f'/{robot_id}/task_execution_status', self.on_execution,
-                FLEET_STATE_QOS)
+                TASK_EXECUTION_QOS)
             self.create_subscription(
                 RobotState, f'/{robot_id}/state', self.on_state, POSE_QOS)
 

@@ -25,6 +25,7 @@ def main() -> None:
     keep_sensors = False
     sensor_profile = 'fleet'
     lidar_update_rate = 20.0
+    control_config_arg = None
     arguments = []
     argument_iterator = iter(sys.argv[1:])
     for argument in argument_iterator:
@@ -34,6 +35,8 @@ def main() -> None:
             sensor_profile = next(argument_iterator).lower()
         elif argument == '--lidar-update-rate':
             lidar_update_rate = float(next(argument_iterator))
+        elif argument == '--control-config':
+            control_config_arg = next(argument_iterator)
         else:
             arguments.append(argument)
     if sensor_profile not in ('fleet', 'full'):
@@ -47,12 +50,11 @@ def main() -> None:
         sys.stderr.write(result.stderr)
         raise SystemExit(result.returncode)
     root = ElementTree.fromstring(result.stdout)
-    # The vendor xacro hard-codes its 0.46 m/s controller YAML. Replace that
-    # plugin parameter with the project-owned 6.0 m/s Gazebo fleet profile
-    # before the robot description reaches Gazebo.
-    control_file = str(
+    import os
+    default_control_file = str(
         get_package_share_directory('sih_amr_fleet') +
         '/config/fleet_fast_control.yaml')
+    control_file = control_config_arg or os.environ.get('SIH_CONTROL_CONFIG') or default_control_file
     for plugin in root.iter('plugin'):
         if plugin.get('name') == CONTROL_PLUGIN:
             parameters = plugin.find('parameters')

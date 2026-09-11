@@ -12,7 +12,18 @@ from geometry_msgs.msg import Pose2D
 from std_msgs.msg import String
 
 from .algorithms import float32_wire_value, freeze_auction_value, static_grid_path_distance
-from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, TASK_SOURCE_QOS, header, new_session_id, now_seconds, stamp_seconds
+from .common import (
+    BUSY_BID_FLOOR,
+    FLEET_STATE_QOS,
+    POSE_QOS,
+    PROTOCOL_QOS,
+    TASK_EXECUTION_QOS,
+    TASK_SOURCE_QOS,
+    header,
+    new_session_id,
+    now_seconds,
+    stamp_seconds,
+)
 from .map_geometry import map_geometry_from_data
 
 UNAVAILABLE_BID = 1.0e9
@@ -111,7 +122,11 @@ class CbbaNode(Node):
         # required by the executor/safety stack and prevents a local DDS
         # discovery delay from silently suppressing all bidding.
         self.create_subscription(RobotState, '/fleet/robot_state', self.on_fleet_state, FLEET_STATE_QOS)
-        self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, FLEET_STATE_QOS)
+        self.create_subscription(TaskExecutionStatus, '/fleet/task_execution_status', self.on_execution, TASK_EXECUTION_QOS)
+        for rid in sorted(self.expected_robot_ids):
+            self.create_subscription(
+                TaskExecutionStatus, f'/{rid}/task_execution_status',
+                self.on_execution, TASK_EXECUTION_QOS)
         self.create_subscription(FleetHealth, '/fleet/health', self.on_health, FLEET_STATE_QOS)
         self.create_timer(0.5, self.run_round)
         self.get_logger().info(f'CbbaNode initialized for {self.robot_id}')
@@ -279,19 +294,24 @@ class CbbaNode(Node):
 
     def on_execution(self, msg):
         if msg.phase in (TaskExecutionStatus.COMPLETED, TaskExecutionStatus.FAILED):
-            self.completed_tasks.add(msg.task_id)
             existing = self.executing_tasks.get(msg.task_id)
             if existing is not None and existing[0] != msg.owner_robot_id:
                 self.get_logger().error(
                     f'Ignoring conflicting completion for {msg.task_id}: '
                     f'committed={existing[0]}, observed={msg.owner_robot_id}')
                 return
+            self.completed_tasks.add(msg.task_id)
             committed = self.executing_tasks.pop(msg.task_id, None)
             owner = committed[0] if committed else msg.owner_robot_id
             if owner and self.busy_robots.get(owner, (None,))[0] == msg.task_id:
                 self.busy_robots.pop(owner, None)
             if committed and self.busy_robots.get(committed[0], (None,))[0] == msg.task_id:
                 self.busy_robots.pop(committed[0], None)
+            if owner == self.robot_id:
+                self.busy_robots.pop(self.robot_id, None)
+                for tid, b in list(self.own_bids.items()):
+                    if b[0] >= BUSY_BID_FLOOR:
+                        self.own_bids.pop(tid, None)
             self.forget_task(msg.task_id)
             self._reported_execution_conflicts = {
                 pair for pair in self._reported_execution_conflicts if pair[0] != msg.task_id
@@ -315,11 +335,14 @@ class CbbaNode(Node):
                     f'Ignoring conflicting executor owner for {msg.task_id}: '
                     f'committed={committed[0]}, observed={msg.owner_robot_id}')
             return
+        valid_until = stamp_seconds(msg.fleet_header.valid_until) if hasattr(msg, 'fleet_header') and hasattr(msg.fleet_header, 'valid_until') else now + 10.0
+        if valid_until <= now:
+            valid_until = now + 10.0
         self.executing_tasks[msg.task_id] = (msg.owner_robot_id, now)
         self.execution_confirmed_tasks.add(msg.task_id)
-        self.busy_robots[msg.owner_robot_id] = (msg.task_id, now)
+        self.busy_robots[msg.owner_robot_id] = (msg.task_id, valid_until)
         self.committed_claims.setdefault(
-            msg.task_id, (msg.owner_robot_id, '', UNAVAILABLE_BID, 1))
+            msg.task_id, (msg.owner_robot_id, getattr(msg, 'owner_session_id', ''), UNAVAILABLE_BID, getattr(msg, 'assignment_epoch', 1)))
         # Purge any unconfirmed phantom commitments for this owner on other tasks
         for other_t, (other_o, _) in list(self.executing_tasks.items()):
             if other_t != msg.task_id and other_o == msg.owner_robot_id and other_t not in self.execution_confirmed_tasks:
@@ -375,6 +398,12 @@ class CbbaNode(Node):
                     old.fleet_header.session_id == msg.fleet_header.session_id and
                     old.fleet_header.sequence_no >= msg.fleet_header.sequence_no):
                 return
+            if old is not None and (
+                    old.fleet_header.session_id != msg.fleet_header.session_id or
+                    abs(old.winning_bid - msg.winning_bid) > 1e-3):
+                self.task_seen_at[msg.task_id] = now
+                self.own_claims.pop(msg.task_id, None)
+                self.claim_views.get(msg.task_id, {}).pop(self.robot_id, None)
             self.bid_views.setdefault(msg.task_id, {})[source] = msg
         elif msg.event == TaskConsensus.CLAIM:
             if (msg.winner_robot_id not in self.expected_robot_ids or
@@ -390,10 +419,8 @@ class CbbaNode(Node):
             # If peer claim indicates a better valid winner, unfreeze own higher claim
             my_claim = self.own_claims.get(msg.task_id)
             if my_claim is not None and msg.winning_bid < my_claim[2] - 1e-3:
-                busy_w = self.busy_robots.get(msg.winner_robot_id)
-                if busy_w is None or busy_w[0] == msg.task_id:
-                    self.own_claims.pop(msg.task_id, None)
-                    self.claim_views.get(msg.task_id, {}).pop(self.robot_id, None)
+                self.own_claims.pop(msg.task_id, None)
+                self.claim_views.get(msg.task_id, {}).pop(self.robot_id, None)
 
     def forget_task(self, task_id):
         """Remove all auction and commitment state for a terminal task."""
@@ -488,7 +515,7 @@ class CbbaNode(Node):
         calculated_bid = max(1.0, base_bid - priority_discount)
         busy_self = self.busy_robots.get(self.robot_id)
         if busy_self is not None and busy_self[0] != task.task_id:
-            calculated_bid += 1000.0
+            calculated_bid += BUSY_BID_FLOOR
         return calculated_bid
 
     def run_round(self):
@@ -514,14 +541,18 @@ class CbbaNode(Node):
         # Prioritize executing tasks and the earliest active unassigned tasks to prevent queue saturation
         executing = [t for t in self.tasks.values() if t.task_id in self.executing_tasks]
         unassigned = [t for t in self.tasks.values() if t.task_id not in self.executing_tasks and t.task_id not in self.completed_tasks]
-        unassigned.sort(key=lambda t: (stamp_seconds(t.created_at), -t.priority))
+        unassigned.sort(key=lambda t: (stamp_seconds(t.created_at), -t.priority, t.task_id))
+        active_claim_task_id = unassigned[0].task_id if unassigned else None
         idle_count = len([rid for rid in self.expected_robot_ids if self.busy_robots.get(rid) is None])
         auction_count = max(1, min(len(self.expected_robot_ids), idle_count * 2))
         active_auction_tasks = executing + unassigned[:auction_count]
 
         for task in active_auction_tasks:
             busy_self = self.busy_robots.get(self.robot_id)
-            if busy_self is None and self.own_bids.get(task.task_id, (0,))[0] >= 1000.0:
+            if busy_self is not None and busy_self[0] in self.completed_tasks:
+                self.busy_robots.pop(self.robot_id, None)
+                busy_self = None
+            if busy_self is None and self.own_bids.get(task.task_id, (0,))[0] >= BUSY_BID_FLOOR:
                 # Robot was previously busy when bidding on this task, but is now idle.
                 # Clear the penalty bid so it can bid its true competitive cost.
                 self.own_bids.pop(task.task_id, None)
@@ -529,7 +560,7 @@ class CbbaNode(Node):
             if busy_self is not None and busy_self[0] != task.task_id:
                 # Robot is busy with another task; apply busy penalty to bid, but
                 # continue participating in consensus so unanimous quorum can commit.
-                if task.task_id not in self.own_bids or self.own_bids[task.task_id][0] < 1000.0:
+                if task.task_id not in self.own_bids or self.own_bids[task.task_id][0] < BUSY_BID_FLOOR:
                     self.own_bids[task.task_id] = (self.bid(task), 1)
 
             own_bid_value, own_bid_epoch = freeze_auction_value(
@@ -624,12 +655,14 @@ class CbbaNode(Node):
             if missing or not settled:
                 continue
 
-            # Only consider robots that are NOT busy with another task
+            # Serial Capacity-One guard: only the single active claim task advances to Phase 2
+            if task.task_id not in self.executing_tasks and task.task_id != active_claim_task_id:
+                continue
+
+            # Replicas determine candidate eligibility purely from source-authored bids
             candidates = [
                 view for view in views.values()
-                if view.winning_bid < UNAVAILABLE_BID and
-                (self.busy_robots.get(view.winner_robot_id) is None or
-                 self.busy_robots.get(view.winner_robot_id)[0] == task.task_id)
+                if math.isfinite(view.winning_bid) and 0.0 <= view.winning_bid < BUSY_BID_FLOOR
             ]
             if not candidates:
                 continue
@@ -640,11 +673,9 @@ class CbbaNode(Node):
             prev_claim = self.own_claims.get(task.task_id)
             if prev_claim is not None:
                 prev_winner = prev_claim[0]
-                busy_p = self.busy_robots.get(prev_winner)
-                is_busy = busy_p is not None and busy_p[0] != task.task_id
                 better_bid = winner_view.winning_bid < prev_claim[2] - 1e-3
                 winner_changed = (prev_winner != winner_view.winner_robot_id and winner_view.winning_bid <= prev_claim[2])
-                if is_busy or better_bid or winner_changed:
+                if better_bid or winner_changed:
                     self.own_claims.pop(task.task_id, None)
                     self.claim_views.get(task.task_id, {}).pop(self.robot_id, None)
 
@@ -674,13 +705,9 @@ class CbbaNode(Node):
             for source, peer_claim in list(claims.items()):
                 if source != self.robot_id and stamp_seconds(peer_claim.lease_until) < now and self.peer_health_until.get(source, 0.0) < now:
                     claims.pop(source, None)
-                else:
-                    busy_w = self.busy_robots.get(peer_claim.winner_robot_id)
-                    if busy_w is not None and busy_w[0] != task.task_id:
-                        claims.pop(source, None)
-                    elif (peer_claim.winner_robot_id != winner_view.winner_robot_id or
-                          abs(peer_claim.winning_bid - winner_view.winning_bid) > 1e-3):
-                        claims.pop(source, None)
+                elif (peer_claim.winner_robot_id != winner_view.winner_robot_id or
+                      abs(peer_claim.winning_bid - winner_view.winning_bid) > 1e-3):
+                    claims.pop(source, None)
             claim_key = self.claim_key(claim)
             missing_claims = self.expected_robot_ids - set(claims)
             mismatched_claims = {
@@ -722,9 +749,6 @@ class CbbaNode(Node):
                             f'claim_values={claim_values}')
                 continue
 
-            owner_work = self.busy_robots.get(winner)
-            if owner_work is not None and owner_work[0] != task.task_id:
-                continue
             for other_t, (other_w, _) in list(self.executing_tasks.items()):
                 if other_t != task.task_id and other_w == winner and other_t not in self.execution_confirmed_tasks:
                     self.executing_tasks.pop(other_t, None)
