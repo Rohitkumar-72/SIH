@@ -306,7 +306,7 @@ class LaptopCycleRun:
                         f"{C_BOLD}{task_id}{C_RESET} finished by {t.assigned_robot} | Duration: {t.duration_s:.1f}s | Progress: [{bar}] {count}/{self.target_tasks} ({pct}%)"
                     )
 
-    def execute(self, tracking_speed: float = 4.0, settle_s: int = 3, seed: int = 2000) -> bool:
+    def execute(self, tracking_speed: float = 0.46, settle_s: int = 3, seed: int = 2000) -> bool:
         self.clean_lingering_processes()
         self.start_time = time.time()
         
@@ -459,14 +459,17 @@ class LaptopCycleRun:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Laptop Fleet Data Collection Runner (4 AMRs, 0.46 m/s)")
-    parser.add_argument("--runs", type=int, default=40, help="Number of simulation work cycles (default: 40)")
-    parser.add_argument("--tasks", type=int, default=200, help="Target tasks per cycle (default: 200)")
-    parser.add_argument("--fleet-size", type=int, default=4, help="Fleet AMR count (default: 4)")
-    parser.add_argument("--speed", type=float, default=0.46, help="AMR path tracking speed m/s (default: 0.46 m/s physical_max)")
-    parser.add_argument("--seed", type=int, default=2000, help="Base random seed for Laptop (default: 2000)")
-    parser.add_argument("--timeout", type=int, default=22000, help="Per-run timeout seconds (default: 22000, 5.5x extended)")
-    parser.add_argument("--output-csv", default="laptop_fleet_8k_dataset.csv", help="Combined dataset CSV output name")
+    parser = argparse.ArgumentParser(
+        description="Laptop Fleet Data Collection Runner (4 AMRs, 0.46 m/s Standard Speed)",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("-r", "--runs", type=int, default=1, help="Number of simulation work cycles / runs")
+    parser.add_argument("-t", "--tasks", type=int, default=12, help="Target completed tasks per cycle")
+    parser.add_argument("-s", "--speed", type=float, default=0.46, help="AMR path tracking speed m/s (default: 0.46 m/s physical_max)")
+    parser.add_argument("-f", "--fleet-size", type=int, default=4, help="Fleet AMR count")
+    parser.add_argument("--seed", type=int, default=2000, help="Base random seed for Laptop")
+    parser.add_argument("--timeout", type=int, default=3600, help="Per-run timeout seconds")
+    parser.add_argument("-o", "--output-csv", default="laptop_fleet_dataset.csv", help="Combined dataset CSV output name")
     args = parser.parse_args()
 
     workspace_log = os.environ.get("AMR_WS_LOG_DIR")
@@ -477,27 +480,37 @@ def main():
     base_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{C_BOLD}{C_GREEN}======================================================================{C_RESET}")
-    print(f"{C_BOLD}{C_GREEN}  SIH LAPTOP AUTOMATED DATA COLLECTION: {args.fleet_size} AMRs, {args.runs} RUNS × {args.tasks} TASKS   {C_RESET}")
-    print(f"{C_BOLD}{C_GREEN}  TARGET: {args.runs * args.tasks} DATASET TASKS FOR ML CONGESTION MODEL   {C_RESET}")
+    print(f"{C_BOLD}{C_GREEN}  SIH LAPTOP AUTOMATED DATA COLLECTION: {args.fleet_size} AMRs, {args.runs} RUN(S) × {args.tasks} TASKS  {C_RESET}")
+    print(f"{C_BOLD}{C_GREEN}  TARGET: {args.runs * args.tasks} DATASET TASKS @ {args.speed} m/s FOR ML CONGESTION MODEL  {C_RESET}")
     print(f"{C_BOLD}{C_GREEN}======================================================================{C_RESET}\n")
 
     telemetry_files = []
     passed = 0
-    for idx in range(1, args.runs + 1):
-        run = LaptopCycleRun(idx, args.runs, args.tasks, base_dir, args.timeout, fleet_count=args.fleet_size)
-        success = run.execute(tracking_speed=args.speed, settle_s=3, seed=args.seed)
-        if run.telemetry_file.exists():
-            telemetry_files.append(str(run.telemetry_file))
-        if success:
-            passed += 1
+
+    try:
+        for idx in range(1, args.runs + 1):
+            run = LaptopCycleRun(idx, args.runs, args.tasks, base_dir, args.timeout, fleet_count=args.fleet_size)
+            success = run.execute(tracking_speed=args.speed, settle_s=3, seed=args.seed)
+            if run.telemetry_file.exists() and run.telemetry_file.stat().st_size > 0:
+                telemetry_files.append(str(run.telemetry_file))
+            if success:
+                passed += 1
+            if run.status == "ABORTED":
+                print(f"\n{C_YELLOW}Run {idx} was aborted. Halting remaining runs.{C_RESET}")
+                break
+    except KeyboardInterrupt:
+        print(f"\n{C_YELLOW}Interrupted by user. Halting simulation runs.{C_RESET}")
 
     # Automatically generate the combined ML dataset CSV
-    print(f"\n{C_BOLD}{C_CYAN}>>> Merging {len(telemetry_files)} telemetry logs into ML Dataset CSV: {args.output_csv} <<<{C_RESET}")
-    script_dir = Path(__file__).resolve().parent
-    gen_script = script_dir / "generate_ml_dataset.py"
-    if gen_script.exists() and telemetry_files:
-        subprocess.run(["python3", str(gen_script)] + telemetry_files + ["--output", args.output_csv])
-        print(f"\n{C_BOLD}{C_GREEN}✔ Laptop Data Collection Finished: {passed}/{args.runs} runs passed ({passed * args.tasks} tasks).{C_RESET}\n")
+    if telemetry_files:
+        print(f"\n{C_BOLD}{C_CYAN}>>> Merging {len(telemetry_files)} telemetry log(s) into ML Dataset CSV: {args.output_csv} <<<{C_RESET}")
+        script_dir = Path(__file__).resolve().parent
+        gen_script = script_dir / "generate_ml_dataset.py"
+        if gen_script.exists():
+            subprocess.run(["python3", str(gen_script)] + telemetry_files + ["--output", args.output_csv])
+            print(f"\n{C_BOLD}{C_GREEN}✔ Laptop Data Collection Finished: {passed}/{args.runs} runs completed ({len(telemetry_files)} telemetry logs saved to {args.output_csv}).{C_RESET}\n")
+    else:
+        print(f"\n{C_YELLOW}No telemetry logs were recorded during this session.{C_RESET}\n")
 
 
 if __name__ == "__main__":

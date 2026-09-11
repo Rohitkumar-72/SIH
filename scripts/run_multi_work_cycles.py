@@ -132,7 +132,7 @@ class WorkCycleRun:
         self.fleet_count = fleet_count
         self.launcher_override = launcher_override
         self.scenario = scenario
-        self.tracking_speed: float = 0.31
+        self.tracking_speed: float = 0.46
         self.enable_faults: bool = False
         self.enable_spawner: bool = False
         self.enable_vision: bool = False
@@ -867,7 +867,7 @@ def main():
     base_dir.mkdir(parents=True, exist_ok=True)
 
     # Resolve velocity profile
-    if args.tracking_speed != 0.31 and args.velocity_profile == "physical_fidelity":
+    if args.tracking_speed != 0.46 and args.velocity_profile == "physical_max":
         profile = resolve_velocity_profile(str(args.tracking_speed))
     else:
         profile = resolve_velocity_profile(args.velocity_profile)

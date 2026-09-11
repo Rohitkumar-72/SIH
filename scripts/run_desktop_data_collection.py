@@ -8,7 +8,7 @@ Runs sequential work-cycle benchmarks on Desktop (Ryzen 5 5600X + RTX 3070):
 - Consolidated robot agent processes (low CPU footprint)
 - DDS Domain IDs cycling in [10, 49]
 - Disjoint random seeds in [1000, 1059]
-- Auto-exports ML dataset CSV upon completion.
+- Auto-exports ML dataset CSV upon completion or interruption.
 """
 
 import argparse
@@ -96,13 +96,23 @@ class TaskState:
 
 
 class DesktopCycleRun:
-    def __init__(self, run_index: int, total_runs: int, target_tasks: int, base_dir: Path, timeout_s: int, fleet_count: int = 4):
+    def __init__(
+        self,
+        run_index: int,
+        total_runs: int,
+        target_tasks: int,
+        base_dir: Path,
+        timeout_s: int,
+        fleet_count: int = 4,
+        gui: bool = False
+    ):
         self.run_index = run_index
         self.total_runs = total_runs
         self.target_tasks = target_tasks
         self.base_dir = base_dir
         self.timeout_s = timeout_s
         self.fleet_count = fleet_count
+        self.gui = gui
         self.run_id = f"desktop_run_{run_index:03d}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.log_dir = base_dir / self.run_id
         self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -324,12 +334,12 @@ class DesktopCycleRun:
                         f"{C_BOLD}{task_id}{C_RESET} finished by {t.assigned_robot} | Duration: {t.duration_s:.1f}s | Progress: [{bar}] {count}/{self.target_tasks} ({pct}%)"
                     )
 
-    def execute(self, tracking_speed: float = 4.0, settle_s: int = 3, seed: int = 1000) -> bool:
+    def execute(self, tracking_speed: float = 0.46, settle_s: int = 3, seed: int = 1000) -> bool:
         self.clean_lingering_processes()
         self.start_time = time.time()
         
         env = os.environ.copy()
-        env["START_GUI"] = "false"
+        env["START_GUI"] = "true" if self.gui else "false"
         env["START_FLEET"] = "true"
         env["FLEET_RANDOM_TASKS"] = "true"
         env["FLEET_RECORD_DATA"] = "true"
@@ -362,6 +372,7 @@ class DesktopCycleRun:
 
         print(f"\n{C_BG_BLUE}{C_WHITE}{C_BOLD} >>> STARTING DESKTOP TEST RUN {self.run_index}/{self.total_runs}: {self.run_id} <<<{C_RESET}")
         print(f" {C_CYAN}Target Work Cycle:{C_RESET} {self.target_tasks} completed tasks across {self.fleet_count} AMRs")
+        print(f" {C_CYAN}Tracking Speed:{C_RESET}    {tracking_speed} m/s (Standard Physical Max)")
         print(f" {C_CYAN}Log Directory:{C_RESET}     {self.log_dir}")
         print(f" {C_CYAN}DDS Domain ID:{C_RESET}     {run_domain_id} (Range [10, 49]) | Seed: {seed + self.run_index}")
         print(f" {C_CYAN}Fleet Architecture:{C_RESET}Consolidated Agent Processes, 50 Hz Physics, Lean Telemetry\n")
@@ -477,14 +488,18 @@ class DesktopCycleRun:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Desktop Fleet Data Collection Runner (4 AMRs, 0.46 m/s)")
-    parser.add_argument("--runs", type=int, default=60, help="Number of simulation work cycles (default: 60)")
-    parser.add_argument("--tasks", type=int, default=200, help="Target tasks per cycle (default: 200)")
-    parser.add_argument("--fleet-size", type=int, default=4, help="Fleet AMR count (default: 4)")
-    parser.add_argument("--speed", type=float, default=0.46, help="AMR path tracking speed m/s (default: 0.46 m/s physical_max)")
-    parser.add_argument("--seed", type=int, default=1000, help="Base random seed for Desktop (default: 1000)")
-    parser.add_argument("--timeout", type=int, default=22000, help="Per-run timeout seconds (default: 22000, 5.5x extended)")
-    parser.add_argument("--output-csv", default="desktop_fleet_12k_dataset.csv", help="Combined dataset CSV output name")
+    parser = argparse.ArgumentParser(
+        description="Desktop Fleet Data Collection Runner (4 AMRs, 0.46 m/s Standard Speed)",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("-r", "--runs", type=int, default=1, help="Number of simulation work cycles / runs")
+    parser.add_argument("-t", "--tasks", type=int, default=12, help="Target completed tasks per cycle")
+    parser.add_argument("-s", "--speed", type=float, default=0.46, help="AMR path tracking speed m/s (default: 0.46 m/s physical_max)")
+    parser.add_argument("-f", "--fleet-size", type=int, default=4, help="Fleet AMR count")
+    parser.add_argument("--seed", type=int, default=1000, help="Base random seed for Desktop")
+    parser.add_argument("--timeout", type=int, default=3600, help="Per-run timeout seconds")
+    parser.add_argument("--gui", action="store_true", default=False, help="Launch Gazebo with GUI enabled (default: headless)")
+    parser.add_argument("-o", "--output-csv", default="desktop_fleet_dataset.csv", help="Combined dataset CSV output filename")
     args = parser.parse_args()
 
     workspace_log = os.environ.get("AMR_WS_LOG_DIR")
@@ -495,27 +510,40 @@ def main():
     base_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{C_BOLD}{C_GREEN}======================================================================{C_RESET}")
-    print(f"{C_BOLD}{C_GREEN}  SIH DESKTOP AUTOMATED DATA COLLECTION: {args.fleet_size} AMRs, {args.runs} RUNS × {args.tasks} TASKS  {C_RESET}")
-    print(f"{C_BOLD}{C_GREEN}  TARGET: {args.runs * args.tasks} DATASET TASKS FOR ML CONGESTION MODEL  {C_RESET}")
+    print(f"{C_BOLD}{C_GREEN}  SIH DESKTOP AUTOMATED DATA COLLECTION: {args.fleet_size} AMRs, {args.runs} RUN(S) × {args.tasks} TASKS  {C_RESET}")
+    print(f"{C_BOLD}{C_GREEN}  TARGET: {args.runs * args.tasks} DATASET TASKS @ {args.speed} m/s FOR ML CONGESTION MODEL  {C_RESET}")
     print(f"{C_BOLD}{C_GREEN}======================================================================{C_RESET}\n")
 
     telemetry_files = []
     passed = 0
-    for idx in range(1, args.runs + 1):
-        run = DesktopCycleRun(idx, args.runs, args.tasks, base_dir, args.timeout, fleet_count=args.fleet_size)
-        success = run.execute(tracking_speed=args.speed, settle_s=3, seed=args.seed)
-        if run.telemetry_file.exists():
-            telemetry_files.append(str(run.telemetry_file))
-        if success:
-            passed += 1
 
-    # Automatically generate the combined ML dataset CSV
-    print(f"\n{C_BOLD}{C_CYAN}>>> Merging {len(telemetry_files)} telemetry logs into ML Dataset CSV: {args.output_csv} <<<{C_RESET}")
-    script_dir = Path(__file__).resolve().parent
-    gen_script = script_dir / "generate_ml_dataset.py"
-    if gen_script.exists() and telemetry_files:
-        subprocess.run(["python3", str(gen_script)] + telemetry_files + ["--output", args.output_csv])
-        print(f"\n{C_BOLD}{C_GREEN}✔ Desktop Data Collection Finished: {passed}/{args.runs} runs passed ({passed * args.tasks} tasks).{C_RESET}\n")
+    try:
+        for idx in range(1, args.runs + 1):
+            run = DesktopCycleRun(
+                idx, args.runs, args.tasks, base_dir, args.timeout,
+                fleet_count=args.fleet_size, gui=args.gui
+            )
+            success = run.execute(tracking_speed=args.speed, settle_s=3, seed=args.seed)
+            if run.telemetry_file.exists() and run.telemetry_file.stat().st_size > 0:
+                telemetry_files.append(str(run.telemetry_file))
+            if success:
+                passed += 1
+            if run.status == "ABORTED":
+                print(f"\n{C_YELLOW}Run {idx} was aborted. Halting remaining runs.{C_RESET}")
+                break
+    except KeyboardInterrupt:
+        print(f"\n{C_YELLOW}Interrupted by user. Halting simulation runs.{C_RESET}")
+
+    # Automatically generate the combined ML dataset CSV from all collected telemetry
+    if telemetry_files:
+        print(f"\n{C_BOLD}{C_CYAN}>>> Merging {len(telemetry_files)} telemetry log(s) into ML Dataset CSV: {args.output_csv} <<<{C_RESET}")
+        script_dir = Path(__file__).resolve().parent
+        gen_script = script_dir / "generate_ml_dataset.py"
+        if gen_script.exists():
+            subprocess.run(["python3", str(gen_script)] + telemetry_files + ["--output", args.output_csv])
+            print(f"\n{C_BOLD}{C_GREEN}✔ Desktop Data Collection Finished: {passed}/{args.runs} runs completed ({len(telemetry_files)} telemetry logs saved to {args.output_csv}).{C_RESET}\n")
+    else:
+        print(f"\n{C_YELLOW}No telemetry logs were recorded during this session.{C_RESET}\n")
 
 
 if __name__ == "__main__":

@@ -152,7 +152,7 @@ def parse_telemetry_to_dataset(jsonl_paths, output_csv_path):
         if run_id.startswith('desktop_run_') or run_id.startswith('laptop_run_') or run_id.startswith('run_01_'):
             run_id = p.parent.name
 
-        nominal_speed = float(run_manifest.get('speed_limits', {}).get('tracking_speed_mps', 4.0))
+        nominal_speed = float(run_manifest.get('speed_limits', {}).get('tracking_speed_mps', 0.46))
         fleet_size = int(run_manifest.get('robot_count', len(all_robots_seen) or 8))
 
         # Match completed tasks
