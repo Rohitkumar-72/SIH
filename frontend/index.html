@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMR Fleet Navigator | Warehouse Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- TOP MINIMALIST NAVIGATION BAR -->
+  <header class="app-navbar">
+    <div class="nav-left">
+      <div class="brand-badge">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">FLEET NAVIGATOR</span>
+          <span class="brand-sub">SIH AMR Decentralized Core</span>
+        </div>
+      </div>
+
+      <!-- MAIN NAVIGATION TABS -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-page="dashboard">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-tab" data-page="map-view">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+          <span>Live Map</span>
+        </button>
+        <button class="nav-tab" data-page="tasks">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <span>Task Handling</span>
+          <span class="pill-count" id="nav-task-count">6</span>
+        </button>
+        <button class="nav-tab" data-page="statistics">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Statistics</span>
+        </button>
+        <button class="nav-tab" data-page="logs">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          <span>Live Events & Logs</span>
+        </button>
+        <button class="nav-tab" data-page="reports">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span>Reports</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- NAVBAR RIGHT CONTROLS & PROFILE -->
+    <div class="nav-right">
+      <div class="fleet-status-pill">
+        <span class="status-indicator-dot"></span>
+        <span class="status-text">Fleet Active: <strong>4 AMRs</strong></span>
+      </div>
+
+      <div class="sim-speed-widget">
+        <button class="speed-toggle active" data-speed="1.0">1x</button>
+        <button class="speed-toggle" data-speed="2.0">2x</button>
+        <button class="btn-pause-sim" id="global-pause-btn" title="Pause / Resume">⏸</button>
+      </div>
+
+      <button class="btn-emergency-stop" id="global-estop-btn">
+        <span>🛑</span> E-Stop
+      </button>
+
+      <div class="profile-card">
+        <div class="profile-avatar">PS</div>
+        <div class="profile-info">
+          <span class="profile-name">Pravin S.</span>
+          <span class="profile-role">Fleet Supervisor</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- APP VIEW CONTAINER (MULTI-PAGE SPA) -->
+  <div class="app-body">
+
+    <!-- ================================================================= -->
+    <!-- 1. DASHBOARD PAGE (ALL-IN-ONE OVERVIEW)                           -->
+    <!-- ================================================================= -->
+    <section class="page-view active" id="page-dashboard">
+      <div class="dashboard-grid">
+        
+        <!-- LEFT: INTERACTIVE LIVE MAP WIDGET -->
+        <div class="dash-map-card">
+          <div class="card-floating-header">
+            <div class="floating-header-left">
+              <div class="view-mode-toggle">
+                <button class="mode-btn active" id="dash-btn-2d">2D Flat Map</button>
+                <button class="mode-btn" id="dash-btn-3d">3D Perspective View</button>
+              </div>
+              <span class="map-res-tag">Warehouse: 45m × 60m (90×120 cells)</span>
+            </div>
+            
+            <div class="floating-header-right">
+              <button class="chip-btn active" id="dash-toggle-trails">Trails: ON</button>
+              <button class="chip-btn active" id="dash-toggle-bubbles">Thoughts: ON</button>
+              <button class="chip-btn" id="dash-btn-recenter">⟲ Recenter</button>
+            </div>
+          </div>
+
+          <!-- MAP CANVAS -->
+          <div class="map-canvas-wrapper" id="dash-canvas-container">
+            <canvas id="dashWarehouseCanvas"></canvas>
+
+            <!-- UBER-STYLE FLOATING ACTIVE MISSION CARD -->
+            <div class="uber-directions-card" id="uber-mission-card">
+              <div class="card-dir-header">
+                <div class="dir-icon-badge">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+                <div class="dir-meta">
+                  <span class="dir-title" id="dir-amr-name">ROBOT_1 (Mission En Route)</span>
+                  <span class="dir-subtitle" id="dir-task-dest">Target: West Zone Aisle 3 (Rack W-04)</span>
+                </div>
+                <button class="btn-card-close" id="btn-minimize-dir">−</button>
+              </div>
+              <div class="dir-body">
+                <div class="dir-step-row">
+                  <span class="step-badge">PICKUP</span>
+                  <span class="step-text" id="dir-item-name">SKU-4921: Industrial Servo Bearing</span>
+                </div>
+                <div class="dir-metrics-row">
+                  <div class="dir-metric">
+                    <span class="metric-lbl">EST. TIME</span>
+                    <strong class="metric-val" id="dir-eta">42 sec</strong>
+                  </div>
+                  <div class="dir-metric">
+                    <span class="metric-lbl">SPEED</span>
+                    <strong class="metric-val" id="dir-speed">0.85 m/s</strong>
+                  </div>
+                  <div class="dir-metric">
+                    <span class="metric-lbl">BATTERY</span>
+                    <strong class="metric-val text-green" id="dir-battery">84%</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HOVER ROBOT TOOLTIP -->
+            <div class="robot-hover-tooltip" id="robot-hover-card" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: LIVE FLEET CARDS & SUMMARY STATS -->
+        <div class="dash-side-panel">
+          
+          <!-- SUMMARY METRICS WIDGET -->
+          <div class="widget-box">
+            <h3 class="widget-title">Real-Time Fleet Overview</h3>
+            <div class="stat-mini-cards">
+              <div class="mini-stat-card">
+                <span class="stat-val text-blue" id="kpi-orders-done">14</span>
+                <span class="stat-lbl">Tasks Completed</span>
+              </div>
+              <div class="mini-stat-card">
+                <span class="stat-val text-green">98.6%</span>
+                <span class="stat-lbl">On-Time Rate</span>
+              </div>
+              <div class="mini-stat-card">
+                <span class="stat-val text-amber" id="kpi-corridors-locked">1</span>
+                <span class="stat-lbl">Corridor Locks</span>
+              </div>
+              <div class="mini-stat-card">
+                <span class="stat-val text-purple">0.00</span>
+                <span class="stat-lbl">Fleet Conflicts</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVE AMR STATUS CARDS -->
+          <div class="widget-box flex-grow">
+            <div class="widget-header-row">
+              <h3 class="widget-title">Active AMR Units</h3>
+              <button class="btn-link-action" id="dash-btn-spawn">+ Quick Spawn</button>
+            </div>
+            <div class="amr-cards-stack" id="amr-cards-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- RECENT ACTIVITY SNIPPET -->
+          <div class="widget-box">
+            <div class="widget-header-row">
+              <h3 class="widget-title">Latest System Activities</h3>
+              <button class="btn-link-action" id="btn-view-all-logs">View All →</button>
+            </div>
+            <div class="recent-events-stream" id="dash-recent-logs">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================================================================= -->
+    <!-- 2. FULL-SCREEN LIVE MAP PAGE                                      -->
+    <!-- ================================================================= -->
+    <section class="page-view" id="page-map-view">
+      <div class="fullmap-container">
+        
+        <!-- MAP FLOATING CONTROL BAR -->
+        <div class="map-floating-bar">
+          <div class="bar-group">
+            <div class="view-mode-toggle">
+              <button class="mode-btn active" id="map-btn-2d">2D Top View</button>
+              <button class="mode-btn" id="map-btn-3d">3D Isometric View</button>
+            </div>
+          </div>
+
+          <div class="bar-group">
+            <button class="map-action-pill" id="map-action-task">📦 Dispatch Task to Location</button>
+            <button class="map-action-pill" id="map-action-obstacle">🚧 Inject Dynamic Obstacle</button>
+            <button class="map-action-pill" id="map-action-clear-obs">🧹 Clear Blockages</button>
+          </div>
+
+          <div class="bar-group">
+            <div class="coords-pill" id="fullmap-coords">X: 0.00m | Y: 0.00m</div>
+          </div>
+        </div>
+
+        <div class="map-canvas-wrapper" id="fullmap-canvas-container">
+          <canvas id="fullWarehouseCanvas"></canvas>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================================================================= -->
+    <!-- 3. TASK HANDLING & DISPATCH PAGE (INSPIRED BY REFERENCE 1)       -->
+    <!-- ================================================================= -->
+    <section class="page-view" id="page-tasks">
+      <div class="page-inner-content">
+        
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-heading">Task & Order Management</h2>
+            <p class="page-subheading">Monitor real-time AMR task assignments, schedules, delivery delays, and prioritize urgent orders.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-outline" id="btn-trigger-task-burst">🎲 Random Task Burst (4x)</button>
+            <button class="btn-solid-primary" id="btn-create-task-modal">+ Create New Task</button>
+          </div>
+        </div>
+
+        <!-- TASK FILTER & SEARCH TOOLBAR -->
+        <div class="table-filter-bar">
+          <div class="search-input-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="task-search-input" placeholder="Search by Order ID, Location, or Assigned AMR..." />
+          </div>
+          <div class="filter-dropdowns">
+            <select class="filter-select" id="task-filter-status">
+              <option value="ALL">All Statuses</option>
+              <option value="Started">Started</option>
+              <option value="En Route">En Route</option>
+              <option value="Done">Done</option>
+              <option value="Pending">Pending</option>
+            </select>
+            <select class="filter-select" id="task-filter-priority">
+              <option value="ALL">All Priorities</option>
+              <option value="Urgent (P1)">Urgent (P1)</option>
+              <option value="High (P2)">High (P2)</option>
+              <option value="Standard (P3)">Standard (P3)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TASKS DATA TABLE -->
+        <div class="data-table-card">
+          <table class="uber-table" id="tasks-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Target Location / Rack</th>
+                <th>Task Type</th>
+                <th>Assigned AMR</th>
+                <th>STA</th>
+                <th>ATA</th>
+                <th>STD</th>
+                <th>ATD</th>
+                <th>Demand (Qty)</th>
+                <th>Delay</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-table-body">
+              <!-- Rendered via JavaScript from TASK_STORE -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================================================================= -->
+    <!-- 4. STATISTICS & PERFORMANCE PAGE (INSPIRED BY REFERENCE 3)        -->
+    <!-- ================================================================= -->
+    <section class="page-view" id="page-statistics">
+      <div class="page-inner-content">
+        
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-heading">Fleet Analytics & Bottleneck Statistics</h2>
+            <p class="page-subheading">Warehouse traffic density heatmap, robot velocity distribution, throughput, and corridor bottleneck reports.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-outline" id="btn-refresh-stats">⟲ Refresh Data</button>
+            <button class="btn-outline" id="btn-export-pdf">Export Report (PDF)</button>
+          </div>
+        </div>
+
+        <!-- STATISTICS KPIS -->
+        <div class="kpi-cards-grid">
+          <div class="kpi-card">
+            <span class="kpi-title">Average Task Execution Time</span>
+            <div class="kpi-metric-group">
+              <span class="kpi-number">1m 24s</span>
+              <span class="kpi-badge badge-green">−12% vs benchmark</span>
+            </div>
+            <span class="kpi-sub">Calculated across 84 mission trips</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Fleet Utilization Ratio</span>
+            <div class="kpi-metric-group">
+              <span class="kpi-number">91.4%</span>
+              <span class="kpi-badge badge-green">Optimal</span>
+            </div>
+            <span class="kpi-sub">Active moving vs Idle/Charging</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Corridor Mutex Wait Time</span>
+            <div class="kpi-metric-group">
+              <span class="kpi-number">2.8s</span>
+              <span class="kpi-badge badge-green">Low delay</span>
+            </div>
+            <span class="kpi-sub">Decentralized Lamport resolution</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Energy Consumption</span>
+            <div class="kpi-metric-group">
+              <span class="kpi-number">1.42 kWh</span>
+              <span class="kpi-badge badge-blue">Normal</span>
+            </div>
+            <span class="kpi-sub">4 Charging Pads online</span>
+          </div>
+        </div>
+
+        <!-- HEATMAP & PERFORMANCE CHARTS -->
+        <div class="stats-charts-row">
+          
+          <!-- WAREHOUSE HEATMAP WIDGET -->
+          <div class="chart-box">
+            <div class="chart-header">
+              <div class="chart-title-group">
+                <h3 class="chart-title">Warehouse Aisle Traffic Congestion Heatmap</h3>
+                <span class="chart-subtitle">Real-time cumulative trajectory density & obstacle hotspots</span>
+              </div>
+              <div class="heatmap-legend">
+                <span class="legend-scale"><span class="scale-dot low"></span> Low</span>
+                <span class="legend-scale"><span class="scale-dot med"></span> Med</span>
+                <span class="legend-scale"><span class="scale-dot high"></span> High Congestion</span>
+              </div>
+            </div>
+            <div class="heatmap-canvas-wrap">
+              <canvas id="statsHeatmapCanvas"></canvas>
+            </div>
+          </div>
+
+          <!-- EFFICIENCY / DELAYS SUMMARY -->
+          <div class="chart-box">
+            <div class="chart-header">
+              <h3 class="chart-title">Task Completion & Delay Breakdown</h3>
+              <span class="chart-subtitle">Distribution of scheduled vs actual delivery times</span>
+            </div>
+            <div class="progress-stats-list">
+              <div class="progress-stat-item">
+                <div class="stat-header-line">
+                  <span>On-Time & Early (< 0s delay)</span>
+                  <strong>88%</strong>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill bg-green" style="width: 88%"></div></div>
+              </div>
+
+              <div class="progress-stat-item">
+                <div class="stat-header-line">
+                  <span>Minor Delay (0s – 30s)</span>
+                  <strong>9%</strong>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill bg-amber" style="width: 9%"></div></div>
+              </div>
+
+              <div class="progress-stat-item">
+                <div class="stat-header-line">
+                  <span>Aisle Obstacle Reroute Delay (> 30s)</span>
+                  <strong>3%</strong>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill bg-red" style="width: 3%"></div></div>
+              </div>
+
+              <div class="battery-health-box">
+                <div class="box-icon">⚡</div>
+                <div class="box-text">
+                  <strong>Inductive Charging Station Status</strong>
+                  <span>4 of 4 Pads Active (Pad 1: Charging, Pad 2: Reserved, Pad 3 & 4: Free)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================================================================= -->
+    <!-- 5. LIVE EVENTS & LOGS PAGE (NON-TECHNICAL READABLE FORMAT)        -->
+    <!-- ================================================================= -->
+    <section class="page-view" id="page-logs">
+      <div class="page-inner-content">
+        
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-heading">Live System Events & Activity Stream</h2>
+            <p class="page-subheading">All decentralized consensus, corridor mutex negotiations, and safety alerts translated into clear, human-readable English.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-outline" id="btn-export-logs">Export CSV</button>
+            <button class="btn-outline" id="btn-clear-all-logs">Clear Logs</button>
+          </div>
+        </div>
+
+        <!-- LOG FILTER TOOLBAR -->
+        <div class="table-filter-bar">
+          <div class="search-input-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="log-search-input" placeholder="Search activities, robot names, or locations..." />
+          </div>
+          <div class="filter-dropdowns">
+            <select class="filter-select" id="log-filter-robot">
+              <option value="ALL">All Robots</option>
+              <option value="robot_1">ROBOT_1</option>
+              <option value="robot_2">ROBOT_2</option>
+              <option value="robot_3">ROBOT_3</option>
+              <option value="robot_4">ROBOT_4</option>
+            </select>
+            <select class="filter-select" id="log-filter-category">
+              <option value="ALL">All Categories</option>
+              <option value="TASK_ALLOCATION">Task Allocation (CBBA)</option>
+              <option value="CORRIDOR_MUTEX">Corridor Negotiation</option>
+              <option value="PATH_ROUTING">Path Routing (WHCA*)</option>
+              <option value="SAFETY_ALERT">Safety & Obstacles</option>
+              <option value="BATTERY_POWER">Battery & Charging</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- LOGS DATA TABLE -->
+        <div class="data-table-card">
+          <table class="uber-table" id="logs-table">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Time</th>
+                <th style="width: 120px;">AMR Unit</th>
+                <th style="width: 170px;">Activity Category</th>
+                <th>Plain English Activity Description</th>
+                <th style="width: 130px;">Status / Severity</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table-body">
+              <!-- Populated via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================================================================= -->
+    <!-- 6. REPORTS PAGE                                                   -->
+    <!-- ================================================================= -->
+    <section class="page-view" id="page-reports">
+      <div class="page-inner-content">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-heading">Shift & Fleet Performance Reports</h2>
+            <p class="page-subheading">Comprehensive summaries for warehouse operations managers and maintenance teams.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-solid-primary" onclick="alert('Report generation PDF initiated!')">Generate Shift Summary</button>
+          </div>
+        </div>
+
+        <div class="report-cards-grid">
+          <div class="report-doc-card">
+            <div class="doc-icon">📊</div>
+            <div class="doc-info">
+              <h3>Daily SLA & Order Fulfillment Report</h3>
+              <p>Total orders completed: 142 • On-time SLA rate: 98.6% • Avg turnaround: 1m 24s</p>
+              <span class="doc-date">Generated Today at 08:00 AM</span>
+            </div>
+            <button class="btn-outline btn-sm">Download PDF</button>
+          </div>
+
+          <div class="report-doc-card">
+            <div class="doc-icon">🔋</div>
+            <div class="doc-info">
+              <h3>Battery Health & Inductive Pad Diagnostics</h3>
+              <p>Fleet battery cycles: Nominal • Pad efficiency: 99.1% • No thermal anomalies detected</p>
+              <span class="doc-date">Generated Yesterday at 11:30 PM</span>
+            </div>
+            <button class="btn-outline btn-sm">Download PDF</button>
+          </div>
+
+          <div class="report-doc-card">
+            <div class="doc-icon">🚧</div>
+            <div class="doc-info">
+              <h3>Warehouse Aisle Obstacle & Congestion Log</h3>
+              <p>Dynamic blockages detected: 3 • Automatic WHCA* reroutes: 3 • Zero collisions recorded</p>
+              <span class="doc-date">Generated Yesterday at 06:00 PM</span>
+            </div>
+            <button class="btn-outline btn-sm">Download PDF</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: ROBOT ACTIVITY & TOPIC INSPECTOR (OPENS ON AMR CLICK)      -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="robot-inspector-modal" style="display: none;">
+    <div class="modal-dialog-wide">
+      <div class="modal-dialog-header">
+        <div class="modal-title-wrap">
+          <span class="modal-robot-badge" id="modal-robot-dot"></span>
+          <h3 id="modal-robot-title">ROBOT_1 Inspection & Activity Feed</h3>
+        </div>
+        <button class="btn-close-modal" id="btn-close-inspector">×</button>
+      </div>
+
+      <div class="modal-dialog-body">
+        <div class="inspector-grid">
+          
+          <!-- LEFT: LIVE AMR TELEMETRY METRICS -->
+          <div class="inspector-telemetry-col">
+            <h4 class="col-heading">Live Telemetry & States</h4>
+            
+            <div class="telemetry-param-list">
+              <div class="param-row">
+                <span class="param-lbl">ROS 2 Namespace:</span>
+                <strong class="param-val" id="insp-namespace">/robot_1</strong>
+              </div>
+              <div class="param-row">
+                <span class="param-lbl">Current Coordinates:</span>
+                <strong class="param-val" id="insp-coords">X: -15.67m, Y: 14.54m (Yaw: 90°)</strong>
+              </div>
+              <div class="param-row">
+                <span class="param-lbl">Linear Velocity:</span>
+                <strong class="param-val" id="insp-speed">0.82 m/s</strong>
+              </div>
+              <div class="param-row">
+                <span class="param-lbl">Battery Charge:</span>
+                <strong class="param-val text-green" id="insp-battery">88.5% (Discharging)</strong>
+              </div>
+              <div class="param-row">
+                <span class="param-lbl">Active Task:</span>
+                <strong class="param-val text-blue" id="insp-task">TASK_PICK_W18</strong>
+              </div>
+              <div class="param-row">
+                <span class="param-lbl">Safety Supervisor State:</span>
+                <strong class="param-val text-green" id="insp-safety">CLEAR (No Obstacles)</strong>
+              </div>
+              <div class="param-row">
+                <span class="param-lbl">Corridor Lock Held:</span>
+                <strong class="param-val" id="insp-mutex">None (Aisle Free)</strong>
+              </div>
+            </div>
+
+            <div class="telemetry-actions">
+              <button class="btn-outline btn-sm w-full" id="insp-btn-returndock">⚡ Order Return to Charging Dock</button>
+              <button class="btn-outline-danger btn-sm w-full" id="insp-btn-stop">⚠️ Halt This Robot</button>
+            </div>
+          </div>
+
+          <!-- RIGHT: RECENT READABLE LOGS FOR THIS ROBOT -->
+          <div class="inspector-logs-col">
+            <h4 class="col-heading">Individual Activity & Decision Log</h4>
+            <div class="inspector-log-stream" id="insp-logs-stream">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: CREATE / DISPATCH NEW TASK                                 -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="create-task-modal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-dialog-header">
+        <h3>Create & Dispatch Warehouse Task</h3>
+        <button class="btn-close-modal" id="btn-close-create-task">×</button>
+      </div>
+      <div class="modal-dialog-body">
+        <div class="form-group">
+          <label>Target Location / Shelf Rack</label>
+          <select class="form-select" id="newtask-location">
+            <option value="Rack W-04 (West Zone)">Rack W-04 (West Zone Aisle 2)</option>
+            <option value="Rack W-18 (West Zone)">Rack W-18 (West Zone Aisle 8)</option>
+            <option value="Rack C-06 (Center Zone)">Rack C-06 (Center Zone Aisle 3)</option>
+            <option value="Rack C-14 (Center Zone)">Rack C-14 (Center Zone Aisle 7)</option>
+            <option value="Rack E-09 (East Zone)">Rack E-09 (East Zone Aisle 4)</option>
+            <option value="Rack E-22 (East Zone)">Rack E-22 (East Zone Aisle 10)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Task Action Type</label>
+          <select class="form-select" id="newtask-type">
+            <option value="pickup">Pickup Item (To Staging)</option>
+            <option value="dropoff">Dropoff Restock</option>
+            <option value="transfer">Internal Aisle Transfer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Item Description & SKU</label>
+          <input type="text" class="form-input" id="newtask-item" value="SKU-8820: High Torque Stepper Motor" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Demand Qty</label>
+            <input type="number" class="form-input" id="newtask-demand" value="8" min="1" max="50" />
+          </div>
+          <div class="form-group">
+            <label>Order Priority</label>
+            <select class="form-select" id="newtask-priority">
+              <option value="Urgent (P1)">Urgent (P1) - Move to Top</option>
+              <option value="High (P2)" selected>High (P2)</option>
+              <option value="Standard (P3)">Standard (P3)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-dialog-footer">
+        <button class="btn-outline" id="btn-cancel-create-task">Cancel</button>
+        <button class="btn-solid-primary" id="btn-submit-create-task">Dispatch Task via Auction</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
