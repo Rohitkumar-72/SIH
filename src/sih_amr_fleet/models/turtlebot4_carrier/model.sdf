@@ -1,0 +1,167 @@
+<sdf version='1.11'>
+  <model name='turtlebot4'>
+    <link name='base_link'>
+      <inertial>
+        <pose>0 0 0.059999999999999998 0 0 0</pose>
+        <mass>2.5</mass>
+        <inertia>
+          <ixx>0.02</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.02</iyy>
+          <iyz>0</iyz>
+          <izz>0.035000000000000003</izz>
+        </inertia>
+      </inertial>
+      <collision name='base_link_fixed_joint_lump__carrier_base_collision_collision'>
+        <pose>0 0 0.059999999999999998 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.10000000000000001</length>
+            <radius>0.17000000000000001</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name='base_link_visual'>
+        <pose>0 0 0.039199999999999999 0 0 1.5707963267948959</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://irobot_create_description/meshes/body_visual.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.119999997 0.119999997 0.119999997 1</diffuse>
+          <specular>0.400000006 0.400000006 0.400000006 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+      <visual name='base_link_visual_1'>
+        <pose>0 0 0.039199999999999999 0 0 1.5707963267948959</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://irobot_create_description/meshes/bumper_visual.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.119999997 0.119999997 0.119999997 1</diffuse>
+          <specular>0.400000006 0.400000006 0.400000006 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+      <visual name='base_link_visual_2'>
+        <pose>0 0 0.080000000000000002 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://turtlebot4_description/meshes/shell.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.119999997 0.119999997 0.119999997 1</diffuse>
+          <specular>0.400000006 0.400000006 0.400000006 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+      <gravity>false</gravity>
+    </link>
+    <joint name='rplidar_joint' type='fixed'>
+      <pose relative_to='base_link'>0.0039358400000000003 0 0.13949271999999999 0 0 1.5707963267948959</pose>
+      <parent>base_link</parent>
+      <child>rplidar_link</child>
+      <axis>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-inf</lower>
+          <upper>inf</upper>
+        </limit>
+      </axis>
+      <physics>
+        <ode>
+          <limit>
+            <cfm>0</cfm>
+            <erp>0.20000000000000001</erp>
+          </limit>
+        </ode>
+      </physics>
+    </joint>
+    <link name='rplidar_link'>
+      <pose relative_to='rplidar_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.17000000000000001</mass>
+        <inertia>
+          <ixx>0.00019000000000000001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00012</iyy>
+          <iyz>0</iyz>
+          <izz>0.00021000000000000001</izz>
+        </inertia>
+      </inertial>
+      <collision name='rplidar_link_collision'>
+        <pose>0 0.012999999999999999 -0.019 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.070999999999999994 0.10000000000000001 0.059999999999999998</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <ode/>
+          </contact>
+          <friction>
+            <ode/>
+          </friction>
+        </surface>
+      </collision>
+      <visual name='rplidar_link_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://turtlebot4_description/meshes/rplidar.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <gravity>false</gravity>
+      <sensor name='rplidar' type='gpu_lidar'>
+        <update_rate>10</update_rate>
+        <visualize>false</visualize>
+        <always_on>true</always_on>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>360</samples>
+              <resolution>1</resolution>
+              <min_angle>-3.1415926535897931</min_angle>
+              <max_angle>3.1415926535897931</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.16400000000000001</min>
+            <max>12</max>
+            <resolution>0.01</resolution>
+          </range>
+        </lidar>
+      </sensor>
+    </link>
+    <frame name='base_footprint_joint' attached_to='base_link'>
+      <pose>0 0 0 0 0 0</pose>
+    </frame>
+    <frame name='base_footprint' attached_to='base_footprint_joint'>
+      <pose>0 0 0 0 0 0</pose>
+    </frame>
+  </model>
+</sdf>

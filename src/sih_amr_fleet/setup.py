@@ -23,6 +23,7 @@ setup(
         ('share/' + package_name + '/config', config_files),
         ('share/' + package_name + '/maps', package_files('maps', '*')),
         ('share/' + package_name + '/scenarios', package_files('scenarios', '*')),
+        ('share/' + package_name + '/models/turtlebot4_carrier', package_files('models/turtlebot4_carrier', '*')),
     ],
     install_requires=['setuptools', 'PyYAML'],
     tests_require=['pytest'],
@@ -59,5 +60,8 @@ setup(
         'fault_injector_node = sih_amr_fleet.fault_injector_node:main',
         'bounded_vision_recorder_node = sih_amr_fleet.bounded_vision_recorder_node:main',
         'robot_agent_process = sih_amr_fleet.robot_agent_process:main',
+        'carrier_robot_description = sih_amr_fleet.carrier_robot_description:main',
+        'kinematic_carrier_node = sih_amr_fleet.kinematic_carrier_node:main',
     ]},
 )
+

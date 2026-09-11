@@ -13,6 +13,7 @@ OVERLAY="${OVERLAY:-$WORKSPACE/install}"
 WORLD_FILE="${WORLD_FILE:-$WAREHOUSE_DIR/worlds/small_warehouse/warehouse_clean.sdf}"
 WORLD_NAME="${WORLD_NAME:-default}"
 MODEL="${MODEL:-lite}"
+SIMULATION_BACKEND="${SIMULATION_BACKEND:-kinematic_lidar_carrier}"
 FLEET_COUNT="${FLEET_COUNT:-6}"
 SENSOR_PROFILE="${SENSOR_PROFILE:-fleet}"
 LIDAR_UPDATE_RATE_HZ="${LIDAR_UPDATE_RATE_HZ:-5.0}"
@@ -43,8 +44,11 @@ for robot in $(seq 1 "$FLEET_COUNT"); do
   for axis in X Y YAW; do
     variable="ROBOT_${robot}_${axis}"
     [[ -n "${!variable:-}" ]] || { echo "ERROR: set $variable in $POSE_FILE" >&2; exit 2; }
+    export "$variable"
   done
 done
+export FLEET_COUNT
+
 [[ -f "$WORLD_FILE" ]] || { echo "ERROR: world not found: $WORLD_FILE" >&2; exit 2; }
 [[ -f "$GUI_CONFIG" ]] || { echo "ERROR: GUI config not found: $GUI_CONFIG" >&2; exit 2; }
 mkdir -p "$LOG_DIR" || { echo "ERROR: cannot create $LOG_DIR" >&2; exit 1; }
@@ -55,8 +59,11 @@ write_run_event launcher_started "fleet_count=$FLEET_COUNT headless_or_gui_run_r
 write_run_event simulation_profile "sensor_profile=$SENSOR_PROFILE lidar_hz=$LIDAR_UPDATE_RATE_HZ tracking_mps=$FLEET_TRACKING_SPEED_MPS"
 
 source /opt/ros/jazzy/setup.bash
-source "$OVERLAY/setup.bash"
+[[ -f "$OVERLAY/setup.bash" ]] && source "$OVERLAY/setup.bash"
+[[ -f "$SIH_ROOT/install/setup.bash" ]] && source "$SIH_ROOT/install/setup.bash"
+[[ -f "$WORKSPACE/install/setup.bash" ]] && source "$WORKSPACE/install/setup.bash"
 set -u
+
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-42}"
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 export RMW_IMPLEMENTATION="${SIH_RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
@@ -78,7 +85,7 @@ export QT_QPA_PLATFORM=xcb
 export GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/lib${GZ_SIM_SYSTEM_PLUGIN_PATH:+:$GZ_SIM_SYSTEM_PLUGIN_PATH}"
 export GZ_SIM_RESOURCE_PATH="$SIH_ROOT/src/sih_amr_fleet/models:$WAREHOUSE_DIR/models:$WAREHOUSE_DIR:/opt/ros/jazzy/share"
 
-SERVER_PID="" CLOCK_PID="" GUI_PID="" FLEET_PID="" DATA_PID="" STARTED_PID=""
+SERVER_PID="" CLOCK_PID="" GUI_PID="" FLEET_PID="" DATA_PID="" STARTED_PID="" CARRIER_PID=""
 declare -a ROBOT_PIDS=() CHARGING_PIDS=()
 
 start_group() {
@@ -93,24 +100,25 @@ cleanup() {
   trap - EXIT INT TERM
   write_run_event launcher_exiting "status=$status"
   echo 'Stopping this fleet run...'
-  for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+  for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "$CARRIER_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
     [[ -n "$pid" ]] && kill -TERM "$pid" 2>/dev/null || true
     [[ -n "$pid" ]] && kill -TERM -- "-$pid" 2>/dev/null || true
   done
   for _ in $(seq 1 10); do
     local alive=false
-    for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+    for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "$CARRIER_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
       [[ -n "$pid" ]] && kill -0 -- "-$pid" 2>/dev/null && alive=true
     done
     [[ "$alive" == false ]] && break
     sleep 0.5
   done
-  for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
+  for pid in "$GUI_PID" "$FLEET_PID" "$DATA_PID" "$CARRIER_PID" "${CHARGING_PIDS[@]}" "${ROBOT_PIDS[@]}" "$CLOCK_PID" "$SERVER_PID"; do
     [[ -n "$pid" ]] && kill -KILL "$pid" 2>/dev/null || true
     [[ -n "$pid" ]] && kill -KILL -- "-$pid" 2>/dev/null || true
   done
   exit "$status"
 }
+
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
@@ -155,18 +163,35 @@ CLOCK_PID="$STARTED_PID"
 sleep 2
 kill -0 "$CLOCK_PID" 2>/dev/null || fail 'Clock bridge exited'
 
+if [[ "$SIMULATION_BACKEND" == "kinematic_lidar_carrier" ]]; then
+  echo "Starting Kinematic LiDAR Carrier motion backend..."
+  start_group "$LOG_DIR/kinematic_carrier.log" ros2 run sih_amr_fleet kinematic_carrier_node --ros-args -p use_sim_time:=true
+  CARRIER_PID="$STARTED_PID"
+  write_run_event kinematic_carrier_started "pid=$CARRIER_PID"
+  sleep 2
+  kill -0 "$CARRIER_PID" 2>/dev/null || fail 'Kinematic carrier node exited during startup'
+fi
+
 spawn_robot() {
   local robot="$1" x="$2" y="$3" yaw="$4" keep_sensors="$5" log_file="$LOG_DIR/$1.log"
   echo "Starting $robot at x=$x y=$y yaw=$yaw..."
-  start_group "$log_file" ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py \
-    namespace:="$robot" model:="$MODEL" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.03 yaw:="$yaw" \
-    spawn_dock:=false keep_sensors_system:="$keep_sensors" \
-    sensor_profile:="$SENSOR_PROFILE" lidar_update_rate_hz:="$LIDAR_UPDATE_RATE_HZ" \
-    control_config:="$CONTROL_CONFIG"
+  if [[ "$SIMULATION_BACKEND" == "kinematic_lidar_carrier" ]]; then
+    start_group "$log_file" ros2 launch sih_amr_fleet spawn_carrier_amr.launch.py \
+      namespace:="$robot" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.03 yaw:="$yaw" \
+      lidar_update_rate_hz:="$LIDAR_UPDATE_RATE_HZ"
+  else
+    start_group "$log_file" ros2 launch sih_amr_fleet spawn_minimal_amr.launch.py \
+      namespace:="$robot" model:="$MODEL" world:="$WORLD_NAME" x:="$x" y:="$y" z:=0.03 yaw:="$yaw" \
+      spawn_dock:=false keep_sensors_system:="$keep_sensors" \
+      sensor_profile:="$SENSOR_PROFILE" lidar_update_rate_hz:="$LIDAR_UPDATE_RATE_HZ" \
+      control_config:="$CONTROL_CONFIG"
+  fi
   ROBOT_PIDS+=("$STARTED_PID")
   write_run_event robot_launch_started "$robot pid=$STARTED_PID"
   wait_for entity "$SPAWN_WAIT_SECONDS" model_exists "$robot" || fail "$robot body was not created"
-  wait_for controller 120 grep -Fq "[$robot.diffdrive_spawner]: Configured and activated diffdrive_controller" "$log_file" || fail "$robot controller did not activate"
+  if [[ "$SIMULATION_BACKEND" != "kinematic_lidar_carrier" ]]; then
+    wait_for controller 120 grep -Fq "[$robot.diffdrive_spawner]: Configured and activated diffdrive_controller" "$log_file" || fail "$robot controller did not activate"
+  fi
   wait_for interfaces 90 grep -Fq "[$robot.interface_readiness]: Interface readiness passed:" "$log_file" || fail "$robot interfaces are not ready"
   echo "Verifying $robot physical coordinates and orientation in Gazebo..."
   python3 "$SCRIPT_DIR/verify_gazebo_pose.py" --robot "$robot" --expected-x "$x" --expected-y "$y" --expected-yaw "$yaw" --timeout 15.0 || fail "$robot failed Gazebo physical pose verification"
@@ -182,6 +207,7 @@ for r in $(seq 1 "$FLEET_COUNT"); do
   yaw_var="ROBOT_${r}_YAW"
   spawn_robot "robot_${r}" "${!x_var}" "${!y_var}" "${!yaw_var}" false
 done
+
 
 # Verify all fleet members simultaneously in Gazebo before releasing control
 echo "Verifying all $FLEET_COUNT AMRs at dock locations in Gazebo..."

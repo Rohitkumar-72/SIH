@@ -21,6 +21,8 @@ class SafetySupervisorNode(Node):
         # without side-shelf returns in 1.2m narrow aisles triggering false braking stops.
         self.forward_half_angle = self.declare_parameter('braking_sector_half_angle_rad', math.pi / 6.0).value
         self.lidar_yaw = self.declare_parameter('lidar_yaw_in_base_rad', math.pi / 2.0).value
+        self.scan_timeout_s = self.declare_parameter('scan_timeout_s', 1.2).value
+        self.localization_timeout_s = self.declare_parameter('localization_timeout_s', 1.2).value
         self.session_id, self.sequence, self.pose_time, self.scan_time = new_session_id(), 0, -math.inf, -math.inf
         self.nearest, self.candidate, self.estop = math.inf, Twist(), False
         self.measured_speed = 0.0
@@ -77,7 +79,7 @@ class SafetySupervisorNode(Node):
             (2.0 * max(self.deceleration, 1e-6)) + self.margin)
         invalid_command = not finite_command(self.candidate.linear.x, self.candidate.angular.z)
         travel_clearance = self.directional_clearance(self.candidate.linear.x)
-        stop = (self.estop or invalid_command or age > 0.5 or scan_age > 0.5
+        stop = (self.estop or invalid_command or age > self.localization_timeout_s or scan_age > self.scan_timeout_s
                 or travel_clearance <= measured_braking)
         safe_speed = braking_safe_speed(
             travel_clearance, self.deceleration, self.margin)
@@ -86,8 +88,8 @@ class SafetySupervisorNode(Node):
                  (SafetyState.SLOW if speed_limited else SafetyState.CLEAR))
         reason = ('emergency stop' if self.estop else
                   ('nonfinite command' if invalid_command else
-                   ('localization stale' if age > 0.5 else
-                    ('scan stale' if scan_age > 0.5 else
+                   ('localization stale' if age > self.localization_timeout_s else
+                    ('scan stale' if scan_age > self.scan_timeout_s else
                      ('braking envelope' if stop else
                       ('braking speed cap' if speed_limited else 'clear'))))))
         if stop:

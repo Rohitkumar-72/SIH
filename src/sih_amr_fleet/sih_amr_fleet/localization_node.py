@@ -23,7 +23,13 @@ class LocalizationNode(Node):
         self.session_id, self.sequence = new_session_id(), 0
         self.dock_anchors = {}
         self.last_raw_odom = None
-        if self.map_file:
+        if not self.map_file or not pathlib.Path(self.map_file).exists():
+            try:
+                from ament_index_python.packages import get_package_share_directory
+                self.map_file = str(pathlib.Path(get_package_share_directory('sih_amr_fleet')) / 'maps' / 'demo_warehouse.yaml')
+            except Exception:
+                pass
+        if self.map_file and pathlib.Path(self.map_file).exists():
             try:
                 for dock_id, spec in (yaml.safe_load(pathlib.Path(self.map_file).read_text()) or {}).get('anchors', {}).items():
                     pose = spec.get('map_pose', [])

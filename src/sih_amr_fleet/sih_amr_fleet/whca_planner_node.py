@@ -206,7 +206,10 @@ class WhcaPlannerNode(Node):
         if self.pose is None or (self.assignment is None and self.docking_target is None):
             return
 
-        if self.assignment is not None and stamp_seconds(self.assignment.lease_until) < now_seconds(self) and self.docking_target is None:
+        if (self.assignment is not None and
+                self.docking_target is None and
+                (self.execution_task_id is None or self.execution_task_id != self.assignment.task.task_id) and
+                stamp_seconds(self.assignment.lease_until) < now_seconds(self)):
             return
 
         if self.execution_waiting and self.docking_target is None:

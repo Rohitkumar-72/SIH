@@ -22,6 +22,7 @@ class InterfaceReadiness(Node):
 
     def __init__(self):
         super().__init__('interface_readiness')
+        self.carrier_mode = self.declare_parameter('carrier_mode', False).value
         self._reported = False
         self._received_odom = False
         self._received_scan = False
@@ -38,6 +39,13 @@ class InterfaceReadiness(Node):
     def _check(self) -> None:
         if self._reported:
             return
+        if self.carrier_mode:
+            if self._received_odom and self._received_scan:
+                self._reported = True
+                self.get_logger().info(
+                    'Interface readiness passed: odom and scan samples received (kinematic carrier mode).')
+            return
+
         adapter_present = any(
             endpoint.node_name == 'twist_stamper'
             for endpoint in self.get_publishers_info_by_topic(
@@ -47,6 +55,7 @@ class InterfaceReadiness(Node):
             self.get_logger().info(
                 'Interface readiness passed: odom and scan samples received; '
                 'twist_stamper publisher detected.')
+
 
 
 def main():

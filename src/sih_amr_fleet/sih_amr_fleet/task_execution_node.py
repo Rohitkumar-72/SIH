@@ -159,8 +159,10 @@ class TaskExecutionNode(Node):
         status.fleet_header = header(self, self.robot_id, self.session_id, self.sequence, 0.5)
         status.task_id = task.task_id
         status.owner_robot_id = self.robot_id
-        status.assignment_epoch = int(getattr(self.current_assignment, 'assignment_epoch', 1))
-        status.owner_session_id = str(getattr(self.current_assignment, 'owner_session_id', self.session_id))
+        if hasattr(status, 'assignment_epoch'):
+            status.assignment_epoch = int(getattr(self.current_assignment, 'assignment_epoch', 1))
+        if hasattr(status, 'owner_session_id'):
+            status.owner_session_id = str(getattr(self.current_assignment, 'owner_session_id', self.session_id))
         status.wait_time_remaining_s = 0.0
 
         if self.phase == TaskExecutionStatus.EN_ROUTE_PICKUP:
