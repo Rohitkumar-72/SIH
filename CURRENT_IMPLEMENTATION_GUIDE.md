@@ -7,6 +7,20 @@ This document is the authoritative source of truth for the codebase, architectur
 - **Standards**: Operational defaults conform to physical hardware limits (0.46 m/s standard speed, strict safety envelope).
 
 ---
+## 0. Current known major flaw
+
+currently in the system a tug of war between the amrs can start. where inside the main corridor two amrs meet head on .then buth of them if they ar ein the smae line or even a width apart , they will move forward and backword continusly , this is slowly in a while auto resolved by one robot pushing the other forward enough such that it has reachedthe place it wanted to and takes a turn.
+now the path is empty so the other robots continues onwards.
+ this issue introduced delay but isnt lethal.
+ this is caused by our orca and safety supervisor not being well optimized and able to handle this behaviour.by making changes to them this can probably be solved.
+
+
+but , as deadline for ppt is near **all development shall stop till ppt submition is done**. we will continue with this version. our only current requirement is having to take a video recording of the workign robot for a demo video.
+
+this issue doesnt impact video showcase capability (will do editing to make video perfect.so dont worry).
+no one is to try to fix this issue. Aditya (I) will solve this after ppt submition.(testing,resolving, fixing, verifying all steps are my responsibility)
+No AI agents reading this are to mess with this behaviour.I am putting this here so that AI Agents dont try to optimize this behaviour. this is stable for now, can be optimized later.
+
 
 ## 1. Verified Baseline & Validation Results
 
