@@ -257,21 +257,17 @@ const APP_STATE = {
       namespace: '/robot_1',
       color: '#06b6d4',
       x: -5.25,
-      y: -22.60,
+      y: -29.55,
       theta: 1.57,
-      speed: 0.82,
-      battery: 92.4,
+      speed: 0.0,
+      battery: 100.0,
       isCharging: false,
-      state: 'EN_ROUTE_DROPOFF',
-      taskId: 'rnd_task_001',
-      path: [
-        { x: -5.25, y: -22.60 },
-        { x: -9.0, y: -22.60 },
-        { x: -9.0, y: -6.11 },
-        { x: -11.35, y: -6.11 }
-      ],
+      state: 'IDLE',
+      taskId: null,
+      path: [],
+      breadcrumbs: [],
       pathIdx: 0,
-      thought: 'Transit to Dispatch Bay 1'
+      thought: 'Docked at Charging Pad 1'
     },
     {
       id: 'robot_2',
@@ -281,19 +277,15 @@ const APP_STATE = {
       x: -3.75,
       y: -29.55,
       theta: 1.57,
-      speed: 0.78,
-      battery: 88.0,
+      speed: 0.0,
+      battery: 100.0,
       isCharging: false,
-      state: 'EN_ROUTE_PICKUP',
-      taskId: 'rnd_task_002',
-      path: [
-        { x: -3.75, y: -29.55 },
-        { x: -9.0, y: -29.55 },
-        { x: -9.0, y: 13.53 },
-        { x: -19.99, y: 13.53 }
-      ],
+      state: 'IDLE',
+      taskId: null,
+      path: [],
+      breadcrumbs: [],
       pathIdx: 0,
-      thought: 'CBBA Quorum 4/4 Winner: Bid 108.80'
+      thought: 'Docked at Charging Pad 2'
     },
     {
       id: 'robot_3',
@@ -304,13 +296,14 @@ const APP_STATE = {
       y: -29.55,
       theta: 1.57,
       speed: 0.0,
-      battery: 96.5,
-      isCharging: true,
+      battery: 100.0,
+      isCharging: false,
       state: 'IDLE',
       taskId: null,
       path: [],
+      breadcrumbs: [],
       pathIdx: 0,
-      thought: 'Inductive Standby (Pad 3)'
+      thought: 'Docked at Charging Pad 3'
     },
     {
       id: 'robot_4',
@@ -318,16 +311,17 @@ const APP_STATE = {
       namespace: '/robot_4',
       color: '#a855f7',
       x: -0.75,
-      y: -25.67,
+      y: -29.55,
       theta: 1.57,
-      speed: 0.75,
-      battery: 74.2,
+      speed: 0.0,
+      battery: 100.0,
       isCharging: false,
-      state: 'COMPLETED',
+      state: 'IDLE',
       taskId: null,
       path: [],
+      breadcrumbs: [],
       pathIdx: 0,
-      thought: 'Task Finished: Ready for CBBA'
+      thought: 'Docked at Charging Pad 4'
     }
   ],
 
@@ -624,8 +618,31 @@ function addStructuredLog(robot, category, description, status = 'Success', chip
 // --- TELEMETRY BRIDGE CLIENT ---
 let telemetrySocket = null;
 
+function updateConnectionStatus(isConnected, label) {
+  const pill = document.querySelector('.fleet-status-pill');
+  if (!pill) return;
+  const dot = pill.querySelector('.status-indicator-dot');
+  const txt = pill.querySelector('.status-text');
+  if (isConnected) {
+    if (dot) {
+      dot.style.backgroundColor = '#10b981';
+      dot.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.7)';
+    }
+    const count = APP_STATE.robots.length;
+    if (txt) txt.innerHTML = `Fleet Live: <strong>${count} AMRs</strong>`;
+  } else {
+    if (dot) {
+      dot.style.backgroundColor = '#f59e0b';
+      dot.style.boxShadow = 'none';
+    }
+    const count = APP_STATE.robots.length;
+    if (txt) txt.innerHTML = `Fleet Standalone: <strong>${count} AMRs</strong>`;
+  }
+}
+
 function initTelemetryBridge() {
-  const wsUrls = ['ws://localhost:8765', 'ws://localhost:9090'];
+  const host = window.location.hostname || 'localhost';
+  const wsUrls = [`ws://${host}:8765`, `ws://${host}:9090`, 'ws://localhost:8765', 'ws://localhost:9090'];
   let connected = false;
 
   function tryConnect(idx) {
@@ -638,7 +655,9 @@ function initTelemetryBridge() {
       telemetrySocket = new WebSocket(wsUrls[idx]);
       telemetrySocket.onopen = () => {
         connected = true;
+        APP_STATE.isLiveConnected = true;
         console.log(`[TelemetryBridge] Connected to ${wsUrls[idx]}`);
+        updateConnectionStatus(true, wsUrls[idx]);
       };
 
       telemetrySocket.onmessage = (event) => {
@@ -657,6 +676,8 @@ function initTelemetryBridge() {
       telemetrySocket.onclose = () => {
         if (connected) {
           console.warn('[TelemetryBridge] Disconnected, switching to polling');
+          APP_STATE.isLiveConnected = false;
+          updateConnectionStatus(false);
           startRestTelemetryPolling();
         }
       };
@@ -669,21 +690,33 @@ function initTelemetryBridge() {
 }
 
 function startRestTelemetryPolling() {
+  const host = window.location.hostname || 'localhost';
+  const endpoints = [
+    '/fleet/dashboard_telemetry',
+    `http://${host}:8766/fleet/dashboard_telemetry`,
+    'http://localhost:8766/fleet/dashboard_telemetry'
+  ];
+  let epIdx = 0;
+
   setInterval(async () => {
     try {
-      const res = await fetch('/fleet/dashboard_telemetry');
+      const res = await fetch(endpoints[epIdx], { cache: 'no-store' });
       if (res.ok) {
         const payload = await res.json();
         handleLiveTelemetryPayload(payload);
+      } else {
+        epIdx = (epIdx + 1) % endpoints.length;
       }
     } catch (e) {
-      // Offline fallback: internal simulation continues
+      epIdx = (epIdx + 1) % endpoints.length;
     }
-  }, 500);
+  }, 250);
 }
 
 function handleLiveTelemetryPayload(data) {
   if (!data) return;
+  APP_STATE.isLiveConnected = true;
+  updateConnectionStatus(true);
 
   if (data.robots) {
     for (const [rId, pose] of Object.entries(data.robots)) {
@@ -694,23 +727,50 @@ function handleLiveTelemetryPayload(data) {
           name: rId,
           namespace: `/${rId}`,
           color: ROBOT_COLOR_MAP[rId] || '#3b82f6',
-          x: pose.x || 0,
-          y: pose.y || 0,
-          theta: pose.theta || 0,
-          speed: 0.0,
-          battery: 90.0,
+          x: pose.x !== undefined ? pose.x : 0,
+          y: pose.y !== undefined ? pose.y : 0,
+          theta: pose.theta !== undefined ? pose.theta : 0,
+          targetX: pose.x !== undefined ? pose.x : 0,
+          targetY: pose.y !== undefined ? pose.y : 0,
+          targetTheta: pose.theta !== undefined ? pose.theta : 0,
+          speed: pose.speed || 0.0,
+          battery: 95.0,
           isCharging: false,
-          state: 'IDLE',
-          taskId: null,
+          state: pose.state || 'IDLE',
+          taskId: pose.taskId || null,
           path: [],
+          breadcrumbs: [],
           pathIdx: 0,
-          thought: 'Live ROS 2'
+          thought: pose.thought || 'Live ROS 2'
         };
         APP_STATE.robots.push(bot);
       } else {
-        bot.x = pose.x;
-        bot.y = pose.y;
-        bot.theta = pose.theta;
+        bot.targetX = pose.x;
+        bot.targetY = pose.y;
+        bot.targetTheta = pose.theta;
+        if (bot.x === undefined) {
+          bot.x = pose.x;
+          bot.y = pose.y;
+          bot.theta = pose.theta;
+        }
+        if (pose.speed !== undefined) bot.speed = pose.speed;
+        if (pose.state) bot.state = pose.state;
+        if (pose.thought) bot.thought = pose.thought;
+        if (pose.taskId !== undefined) bot.taskId = pose.taskId;
+      }
+
+      // Record breadcrumbs for live motion history
+      if (!bot.breadcrumbs) bot.breadcrumbs = [];
+      const lastPt = bot.breadcrumbs[bot.breadcrumbs.length - 1];
+      if (!lastPt || Math.hypot(bot.x - lastPt.x, bot.y - lastPt.y) > 0.25) {
+        bot.breadcrumbs.push({ x: bot.x, y: bot.y });
+        if (bot.breadcrumbs.length > 50) bot.breadcrumbs.shift();
+      }
+
+      // Inject live planned routes if provided by ROS 2
+      if (data.paths && data.paths[rId] && Array.isArray(data.paths[rId])) {
+        bot.path = data.paths[rId];
+        bot.pathIdx = 0;
       }
     }
   }
@@ -718,8 +778,9 @@ function handleLiveTelemetryPayload(data) {
   if (data.health) {
     for (const [rId, h] of Object.entries(data.health)) {
       const bot = APP_STATE.robots.find(r => r.id === rId);
-      if (bot && h.battery !== undefined) {
-        bot.battery = h.battery;
+      if (bot) {
+        if (h.battery !== undefined) bot.battery = h.battery;
+        if (h.safe !== undefined) bot.safe = h.safe;
       }
     }
   }
@@ -734,6 +795,7 @@ function handleLiveTelemetryPayload(data) {
       }
     }
     renderTasksTable();
+    if (typeof renderTaskCards === 'function') renderTaskCards();
     updateTaskSummaryMetrics();
   }
 
@@ -742,6 +804,9 @@ function handleLiveTelemetryPayload(data) {
       if (ev.detail) parseRawBackendLogLine(ev.detail);
     }
   }
+
+  renderSidebarAmrCards();
+  updateUberDirectionCard();
 }
 
 function parseRawBackendLogLine(line) {
@@ -1090,30 +1155,45 @@ function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
 
   if (APP_STATE.showTrails) {
     for (const bot of APP_STATE.robots) {
-      if (!bot.path || bot.path.length <= 1) continue;
-      
-      ctx.strokeStyle = bot.id === APP_STATE.selectedRobotId ? '#2563eb' : '#60a5fa';
-      ctx.lineWidth = bot.id === APP_STATE.selectedRobotId ? 3.5 : 2;
-      ctx.beginPath();
-
-      const pStart = projectWorld(bot.x, bot.y, 0, cWidth, cHeight, mode);
-      ctx.moveTo(pStart.x, pStart.y);
-
-      for (let i = bot.pathIdx; i < bot.path.length; i++) {
-        const pNode = projectWorld(bot.path[i].x, bot.path[i].y, 0, cWidth, cHeight, mode);
-        ctx.lineTo(pNode.x, pNode.y);
+      // 1. Draw breadcrumb motion trail
+      if (bot.breadcrumbs && bot.breadcrumbs.length > 1) {
+        ctx.strokeStyle = bot.color ? `${bot.color}88` : 'rgba(96, 165, 250, 0.4)';
+        ctx.lineWidth = 2.0;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        const p0 = projectWorld(bot.breadcrumbs[0].x, bot.breadcrumbs[0].y, 0, cWidth, cHeight, mode);
+        ctx.moveTo(p0.x, p0.y);
+        for (let i = 1; i < bot.breadcrumbs.length; i++) {
+          const pt = projectWorld(bot.breadcrumbs[i].x, bot.breadcrumbs[i].y, 0, cWidth, cHeight, mode);
+          ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
-      ctx.stroke();
 
-      if (bot.path.length > 0) {
+      // 2. Draw planned future route waypoints
+      if (bot.path && bot.path.length > 1) {
+        ctx.strokeStyle = bot.id === APP_STATE.selectedRobotId ? '#2563eb' : (bot.color || '#60a5fa');
+        ctx.lineWidth = bot.id === APP_STATE.selectedRobotId ? 3.0 : 1.8;
+        ctx.beginPath();
+
+        const pStart = projectWorld(bot.x, bot.y, 0, cWidth, cHeight, mode);
+        ctx.moveTo(pStart.x, pStart.y);
+
+        for (let i = bot.pathIdx; i < bot.path.length; i++) {
+          const pNode = projectWorld(bot.path[i].x, bot.path[i].y, 0, cWidth, cHeight, mode);
+          ctx.lineTo(pNode.x, pNode.y);
+        }
+        ctx.stroke();
+
         const dest = bot.path[bot.path.length - 1];
         const pDest = projectWorld(dest.x, dest.y, 0, cWidth, cHeight, mode);
-        ctx.fillStyle = '#2563eb';
+        ctx.fillStyle = bot.color || '#2563eb';
         ctx.beginPath();
         ctx.arc(pDest.x, pDest.y, 5, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
       }
     }
@@ -1192,6 +1272,23 @@ let lastAnimTime = performance.now();
 
 function updateSimulationEngine(dt) {
   if (APP_STATE.isPaused || APP_STATE.isEStopped) return;
+
+  if (APP_STATE.isLiveConnected) {
+    // Smooth real-time pose interpolation towards incoming ROS 2 coordinates
+    for (const bot of APP_STATE.robots) {
+      if (bot.targetX !== undefined) {
+        const lerpSpeed = Math.min(1.0, dt * 10.0);
+        bot.x += (bot.targetX - bot.x) * lerpSpeed;
+        bot.y += (bot.targetY - bot.y) * lerpSpeed;
+        let diff = bot.targetTheta - bot.theta;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
+        bot.theta += diff * lerpSpeed;
+      }
+    }
+    updateUberDirectionCard();
+    return;
+  }
 
   for (const t of APP_STATE.tasks) {
     if (t.status === 'PICKUP_WAIT' || t.status === 'DROPOFF_WAIT') {
@@ -1820,23 +1917,24 @@ function updateUberDirectionCard() {
 
   if (!nameElem || !activeBot) return;
 
-  nameElem.textContent = `${activeBot.name.toUpperCase()} (${activeBot.state})`;
+  nameElem.textContent = `${activeBot.name.toUpperCase()} (${activeBot.state || 'IDLE'})`;
   
   const activeTask = APP_STATE.tasks.find(t => t.task_id === activeBot.taskId);
   if (activeTask) {
-    destElem.textContent = activeBot.state.includes('DROPOFF') 
-      ? `Dropoff: ${activeTask.dropoff.station_id} (${activeTask.dropoff.zone})`
-      : `Pickup: ${activeTask.pickup.rack_id}`;
-    itemElem.textContent = activeTask.pickup.item_type || 'Industrial Cargo';
-    etaElem.textContent = '34 sec';
+    const isDropoff = (activeBot.state || '').includes('DROPOFF') || (activeTask.status || '').includes('DROPOFF');
+    const targetInfo = isDropoff ? (activeTask.dropoff || {}) : (activeTask.pickup || {});
+    const targetLabel = targetInfo.label || targetInfo.station_id || targetInfo.rack_id || (targetInfo.x !== undefined ? `Coords (${targetInfo.x.toFixed(1)}, ${targetInfo.y.toFixed(1)})` : 'Assigned Target');
+    destElem.textContent = isDropoff ? `Dropoff: ${targetLabel}` : `Pickup: ${targetLabel}`;
+    itemElem.textContent = targetInfo.item_type || targetInfo.item || activeTask.task_id || 'Warehouse SKU';
+    etaElem.textContent = activeTask.dwell_remaining > 0 ? `${activeTask.dwell_remaining}s dwell` : 'En route';
   } else {
-    destElem.textContent = activeBot.isCharging ? 'Docked: Inductive Fast Charging Pad' : 'Idle: Awaiting CBBA Auction';
+    destElem.textContent = activeBot.isCharging ? 'Docked: Inductive Fast Charging Pad' : 'Idle / Standby: Ready for Task';
     itemElem.textContent = 'No Payload Assigned';
     etaElem.textContent = '--';
   }
 
-  speedElem.textContent = `${(activeBot.speed || 0.8).toFixed(2)} m/s`;
-  battElem.textContent = `${Math.round(activeBot.battery)}%`;
+  speedElem.textContent = `${(activeBot.speed || 0.0).toFixed(2)} m/s`;
+  battElem.textContent = `${Math.round(activeBot.battery || 100)}%`;
 }
 
 function renderStaticHeatmap() {
