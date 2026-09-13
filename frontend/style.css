@@ -103,7 +103,7 @@ body {
 }
 
 .brand-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.5px;
   color: var(--text-main);
@@ -112,9 +112,11 @@ body {
 }
 
 .brand-sub {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
 }
 
 .nav-tabs {
@@ -1344,3 +1346,363 @@ body {
 .text-amber { color: var(--status-amber) !important; }
 .text-purple { color: var(--status-purple) !important; }
 .text-red { color: var(--status-red) !important; }
+.text-cyan { color: #06b6d4 !important; }
+
+/* ==============================================================================
+   TASK HANDLING & LIFECYCLE EXTENSIONS (TASK SPECIFICATION)
+   ============================================================================== */
+.task-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.task-stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ts-num {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-sans);
+}
+
+.ts-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Task Lifecycle State Badges */
+.status-badge-lifecycle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.badge-announced, .badge-cbba {
+  background: #f5f3ff;
+  color: #9333ea;
+  border: 1px solid #d8b4fe;
+}
+
+.badge-assigned, .badge-enroute-pickup {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #93c5fd;
+}
+
+.badge-pickup-wait, .badge-dropoff-wait {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fcd34d;
+}
+
+.badge-enroute-dropoff {
+  background: #ecfeff;
+  color: #0891b2;
+  border: 1px solid #a5f3fc;
+}
+
+.badge-completed {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #6ee7b7;
+}
+
+.badge-failed {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+/* Dwell Countdown Pill */
+.dwell-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #fde68a;
+}
+
+.dwell-pulse {
+  animation: dwellPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes dwellPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Priority Progress Bar */
+.priority-meter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.priority-meter-bar {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+  min-width: 40px;
+}
+
+.priority-meter-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.priority-val-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+/* Progress Percentage Bar */
+.task-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+}
+
+.task-progress-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.task-progress-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.task-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* Coordinates Subtitle Tag */
+.coord-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-top: 2px;
+}
+
+/* View toggle buttons */
+.task-view-toggle {
+  display: flex;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+.btn-toggle-view {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.btn-toggle-view.active {
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+
+/* Tasks Kanban Cards */
+.tasks-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.task-kanban-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.task-kanban-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kc-id {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.kc-item {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.kc-points {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--bg-subtle);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+}
+
+.kc-point-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.kc-point-val {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* ==============================================================================
+   LIVE MULTI-AGENT DECISION STREAM STYLING
+   ============================================================================== */
+.log-stream-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: #0f172a;
+  color: #f8fafc;
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+.stream-live-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #38bdf8;
+}
+
+.live-dot-pulse {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+  animation: liveDotPulse 1.5s infinite;
+}
+
+@keyframes liveDotPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.log-count-tag {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: var(--font-mono);
+}
+
+/* Decision Event Card Detail inside table */
+.decision-event-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.decision-main-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.decision-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.decision-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  color: #475569;
+}
+
+.quorum-pill {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+  font-weight: 700;
+}
+
+.bid-pill {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-weight: 700;
+}
+

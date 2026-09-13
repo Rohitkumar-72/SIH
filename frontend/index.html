@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AMR Fleet Navigator | Warehouse Mission Control</title>
+  <title>AM-CORD AI | Autonomous Mobility Coordination AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=spec_v3" />
 </head>
 <body>
 
@@ -21,8 +21,8 @@
           </svg>
         </div>
         <div class="brand-text">
-          <span class="brand-name">FLEET NAVIGATOR</span>
-          <span class="brand-sub">SIH AMR Decentralized Core</span>
+          <span class="brand-name">AM-CORD AI</span>
+          <span class="brand-sub">Autonomous Mobility Coordination AI</span>
         </div>
       </div>
 
@@ -242,19 +242,43 @@
 
 
     <!-- ================================================================= -->
-    <!-- 3. TASK HANDLING & DISPATCH PAGE (INSPIRED BY REFERENCE 1)       -->
+    <!-- 3. TASK HANDLING & DISPATCH PAGE (FULL CBBA & LIFECYCLE SPEC)     -->
     <!-- ================================================================= -->
     <section class="page-view" id="page-tasks">
       <div class="page-inner-content">
         
         <div class="page-header-row">
           <div>
-            <h2 class="page-heading">Task & Order Management</h2>
-            <p class="page-subheading">Monitor real-time AMR task assignments, schedules, delivery delays, and prioritize urgent orders.</p>
+            <h2 class="page-heading">Autonomous Task Handling & Dispatch Core</h2>
+            <p class="page-subheading">Real-time CBBA auction allocation, multi-phase lifecycle tracking, dwell countdowns, and coordinate dispatch.</p>
           </div>
           <div class="header-actions">
-            <button class="btn-outline" id="btn-trigger-task-burst">🎲 Random Task Burst (4x)</button>
-            <button class="btn-solid-primary" id="btn-create-task-modal">+ Create New Task</button>
+            <button class="btn-outline" id="btn-trigger-task-burst">🎲 Generate Random Task (CBBA)</button>
+            <button class="btn-solid-primary" id="btn-create-task-modal">+ Announce New Task</button>
+          </div>
+        </div>
+
+        <!-- TASK SUMMARY METRICS CARDS -->
+        <div class="task-stats-bar">
+          <div class="task-stat-card">
+            <span class="ts-num text-purple" id="task-metric-announced">1</span>
+            <span class="ts-label">🟣 Announced / Auction</span>
+          </div>
+          <div class="task-stat-card">
+            <span class="ts-num text-blue" id="task-metric-active">2</span>
+            <span class="ts-label">🔵 En Route / Assigned</span>
+          </div>
+          <div class="task-stat-card">
+            <span class="ts-num text-amber" id="task-metric-dwelling">1</span>
+            <span class="ts-label">🟡 Station Dwelling</span>
+          </div>
+          <div class="task-stat-card">
+            <span class="ts-num text-green" id="task-metric-completed">14</span>
+            <span class="ts-label">🟢 Completed Deliveries</span>
+          </div>
+          <div class="task-stat-card">
+            <span class="ts-num text-cyan" id="task-metric-avg-bid">102.4</span>
+            <span class="ts-label">⚡ Avg CBBA Cost</span>
           </div>
         </div>
 
@@ -262,43 +286,56 @@
         <div class="table-filter-bar">
           <div class="search-input-wrap">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="task-search-input" placeholder="Search by Order ID, Location, or Assigned AMR..." />
+            <input type="text" id="task-search-input" placeholder="Search by Task ID (e.g. rnd_task_001), Rack, Item, or Assigned AMR..." />
           </div>
           <div class="filter-dropdowns">
+            <select class="filter-select" id="task-filter-run">
+              <option value="ALL">All Dataset Runs (413 Tasks)</option>
+              <option value="run_1789189224">Session run_1789189224 (Active)</option>
+              <option value="run_1789187770">Session run_1789187770</option>
+              <option value="run_1789031643">Session run_1789031643</option>
+              <option value="run_1789030083">Session run_1789030083</option>
+            </select>
             <select class="filter-select" id="task-filter-status">
-              <option value="ALL">All Statuses</option>
-              <option value="Started">Started</option>
-              <option value="En Route">En Route</option>
-              <option value="Done">Done</option>
-              <option value="Pending">Pending</option>
+              <option value="ALL">All Lifecycle States</option>
+              <option value="ANNOUNCED">🟣 ANNOUNCED</option>
+              <option value="CBBA_AUCTION">🟣 CBBA_AUCTION</option>
+              <option value="ASSIGNED">🔵 ASSIGNED</option>
+              <option value="EN_ROUTE_PICKUP">🔵 EN_ROUTE_PICKUP</option>
+              <option value="PICKUP_WAIT">🟡 PICKUP_WAIT (Dwell)</option>
+              <option value="EN_ROUTE_DROPOFF">🟦 EN_ROUTE_DROPOFF</option>
+              <option value="DROPOFF_WAIT">🟡 DROPOFF_WAIT (Dwell)</option>
+              <option value="COMPLETED">🟢 COMPLETED</option>
+              <option value="FAILED">🔴 FAILED</option>
             </select>
             <select class="filter-select" id="task-filter-priority">
               <option value="ALL">All Priorities</option>
-              <option value="Urgent (P1)">Urgent (P1)</option>
-              <option value="High (P2)">High (P2)</option>
-              <option value="Standard (P3)">Standard (P3)</option>
+              <option value="CRITICAL">Critical Priority (≥80)</option>
+              <option value="HIGH">High Priority (60-79)</option>
+              <option value="STANDARD">Standard Priority (<60)</option>
             </select>
+            <div class="task-view-toggle">
+              <button class="btn-toggle-view active" id="btn-view-table" title="Table View">☰ Table</button>
+              <button class="btn-toggle-view" id="btn-view-cards" title="Cards View">⊞ Cards</button>
+            </div>
           </div>
         </div>
 
-        <!-- TASKS DATA TABLE -->
-        <div class="data-table-card">
+        <!-- TASKS DATA TABLE VIEW -->
+        <div class="data-table-card" id="tasks-table-container">
           <table class="uber-table" id="tasks-table">
             <thead>
               <tr>
-                <th>Order ID</th>
-                <th>Target Location / Rack</th>
-                <th>Task Type</th>
-                <th>Assigned AMR</th>
-                <th>STA</th>
-                <th>ATA</th>
-                <th>STD</th>
-                <th>ATD</th>
-                <th>Demand (Qty)</th>
-                <th>Delay</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style="width: 130px;">Task ID</th>
+                <th style="width: 100px;">Priority</th>
+                <th>Pickup Rack & Coordinates</th>
+                <th>Dropoff Station & Zone</th>
+                <th style="width: 110px;">Dwell Time</th>
+                <th style="width: 110px;">Assigned AMR</th>
+                <th style="width: 90px;">Winning Bid</th>
+                <th style="width: 140px;">Execution Progress</th>
+                <th style="width: 140px;">Lifecycle Status</th>
+                <th style="width: 110px;">Actions</th>
               </tr>
             </thead>
             <tbody id="tasks-table-body">
@@ -307,12 +344,17 @@
           </table>
         </div>
 
+        <!-- TASKS KANBAN / CARDS GRID VIEW -->
+        <div class="tasks-cards-grid" id="tasks-cards-container" style="display: none;">
+          <!-- Dynamically populated -->
+        </div>
+
       </div>
     </section>
 
 
     <!-- ================================================================= -->
-    <!-- 4. STATISTICS & PERFORMANCE PAGE (INSPIRED BY REFERENCE 3)        -->
+    <!-- 4. STATISTICS & PERFORMANCE PAGE (POWERED BY REAL DATASET)        -->
     <!-- ================================================================= -->
     <section class="page-view" id="page-statistics">
       <div class="page-inner-content">
@@ -320,11 +362,11 @@
         <div class="page-header-row">
           <div>
             <h2 class="page-heading">Fleet Analytics & Bottleneck Statistics</h2>
-            <p class="page-subheading">Warehouse traffic density heatmap, robot velocity distribution, throughput, and corridor bottleneck reports.</p>
+            <p class="page-subheading">Computed live from real dataset logs (desktop_fleet_dataset.csv) & active space-time reservation benchmarks.</p>
           </div>
           <div class="header-actions">
             <button class="btn-outline" id="btn-refresh-stats">⟲ Refresh Data</button>
-            <button class="btn-outline" id="btn-export-pdf">Export Report (PDF)</button>
+            <button class="btn-outline" id="btn-export-pdf">Export Report (CSV)</button>
           </div>
         </div>
 
@@ -333,34 +375,34 @@
           <div class="kpi-card">
             <span class="kpi-title">Average Task Execution Time</span>
             <div class="kpi-metric-group">
-              <span class="kpi-number">1m 24s</span>
-              <span class="kpi-badge badge-green">−12% vs benchmark</span>
+              <span class="kpi-number" id="stat-avg-travel-time">1m 18s</span>
+              <span class="kpi-badge badge-green">Real Run Data</span>
             </div>
-            <span class="kpi-sub">Calculated across 84 mission trips</span>
+            <span class="kpi-sub" id="stat-sample-count">Calculated across 42 mission cycles</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-title">Fleet Utilization Ratio</span>
+            <span class="kpi-title">Mean Static Path Length</span>
             <div class="kpi-metric-group">
-              <span class="kpi-number">91.4%</span>
+              <span class="kpi-number" id="stat-mean-path-len">24.6 m</span>
+              <span class="kpi-badge badge-blue">WHCA* Metric</span>
+            </div>
+            <span class="kpi-sub" id="stat-mean-turns">Avg 1.8 turns / 1.4 junction crosses</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Corridor Mutex Resolution Time</span>
+            <div class="kpi-metric-group">
+              <span class="kpi-number" id="stat-corridor-wait">2.4s</span>
               <span class="kpi-badge badge-green">Optimal</span>
             </div>
-            <span class="kpi-sub">Active moving vs Idle/Charging</span>
+            <span class="kpi-sub">Lamport logical clock decentralized locks</span>
           </div>
           <div class="kpi-card">
-            <span class="kpi-title">Corridor Mutex Wait Time</span>
+            <span class="kpi-title">Average Fleet Stop Time</span>
             <div class="kpi-metric-group">
-              <span class="kpi-number">2.8s</span>
-              <span class="kpi-badge badge-green">Low delay</span>
+              <span class="kpi-number" id="stat-stop-time">4.2s</span>
+              <span class="kpi-badge badge-amber">Yield & Mutex</span>
             </div>
-            <span class="kpi-sub">Decentralized Lamport resolution</span>
-          </div>
-          <div class="kpi-card">
-            <span class="kpi-title">Energy Consumption</span>
-            <div class="kpi-metric-group">
-              <span class="kpi-number">1.42 kWh</span>
-              <span class="kpi-badge badge-blue">Normal</span>
-            </div>
-            <span class="kpi-sub">4 Charging Pads online</span>
+            <span class="kpi-sub">Corridor queue occupancy 0.042</span>
           </div>
         </div>
 
@@ -394,33 +436,33 @@
             <div class="progress-stats-list">
               <div class="progress-stat-item">
                 <div class="stat-header-line">
-                  <span>On-Time & Early (< 0s delay)</span>
-                  <strong>88%</strong>
+                  <span>Direct Delivery (< 500s total mission)</span>
+                  <strong id="stat-pct-fast">76%</strong>
                 </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill bg-green" style="width: 88%"></div></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill bg-green" id="stat-bar-fast" style="width: 76%"></div></div>
               </div>
 
               <div class="progress-stat-item">
                 <div class="stat-header-line">
-                  <span>Minor Delay (0s – 30s)</span>
-                  <strong>9%</strong>
+                  <span>Cross-Zone Transit (500s – 1200s)</span>
+                  <strong id="stat-pct-med">19%</strong>
                 </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill bg-amber" style="width: 9%"></div></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill bg-amber" id="stat-bar-med" style="width: 19%"></div></div>
               </div>
 
               <div class="progress-stat-item">
                 <div class="stat-header-line">
-                  <span>Aisle Obstacle Reroute Delay (> 30s)</span>
-                  <strong>3%</strong>
+                  <span>Heavy Congestion / Mutex Queue (> 1200s)</span>
+                  <strong id="stat-pct-slow">5%</strong>
                 </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill bg-red" style="width: 3%"></div></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill bg-red" id="stat-bar-slow" style="width: 5%"></div></div>
               </div>
 
               <div class="battery-health-box">
                 <div class="box-icon">⚡</div>
                 <div class="box-text">
-                  <strong>Inductive Charging Station Status</strong>
-                  <span>4 of 4 Pads Active (Pad 1: Charging, Pad 2: Reserved, Pad 3 & 4: Free)</span>
+                  <strong>Inductive Fast Charging Station Status</strong>
+                  <span>4 of 4 Pads Active (Pad 1: Nominal, Pad 2: In-Use, Pad 3 & 4: Ready)</span>
                 </div>
               </div>
             </div>
@@ -433,19 +475,20 @@
 
 
     <!-- ================================================================= -->
-    <!-- 5. LIVE EVENTS & LOGS PAGE (NON-TECHNICAL READABLE FORMAT)        -->
+    <!-- 5. LIVE EVENTS & LOGS PAGE (REAL MULTI-AGENT DECISION STREAM)     -->
     <!-- ================================================================= -->
     <section class="page-view" id="page-logs">
       <div class="page-inner-content">
         
         <div class="page-header-row">
           <div>
-            <h2 class="page-heading">Live System Events & Activity Stream</h2>
-            <p class="page-subheading">All decentralized consensus, corridor mutex negotiations, and safety alerts translated into clear, human-readable English.</p>
+            <h2 class="page-heading">Live Multi-Agent Decision & Event Stream</h2>
+            <p class="page-subheading">Decentralized CBBA auctions, 4/4 Quorum verification, WHCA* space-time reservations, Lamport mutex locks, and safety alerts.</p>
           </div>
           <div class="header-actions">
+            <button class="btn-outline" id="btn-stream-toggle">⏸ Pause Stream</button>
             <button class="btn-outline" id="btn-export-logs">Export CSV</button>
-            <button class="btn-outline" id="btn-clear-all-logs">Clear Logs</button>
+            <button class="btn-outline" id="btn-clear-all-logs">Clear Stream</button>
           </div>
         </div>
 
@@ -453,37 +496,53 @@
         <div class="table-filter-bar">
           <div class="search-input-wrap">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="log-search-input" placeholder="Search activities, robot names, or locations..." />
+            <input type="text" id="log-search-input" placeholder="Search decisions (e.g. SUBMIT_BID, Quorum, WHCA, Mutex, obstacle)..." />
           </div>
           <div class="filter-dropdowns">
             <select class="filter-select" id="log-filter-robot">
-              <option value="ALL">All Robots</option>
-              <option value="robot_1">ROBOT_1</option>
-              <option value="robot_2">ROBOT_2</option>
-              <option value="robot_3">ROBOT_3</option>
-              <option value="robot_4">ROBOT_4</option>
+              <option value="ALL">All Agents / Fleet</option>
+              <option value="robot_1">robot_1 (Cyan)</option>
+              <option value="robot_2">robot_2 (Green)</option>
+              <option value="robot_3">robot_3 (Yellow)</option>
+              <option value="robot_4">robot_4 (Magenta)</option>
+              <option value="FLEET">FLEET Broadcaster</option>
             </select>
             <select class="filter-select" id="log-filter-category">
-              <option value="ALL">All Categories</option>
-              <option value="TASK_ALLOCATION">Task Allocation (CBBA)</option>
-              <option value="CORRIDOR_MUTEX">Corridor Negotiation</option>
-              <option value="PATH_ROUTING">Path Routing (WHCA*)</option>
-              <option value="SAFETY_ALERT">Safety & Obstacles</option>
-              <option value="BATTERY_POWER">Battery & Charging</option>
+              <option value="ALL">All Decision Types</option>
+              <option value="CBBA_AUCTION">⚡ CBBA Auction & Bids</option>
+              <option value="QUORUM_CONSENSUS">🤝 Quorum Consensus (4/4)</option>
+              <option value="WHCA_ROUTING">🗺️ WHCA* Space-Time Routing</option>
+              <option value="CORRIDOR_MUTEX">🚧 Corridor Mutex (Lamport)</option>
+              <option value="TASK_LIFECYCLE">📦 Task Lifecycle & Dwell</option>
+              <option value="SAFETY_ALERT">🛑 Safety & Obstacles</option>
+            </select>
+            <select class="filter-select" id="log-filter-severity">
+              <option value="ALL">All Severities</option>
+              <option value="Success">Success / Confirmed</option>
+              <option value="Active">Active / In-Progress</option>
+              <option value="Warning">Warning</option>
+              <option value="Emergency">Emergency / Alert</option>
             </select>
           </div>
         </div>
 
-        <!-- LOGS DATA TABLE -->
+        <!-- LOGS STREAM CARDS / TABLE -->
         <div class="data-table-card">
+          <div class="log-stream-header">
+            <div class="stream-live-pill">
+              <span class="live-dot-pulse"></span>
+              <span>LIVE TELEMETRY STREAM CONNECTED (10 Hz)</span>
+            </div>
+            <span class="log-count-tag" id="log-count-display">Showing 0 events</span>
+          </div>
           <table class="uber-table" id="logs-table">
             <thead>
               <tr>
-                <th style="width: 110px;">Time</th>
-                <th style="width: 120px;">AMR Unit</th>
-                <th style="width: 170px;">Activity Category</th>
-                <th>Plain English Activity Description</th>
-                <th style="width: 130px;">Status / Severity</th>
+                <th style="width: 100px;">Time</th>
+                <th style="width: 110px;">AMR / Node</th>
+                <th style="width: 190px;">Decision Category</th>
+                <th>Structured Decision Event & Context</th>
+                <th style="width: 120px;">Verification</th>
               </tr>
             </thead>
             <tbody id="logs-table-body">
@@ -618,60 +677,94 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- MODAL: CREATE / DISPATCH NEW TASK                                 -->
+  <!-- MODAL: ANNOUNCE & DISPATCH NEW TASK (CBBA SPEC)                    -->
   <!-- ================================================================= -->
   <div class="modal-backdrop" id="create-task-modal" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-dialog-header">
-        <h3>Create & Dispatch Warehouse Task</h3>
+        <div class="modal-title-wrap">
+          <span class="step-badge" style="background: #a855f7; color: #fff;">CBBA AUCTION</span>
+          <h3>Announce New Fleet Task (ROS 2 Wire Spec)</h3>
+        </div>
         <button class="btn-close-modal" id="btn-close-create-task">×</button>
       </div>
       <div class="modal-dialog-body">
-        <div class="form-group">
-          <label>Target Location / Shelf Rack</label>
-          <select class="form-select" id="newtask-location">
-            <option value="Rack W-04 (West Zone)">Rack W-04 (West Zone Aisle 2)</option>
-            <option value="Rack W-18 (West Zone)">Rack W-18 (West Zone Aisle 8)</option>
-            <option value="Rack C-06 (Center Zone)">Rack C-06 (Center Zone Aisle 3)</option>
-            <option value="Rack C-14 (Center Zone)">Rack C-14 (Center Zone Aisle 7)</option>
-            <option value="Rack E-09 (East Zone)">Rack E-09 (East Zone Aisle 4)</option>
-            <option value="Rack E-22 (East Zone)">Rack E-22 (East Zone Aisle 10)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Task Action Type</label>
-          <select class="form-select" id="newtask-type">
-            <option value="pickup">Pickup Item (To Staging)</option>
-            <option value="dropoff">Dropoff Restock</option>
-            <option value="transfer">Internal Aisle Transfer</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Item Description & SKU</label>
-          <input type="text" class="form-input" id="newtask-item" value="SKU-8820: High Torque Stepper Motor" />
-        </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Demand Qty</label>
-            <input type="number" class="form-input" id="newtask-demand" value="8" min="1" max="50" />
+            <label>Pickup Rack Location</label>
+            <select class="form-select" id="newtask-pickup-rack">
+              <option value="RACK_WEST_SOUTH_01" data-x="-19.99" data-y="-17.60">Rack W-01 (West South: X:-19.99, Y:-17.60)</option>
+              <option value="RACK_WEST_NORTH_12" data-x="-19.99" data-y="13.53">Rack W-12 (West North: X:-19.99, Y:13.53)</option>
+              <option value="RACK_EAST_SOUTH_08" data-x="15.67" data-y="-20.65">Rack E-08 (East South: X:15.67, Y:-20.65)</option>
+              <option value="RACK_EAST_NORTH_16" data-x="-15.67" data-y="27.77">Rack W-16 (North Hub: X:-15.67, Y:27.77)</option>
+              <option value="RACK_CENTER_MID_05" data-x="-2.54" data-y="1.01">Rack C-05 (Center Mid: X:-2.54, Y:1.01)</option>
+            </select>
           </div>
           <div class="form-group">
-            <label>Order Priority</label>
-            <select class="form-select" id="newtask-priority">
-              <option value="Urgent (P1)">Urgent (P1) - Move to Top</option>
-              <option value="High (P2)" selected>High (P2)</option>
-              <option value="Standard (P3)">Standard (P3)</option>
+            <label>Payload SKU / Item Type</label>
+            <input type="text" class="form-input" id="newtask-item" value="Servo Motors (High Torque)" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dropoff Dispatch Station & Zone</label>
+            <select class="form-select" id="newtask-dropoff-station">
+              <option value="DROPOFF_STATION_A" data-zone="DISPATCH_BAY_1" data-x="-11.35" data-y="-6.11">Station A (Dispatch Bay 1: X:-11.35, Y:-6.11)</option>
+              <option value="DROPOFF_STATION_B" data-zone="DISPATCH_BAY_2" data-x="0.00" data-y="28.79">Station B (Dispatch Bay 2: X:0.00, Y:28.79)</option>
+              <option value="DROPOFF_STATION_C" data-zone="INSPECTION_PAD" data-x="19.99" data-y="19.63">Station C (Inspection Pad: X:19.99, Y:19.63)</option>
+              <option value="DROPOFF_STATION_D" data-zone="ASSEMBLY_STN_1" data-x="0.00" data-y="26.75">Station D (Assembly Station: X:0.00, Y:26.75)</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>CBBA Priority Weight (1 - 100)</label>
+            <input type="number" class="form-input" id="newtask-priority" value="75" min="1" max="100" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pickup Dwell Time (seconds)</label>
+            <input type="number" class="form-input" id="newtask-dwell-pickup" value="3.0" step="0.5" min="0.5" max="30.0" />
+          </div>
+          <div class="form-group">
+            <label>Dropoff Dwell Time (seconds)</label>
+            <input type="number" class="form-input" id="newtask-dwell-dropoff" value="3.0" step="0.5" min="0.5" max="30.0" />
           </div>
         </div>
       </div>
       <div class="modal-dialog-footer">
         <button class="btn-outline" id="btn-cancel-create-task">Cancel</button>
-        <button class="btn-solid-primary" id="btn-submit-create-task">Dispatch Task via Auction</button>
+        <button class="btn-solid-primary" id="btn-submit-create-task">Broadcast TaskAnnouncement (CBBA)</button>
       </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- ================================================================= -->
+  <!-- MODAL: TASK JSON SCHEMA & PAYLOAD INSPECTOR                      -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="task-json-modal" style="display: none;">
+    <div class="modal-dialog" style="width: 600px; max-width: 95vw;">
+      <div class="modal-dialog-header">
+        <div class="modal-title-wrap">
+          <span class="step-badge" style="background: #2563eb; color: #fff;">JSON SCHEMA</span>
+          <h3 id="task-json-modal-title">Task Specification Payload</h3>
+        </div>
+        <button class="btn-close-modal" id="btn-close-task-json">×</button>
+      </div>
+      <div class="modal-dialog-body">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+          Standard ROS 2 payload matching <code>TaskAnnouncement</code> and <code>/fleet/dashboard_telemetry</code>.
+        </p>
+        <pre id="task-json-content" style="background: #0f172a; color: #38bdf8; padding: 14px; border-radius: 8px; font-family: var(--font-mono); font-size: 12px; max-height: 380px; overflow-y: auto; line-height: 1.5;"></pre>
+      </div>
+      <div class="modal-dialog-footer">
+        <button class="btn-outline" id="btn-copy-task-json">📋 Copy JSON</button>
+        <button class="btn-solid-primary" id="btn-done-task-json">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=spec_v2"></script>
 </body>
 </html>
