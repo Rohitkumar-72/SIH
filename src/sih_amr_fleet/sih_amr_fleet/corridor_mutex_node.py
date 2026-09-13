@@ -312,6 +312,15 @@ class CorridorMutexNode(Node):
             self.release_request(CorridorProtocol.EXIT)
             self.last_exited_corridor = exited_corridor
             self.last_exited_time = now
+        elif not self.request['was_inside']:
+            entered_at = self.request.get('entered_at', now)
+            if now - entered_at > 10.0:
+                self.get_logger().warning(
+                    f"[{self.robot_id}:CorridorMutex] Decision: TIMEOUT_UNENTERED_MUTEX for corridor "
+                    f"{self.request['corridor']}. Actor=CorridorMutex:{self.robot_id}. "
+                    f"Held token for {now - entered_at:.1f}s without entering. Releasing to avoid fleet deadlock."
+                )
+                self.release_request(CorridorProtocol.CANCEL)
             # The exited cell is normally still inside this corridor's broad
             # approach band. Clearing the old arm prevents the next 20 Hz
             # state sample from immediately requesting the corridor again
@@ -380,6 +389,7 @@ class CorridorMutexNode(Node):
 
         if permitted and self.entrance_clear and not self.request['entered']:
             self.request['entered'] = True
+            self.request['entered_at'] = now_seconds(self)
             self.send(CorridorProtocol.ENTER, self.request['corridor'], self.request['id'])
             self.get_logger().info(
                 f"[{self.robot_id}:CorridorMutex] Decision: ENTER_CORRIDOR {self.request['corridor']}. "

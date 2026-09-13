@@ -42,13 +42,18 @@ class OrcaNode(Node):
             preferred = (self.desired.linear.x * direction[0], self.desired.linear.x * direction[1])
             peers = [
                 {'x': p.pose.x, 'y': p.pose.y, 'vx': p.twist.linear.x, 'vy': p.twist.linear.y,
-                 'radius_inflation': 2.0 * math.sqrt(max(p.covariance_trace, 0.0))}
+                 'radius_inflation': 2.0 * math.sqrt(max(p.covariance_trace, 0.0)),
+                 'id': getattr(p, 'robot_id', '')}
                 for p in self.tracks
                 if all(math.isfinite(value) for value in (
                     p.pose.x, p.pose.y, p.twist.linear.x, p.twist.linear.y, p.covariance_trace))
             ]
-            vx, vy = avoidance_velocity(preferred, (self.pose.x, self.pose.y), peers, self.radius, 1.5, self.max_speed)
-            result.linear.x = vx * direction[0] + vy * direction[1]
+            vx, vy = avoidance_velocity(preferred, (self.pose.x, self.pose.y), peers, self.radius, 1.5, self.max_speed, self_id=self.robot_id)
+            raw_linear_x = vx * direction[0] + vy * direction[1]
+            if self.desired.linear.x <= 0.01:
+                result.linear.x = 0.0
+            else:
+                result.linear.x = max(0.0, min(raw_linear_x, self.desired.linear.x))
             result.angular.z = self.desired.angular.z
             if peers and abs(result.linear.x - self.desired.linear.x) > 0.05:
                 self.get_logger().info(

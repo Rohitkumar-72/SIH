@@ -189,7 +189,8 @@ class WorkCycleRun:
             "orca_node", "random_task_generator_node", "warehouse_map_node",
             "spawn_minimal_amr", "turtlebot4_spawn", "twist_stamper",
             "interface_readiness", "localization_node", "robot_state_publisher",
-            "controller_manager", "diffdrive_controller"
+            "controller_manager", "diffdrive_controller", "kinematic_carrier_node",
+            "kinematic_carrier", "verify_gazebo_pose"
         ]
         if graceful:
             for pat in patterns:

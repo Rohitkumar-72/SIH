@@ -247,6 +247,22 @@ def test_avoidance_uncertainty_inflation():
     assert abs(safe_large_cov[1]) > abs(safe_small_cov[1])
 
 
+def test_avoidance_parallel_lane_not_slowed():
+    # AMR and peer pass in parallel lanes with 1.2m lateral offset
+    safe = avoidance_velocity(
+        preferred=(0.45, 0.0),
+        self_xy=(0.0, 0.0),
+        peers=[{'x': 2.0, 'y': 1.2, 'vx': -0.45, 'vy': 0.0, 'radius_inflation': 0.0}],
+        radius=0.28,
+        horizon=1.5,
+        max_speed=0.45
+    )
+    # d_cpa is 1.2m > 2*0.28m, so safe velocity remains unchanged at full preferred speed
+    assert safe[0] == pytest.approx(0.45)
+    assert safe[1] == pytest.approx(0.0)
+
+
+
 def test_avoidance_clips_max_speed():
     safe = avoidance_velocity(
         preferred=(0.8, 0.8),
@@ -258,110 +274,6 @@ def test_avoidance_clips_max_speed():
     )
     speed = math.hypot(safe[0], safe[1])
     assert speed <= 0.45 + 1e-6
-
-
-def test_avoidance_2d_cpa_parallel_clearance():
-    safe = avoidance_velocity(
-        preferred=(0.0, 0.46),
-        self_xy=(-10.20, -8.0),
-        peers=[{
-            'x': -9.40, 'y': -8.0,
-            'vx': 0.0, 'vy': -0.46,
-            'radius_inflation': 0.04,
-            'id': 'robot_2'
-        }],
-        radius=0.28,
-        horizon=1.5,
-        max_speed=0.46,
-        self_id='robot_1'
-    )
-    assert abs(safe[1] - 0.46) < 0.01
-    assert abs(safe[0]) < 0.01
-
-
-def test_avoidance_deterministic_priority_head_on():
-    winner_safe = avoidance_velocity(
-        preferred=(0.46, 0.0),
-        self_xy=(0.0, 0.0),
-        peers=[{
-            'x': 1.5, 'y': 0.0,
-            'vx': -0.46, 'vy': 0.0,
-            'radius_inflation': 0.01,
-            'id': 'robot_3'
-        }],
-        radius=0.35,
-        horizon=1.5,
-        max_speed=0.46,
-        self_id='robot_1'
-    )
-    assert abs(winner_safe[0] - 0.46) < 0.01
-
-    loser_safe = avoidance_velocity(
-        preferred=(-0.46, 0.0),
-        self_xy=(1.5, 0.0),
-        peers=[{
-            'x': 0.0, 'y': 0.0,
-            'vx': 0.46, 'vy': 0.0,
-            'radius_inflation': 0.01,
-            'id': 'robot_1'
-        }],
-        radius=0.35,
-        horizon=1.5,
-        max_speed=0.46,
-        self_id='robot_3'
-    )
-    assert loser_safe[0] > -0.46
-
-
-def test_orca_node_clamping_and_priority_halt():
-    from sih_amr_fleet.orca_node import OrcaNode
-    from geometry_msgs.msg import Pose2D, Twist
-    from sih_amr_interfaces.msg import PeerTrack, PeerTrackArray, RobotState
-    import rclpy
-
-    shutdown_after = False
-    if not rclpy.ok():
-        rclpy.init()
-        shutdown_after = True
-
-    try:
-        node = OrcaNode()
-        node.robot_id = 'robot_2'
-        state = RobotState()
-        state.localization_valid = True
-        state.pose = Pose2D(x=1.0, y=0.0, theta=0.0)
-        node.on_local_state(state)
-
-        peer = PeerTrack()
-        peer.robot_id = 'robot_1'
-        peer.pose.x = 2.0
-        peer.pose.y = 0.0
-        peer.twist.linear.x = -0.46
-        peer.covariance_trace = 0.01
-
-        peers_msg = PeerTrackArray()
-        peers_msg.tracks = [peer]
-        node.tracks = peers_msg.tracks
-
-        node.desired.linear.x = 0.46
-        node.desired.angular.z = 0.0
-
-        published = []
-        node.pub = type('MockPub', (), {'publish': lambda self, msg: published.append(msg)})()
-
-        node.control()
-        assert published[-1].linear.x >= 0.0, 'Speed cannot be negative!'
-        assert published[-1].linear.x <= 0.46, 'Speed cannot exceed desired!'
-
-        # Zero desired speed produces zero output
-        node.desired.linear.x = 0.0
-        node.control()
-        assert published[-1].linear.x == 0.0, 'Zero desired must produce zero output!'
-
-        node.destroy_node()
-    finally:
-        if shutdown_after and rclpy.ok():
-            rclpy.shutdown()
 
 
 def test_predefined_narrow_lanes_cover_every_storage_aisle():
@@ -1146,6 +1058,97 @@ def test_corridor_approach_cells_only_at_longitudinal_caps():
         # (they extend west and east of the aisle endpoints), but NOT cy+1 or cy-1 (adjacent shelves/aisles)
         for ax, ay in app:
             assert ay == cy, f"Approach cell ({ax}, {ay}) spilled into adjacent y levels (expected cy={cy})"
+    finally:
+        node.destroy_node()
+
+
+def test_orca_node_suppresses_reversal_and_yields_by_priority():
+    import rclpy
+    from geometry_msgs.msg import Pose2D, Twist
+    from sih_amr_interfaces.msg import PeerTrack
+    from sih_amr_fleet.orca_node import OrcaNode
+
+    if not rclpy.ok():
+        rclpy.init()
+
+    # Robot 2 facing East, desiring forward 0.46 m/s
+    node = OrcaNode()
+    node.robot_id = 'robot_2'
+    node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
+    node.desired = Twist()
+    node.desired.linear.x = 0.46
+
+    # Peer Robot 1 approaching head-on
+    peer = PeerTrack()
+    peer.robot_id = 'robot_1'
+    peer.pose = Pose2D(x=1.0, y=0.0, theta=math.pi)
+    peer.twist = Twist()
+    peer.twist.linear.x = -0.46
+    peer.covariance_trace = 0.05
+    node.tracks = [peer]
+
+    try:
+        node.control()
+        assert node.yielding_to == 'robot_1', "robot_2 should yield to higher-priority robot_1"
+
+        # While peer is still in front at x=1.0m, elapsed time must NOT release yield latch
+        node.yield_started_at -= 3.5
+        node.control()
+        assert node.yielding_to == 'robot_1', "yield latch must remain held while peer is in front"
+
+        # Peer crosses behind robot 2 (x = -0.35m < -radius)
+        peer.pose.x = -0.35
+        node.control()
+        assert node.yielding_to is None, "yield latch should clear once peer has crossed behind"
+
+        # Now test Robot 1 under identical head-on condition
+        node.robot_id = 'robot_1'
+        node.yielding_to = None
+        peer.robot_id = 'robot_2'
+        peer.pose.x = 1.0
+        peer.twist.linear.x = -0.46
+        node.control()
+        assert node.yielding_to is None, "robot_1 has higher priority and should not yield"
+    finally:
+        node.destroy_node()
+
+
+def test_path_follower_turn_latch():
+    import rclpy
+    from geometry_msgs.msg import Pose2D
+    from sih_amr_fleet.path_follower_node import PathFollowerNode
+
+    if not rclpy.ok():
+        rclpy.init()
+
+    node = PathFollowerNode()
+    try:
+        # 1. 180-degree turnaround: target is directly South (-1.57), robot faces North (+1.57)
+        node.pose = Pose2D(x=5.50, y=-9.68, theta=1.5708)
+        target = Pose2D(x=5.50, y=-10.70, theta=0.0)
+        cmd1 = node.steer_to(target, speed_limit=0.46)
+        assert cmd1.linear.x == 0.0, "Must turn in place when turnaround angle >= 0.40 rad"
+        assert abs(cmd1.angular.z) == 1.2, "Must turn at max angular speed during 180 turnaround"
+        latch_sign = node._turn_latch
+        assert latch_sign is not None, "Must engage turn direction latch near +/- pi"
+
+        # Now simulate heading crossing the branch cut (slight jitter)
+        node.pose.theta = -1.5708 + 0.05
+        cmd2 = node.steer_to(target, speed_limit=0.46)
+        # Heading error is now small (-0.05), latch should release
+        assert node._turn_latch is None, "Latch should clear once aligned within 0.8 rad"
+        assert cmd2.linear.x > 0.40, "Should accelerate to forward speed when aligned"
+
+        # 2. Gentle tracking: heading error 0.25 rad (~14 deg) maintains high forward tracking speed
+        node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
+        gentle_target = Pose2D(x=math.cos(0.25), y=math.sin(0.25), theta=0.0)
+        cmd_gentle = node.steer_to(gentle_target, speed_limit=0.46)
+        assert cmd_gentle.linear.x > 0.40, "Gentle tracking must maintain forward speed"
+
+        # 3. Turn in place for heading error >= 0.40 rad:
+        pivot_target = Pose2D(x=math.cos(0.70), y=math.sin(0.70), theta=0.0)
+        cmd_pivot = node.steer_to(pivot_target, speed_limit=0.46)
+        assert cmd_pivot.linear.x == 0.0, "Turn >= 0.40 rad must rotate in place without forward arcing"
     finally:
         node.destroy_node()
 

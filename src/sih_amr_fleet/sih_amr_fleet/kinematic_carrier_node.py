@@ -12,10 +12,12 @@ Replaces Gazebo wheel physics with a deterministic kinematic motion model:
 7. Publishes hidden true_pose solely for benchmark validation and telemetry.
 """
 
+import concurrent.futures
 import math
 import os
 import pathlib
 import random
+import time
 import yaml
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -96,6 +98,12 @@ class KinematicCarrierNode(Node):
         
         self.session_id = new_session_id()
         self.telemetry_sequence = 0
+        self.gz_sync_total_count = 0
+        self.gz_sync_error_count = 0
+        self.last_gz_latency_ms = 0.0
+        self.max_gz_latency_ms = 0.0
+        self.gz_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.gz_future = None
         
         # Load map geometry for swept footprint collision checking
         self.map_resolution = 0.5
@@ -262,8 +270,9 @@ class KinematicCarrierNode(Node):
                         self.gz_entity_ids[rid] = p.id
                         self.get_logger().info(f'Resolved Gazebo entity ID for {rid} ({p.name}) -> {p.id}')
 
-    def _is_position_collision_free(self, robot_id: str, x: float, y: float) -> bool:
-        """Check if a circular footprint at (x, y) intersects shelves, walls, or other AMRs."""
+    def _is_position_collision_free(self, robot_id: str, x: float, y: float, curr_x: Optional[float] = None, curr_y: Optional[float] = None) -> bool:
+        """Check if a circular footprint at (x, y) intersects shelves, walls, or other AMRs.
+        Allows inward escape if robot is already slightly outside the warehouse perimeter."""
         # Warehouse boundary limits with robot radius margin.
         # Perimeter transit lane centers are at x = -22.5 and x = +22.5.
         # Allow +/- 0.05m clearance so AMRs centered at -22.5 or +22.5 are not clamped.
@@ -272,8 +281,16 @@ class KinematicCarrierNode(Node):
         min_y = self.map_origin_y + 0.15
         max_y = self.map_origin_y + (self.map_height * self.map_resolution) - 0.15
 
-        if not (min_x <= x <= max_x and min_y <= y <= max_y):
-            return False
+        in_bounds = (min_x <= x <= max_x and min_y <= y <= max_y)
+        if not in_bounds:
+            if curr_x is not None and curr_y is not None:
+                curr_viol = max(0.0, min_x - curr_x, curr_x - max_x, min_y - curr_y, curr_y - max_y)
+                cand_viol = max(0.0, min_x - x, x - max_x, min_y - y, y - max_y)
+                # Permit candidate position only if it strictly reduces current boundary violation
+                if cand_viol >= curr_viol:
+                    return False
+            else:
+                return False
 
         if self.physical_shelves:
             # Physical shelf obstacle check: exact distance from circular footprint to physical shelf boxes
@@ -351,7 +368,7 @@ class KinematicCarrierNode(Node):
                     fraction = s / substeps
                     cx = robot.true_x + fraction * dx
                     cy = robot.true_y + fraction * dy
-                    if not self._is_position_collision_free(robot_id, cx, cy):
+                    if not self._is_position_collision_free(robot_id, cx, cy, curr_x=robot.true_x, curr_y=robot.true_y):
                         collision = True
                         allowed_ratio = max(0.0, (s - 1) / substeps)
                         break
@@ -408,21 +425,45 @@ class KinematicCarrierNode(Node):
             self._publish_odometry(robot, dt, v, w)
             self._check_anchor_proximity(robot)
 
-        # Dispatch batch pose update to Gazebo via Gazebo Sim Transport
-        if gz_pose_vector is not None and len(gz_pose_vector.pose) > 0:
-            try:
-                self.gz_node.request(
-                    f'/world/{self.world_name}/set_pose_vector',
-                    gz_pose_vector,
-                    GzPose_V,
-                    GzBoolean,
-                    timeout=20
-                )
-            except Exception:
-                pass
+        # Dispatch batch pose update to Gazebo via non-blocking background worker
+        if gz_pose_vector is not None and len(gz_pose_vector.pose) > 0 and self.gz_executor is not None:
+            if self.gz_future is None or self.gz_future.done():
+                self.gz_future = self.gz_executor.submit(self._dispatch_gz_pose, gz_pose_vector)
 
         # Publish true pose telemetry for validation
         self._publish_telemetry_true_poses()
+
+    def _dispatch_gz_pose(self, gz_pose_vector):
+        """Execute Gazebo set_pose_vector request in background worker to prevent choking the motion timer."""
+        t0 = time.perf_counter()
+        self.gz_sync_total_count += 1
+        try:
+            res, rep = self.gz_node.request(
+                f'/world/{self.world_name}/set_pose_vector',
+                gz_pose_vector,
+                GzPose_V,
+                GzBoolean,
+                timeout=10
+            )
+            if not (res and rep is not None and rep.data):
+                self.gz_sync_error_count += 1
+                err_kind = 'rejected' if (res and rep is not None and not rep.data) else 'timeout/unreachable'
+                self.get_logger().warning(
+                    f'[Carrier] Gazebo set_pose_vector failed ({err_kind}). '
+                    f'Sync failures: {self.gz_sync_error_count}/{self.gz_sync_total_count}.',
+                    throttle_duration_sec=5.0
+                )
+        except Exception as e:
+            self.gz_sync_error_count += 1
+            self.get_logger().warning(
+                f'[Carrier] Exception in Gazebo set_pose_vector: {e}. '
+                f'Sync failures: {self.gz_sync_error_count}/{self.gz_sync_total_count}.',
+                throttle_duration_sec=5.0
+            )
+        lat_ms = (time.perf_counter() - t0) * 1000.0
+        self.last_gz_latency_ms = lat_ms
+        if lat_ms > self.max_gz_latency_ms:
+            self.max_gz_latency_ms = lat_ms
 
     def _publish_odometry(self, robot: RobotKinematicState, dt: float, cmd_v: float, cmd_w: float):
         """Publish standard nav_msgs/Odometry for localization_node."""
@@ -460,8 +501,7 @@ class KinematicCarrierNode(Node):
             dx = robot.true_x - anchor_pose[0]
             dy = robot.true_y - anchor_pose[1]
             dist = math.hypot(dx, dy)
-            dyaw = min(abs(wrap_angle(robot.true_yaw - anchor_pose[2])),
-                       abs(wrap_angle(robot.true_yaw - (anchor_pose[2] + math.pi))))
+            dyaw = abs(wrap_angle(robot.true_yaw - anchor_pose[2]))
             
             if dist <= dock_tolerance_dist and dyaw <= dock_tolerance_yaw:
                 matched_dock = dock_id
@@ -506,6 +546,11 @@ class KinematicCarrierNode(Node):
             msg.twist.angular.z = robot.true_wz
             msg.localization_valid = True
             self.true_pose_pub.publish(msg)
+
+    def destroy_node(self):
+        if hasattr(self, 'gz_executor') and self.gz_executor:
+            self.gz_executor.shutdown(wait=False)
+        super().destroy_node()
 
 
 def main(args=None):

@@ -167,8 +167,16 @@ warehouse_ready() {
 }
 fail() { echo "ERROR: $*" >&2; echo "Logs: $LOG_DIR" >&2; exit 1; }
 
-if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn' >/dev/null; then
-  fail 'A Gazebo or AMR launch is already running. Stop it before starting a clean run.'
+# Clean up and ensure no lingering processes from prior crashed/aborted runs can hijack simulation
+if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
+  echo "Detected lingering simulator or carrier processes; cleaning up before run..."
+  pkill -15 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
+  sleep 1.0
+  pkill -9 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
+  sleep 0.5
+fi
+if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
+  fail 'A Gazebo, carrier, or AMR launch is still active and could not be terminated. Stop it before starting a clean run.'
 fi
 
 echo "Validating physics timing invariant (controller_update_rate <= 1 / max_step_size)..."

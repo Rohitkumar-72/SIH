@@ -574,6 +574,8 @@ class DataCollectionNode(Node):
         if sequence <= self.last_execution_sequences.get(source, -1):
             return
         self.last_execution_sequences[source] = sequence
+        if int(msg.phase) == TaskExecutionStatus.COMPLETED and msg.task_id:
+            self.completed_tasks.add(msg.task_id)
         self.remember_pipeline(msg.owner_robot_id, 'execution', {
             'task_id': msg.task_id,
             'session_id': msg.fleet_header.session_id,

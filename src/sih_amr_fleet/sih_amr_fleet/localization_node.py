@@ -8,7 +8,7 @@ from rclpy.node import Node
 from sih_amr_interfaces.msg import DockProtocol, RobotState
 
 from .algorithms import body_velocity_to_map, map_transform_for_anchor
-from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, yaw_from_quaternion
+from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, wrap_angle, yaw_from_quaternion
 
 
 class LocalizationNode(Node):
@@ -76,7 +76,7 @@ class LocalizationNode(Node):
         msg.pose = Pose2D(
             x=self.odom_origin_x + cosine * local_x - sine * local_y,
             y=self.odom_origin_y + sine * local_x + cosine * local_y,
-            theta=self.odom_origin_yaw + yaw_from_quaternion(odom.pose.pose.orientation))
+            theta=wrap_angle(self.odom_origin_yaw + yaw_from_quaternion(odom.pose.pose.orientation)))
         # nav_msgs/Odometry expresses twist in child_frame_id (base_link for
         # these AMRs).  Fleet consumers predict peers in the map frame, so a
         # body-forward velocity cannot be copied and mislabeled as map +x.

@@ -126,7 +126,8 @@ class LaptopCycleRun:
             "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr",
             "twist_stamper", "localization_node", "interface_readiness",
             "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner",
-            "dashboard_bridge_node", "dashboard_bridge"
+            "dashboard_bridge_node", "dashboard_bridge", "kinematic_carrier_node",
+            "kinematic_carrier", "verify_gazebo_pose"
         ]
         for pat in patterns:
             try:

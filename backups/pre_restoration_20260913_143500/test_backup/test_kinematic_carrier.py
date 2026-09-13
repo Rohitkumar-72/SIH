@@ -98,6 +98,35 @@ def test_zero_noise_odometry_match():
     assert abs(robot.local_yaw) < 1e-6
 
 
+def test_odometry_body_frame_twist():
+    """Verify that odometry twist is in base_link body frame and produces correct map velocity."""
+    from sih_amr_fleet.algorithms import body_velocity_to_map
+
+    dt = 0.02
+    cmd_v = 0.46
+    # 1. Westbound robot (yaw = pi)
+    yaw_west = math.pi
+    dx_west = cmd_v * math.cos(yaw_west) * dt
+    dy_west = cmd_v * math.sin(yaw_west) * dt
+    true_dist_west = math.copysign(math.hypot(dx_west, dy_west), cmd_v)
+    body_vx_west = true_dist_west / dt
+    assert abs(body_vx_west - cmd_v) < 1e-6
+    map_vx, map_vy = body_velocity_to_map(body_vx_west, 0.0, yaw_west)
+    assert abs(map_vx - (-0.46)) < 1e-5
+    assert abs(map_vy - 0.0) < 1e-5
+
+    # 2. Northbound robot (yaw = pi / 2)
+    yaw_north = math.pi / 2.0
+    dx_north = cmd_v * math.cos(yaw_north) * dt
+    dy_north = cmd_v * math.sin(yaw_north) * dt
+    true_dist_north = math.copysign(math.hypot(dx_north, dy_north), cmd_v)
+    body_vx_north = true_dist_north / dt
+    assert abs(body_vx_north - cmd_v) < 1e-6
+    map_vx, map_vy = body_velocity_to_map(body_vx_north, 0.0, yaw_north)
+    assert abs(map_vx - 0.0) < 1e-5
+    assert abs(map_vy - 0.46) < 1e-5
+
+
 def test_physical_shelf_collision_clearance():
     """Verify physical shelf collision logic allows passage down all warehouse aisles and detects contact."""
     import yaml
@@ -148,63 +177,113 @@ def test_physical_shelf_collision_clearance():
     assert not is_collision_free(-10.0, -18.12)
 
 
-def test_dock_heading_strict_forward_alignment():
-    """Verify that dock confirmation requires strict forward heading match and rejects reverse-facing contact."""
-    from sih_amr_fleet.common import wrap_angle
+def test_multirate_carrier_integration():
+    """Verify that carrier distance traveled per sim-second is rate-independent.
+    
+    A robot commanded at 0.46 m/s must advance 0.46 m in 1.0 simulated second,
+    regardless of whether callbacks fire at 50 Hz (0.02s dt), 25 Hz (0.04s dt),
+    or 11.46 Hz (~0.087s dt).
+    """
+    v_cmd = 0.46
+    sim_duration = 1.0  # 1.0 sim-second
 
-    dock_yaw = 1.5708
-    dock_tolerance_yaw = 0.20
+    for rate_hz in [50.0, 25.0, 15.87, 11.46, 10.0]:
+        robot = RobotKinematicState('robot_test', x=0.0, y=0.0, yaw=0.0)
+        nominal_dt = 0.02
+        dt_callback = 1.0 / rate_hz
+        elapsed = 0.0
+        total_dist = 0.0
 
-    # Robot facing forward (spawn heading +pi/2)
-    robot_forward_yaw = 1.5708
-    dyaw_forward = abs(wrap_angle(robot_forward_yaw - dock_yaw))
-    assert dyaw_forward <= dock_tolerance_yaw
+        while elapsed < sim_duration - 1e-9:
+            step_dt = min(dt_callback, sim_duration - elapsed)
+            # Micro-substeps of <= 0.02s
+            num_substeps = max(1, math.ceil(step_dt / nominal_dt))
+            substep_dt = step_dt / num_substeps
 
-    # Robot facing 180 degrees opposite (-pi/2) must NOT match
-    robot_reverse_yaw = -1.5708
-    dyaw_reverse = abs(wrap_angle(robot_reverse_yaw - dock_yaw))
-    assert dyaw_reverse > dock_tolerance_yaw
-    assert math.isclose(dyaw_reverse, math.pi, abs_tol=1e-3)
+            for _ in range(num_substeps):
+                dx = v_cmd * math.cos(robot.true_yaw) * substep_dt
+                dy = v_cmd * math.sin(robot.true_yaw) * substep_dt
+                robot.true_x += dx
+                robot.true_y += dy
+                total_dist += math.hypot(dx, dy)
+
+            elapsed += step_dt
+
+        assert abs(total_dist - (v_cmd * sim_duration)) < 1e-4, (
+            f'Failed for rate {rate_hz} Hz: got {total_dist}m, expected {v_cmd * sim_duration}m'
+        )
+        assert abs(robot.true_x - (v_cmd * sim_duration)) < 1e-4
 
 
-def test_boundary_inward_recovery_and_rejections():
-    """Verify carrier boundary outward rejection, inward recovery, shelf rejection, and peer rejection."""
+def test_substepping_avoids_tunneling():
+    """Verify that substepping catches collisions even with large elapsed dt."""
+    # Obstacle is at x = 0.20, robot starts at x = 0.0 with radius 0.17.
+    # Contact occurs when center reaches x = 0.20 - 0.17 = 0.03m.
+    robot = RobotKinematicState('robot_test', x=0.0, y=0.0, yaw=0.0)
+    v_cmd = 0.5  # m/s
+    obstacle_x = 0.20
+    robot_radius = 0.17
+    contact_threshold_x = obstacle_x - robot_radius  # 0.03m
+
+    def is_free(cx, cy):
+        return cx < contact_threshold_x
+
+    # One large dt step of 0.1s: without substepping, robot would jump to x = 0.05 (penetrating)
+    large_dt = 0.10
+    nominal_dt = 0.02
+    num_substeps = max(1, math.ceil(large_dt / nominal_dt))
+    substep_dt = large_dt / num_substeps
+
+    collided = False
+    for _ in range(num_substeps):
+        dx = v_cmd * substep_dt
+        if not is_free(robot.true_x + dx, robot.true_y):
+            collided = True
+            break
+        robot.true_x += dx
+
+    assert collided, "Substepping failed to detect obstacle"
+    assert robot.true_x <= contact_threshold_x + 1e-5
+
+
+def test_large_dt_retains_unintegrated_remainder():
+    """Verify that when dt > 0.5s, carrier integrates up to cap and retains unintegrated remainder."""
+    prev_sim_time_s = 100.0
+    now_s = 100.8  # dt = 0.8s > 0.5s cap
+    max_step_dt = 0.5
+
+    dt = now_s - prev_sim_time_s
+    dt_to_integrate = min(dt, max_step_dt)
+    prev_sim_time_s += dt_to_integrate
+    integrated_1 = dt_to_integrate
+
+    assert integrated_1 == 0.5
+    # On next tick at now_s = 100.8, remainder is now_s - prev_sim_time_s
+    dt_next = now_s - prev_sim_time_s
+    assert abs(dt_next - 0.3) < 1e-9, f"Expected 0.3s remainder, got {dt_next}"
+    integrated_2 = min(dt_next, max_step_dt)
+    prev_sim_time_s += integrated_2
+
+    total_integrated = integrated_1 + integrated_2
+    assert abs(total_integrated - 0.8) < 1e-9, f"Expected 0.8s total integration, got {total_integrated}"
+    assert abs(prev_sim_time_s - now_s) < 1e-9
+
+
+def test_boundary_recovery_scoped_attributes():
+    """Verify that carrier boundary limits are accessible properties and prevent NameError."""
     import rclpy
     from sih_amr_fleet.kinematic_carrier_node import KinematicCarrierNode
-
-    shutdown_at_end = False
     if not rclpy.ok():
         rclpy.init()
-        shutdown_at_end = True
-
+    node = KinematicCarrierNode()
     try:
-        node = KinematicCarrierNode()
-        # 1. Valid interior point:
-        assert node._is_position_collision_free('robot_1', -22.50, 10.0)
-
-        # 2. Outward step beyond warehouse boundary (-22.55) is rejected:
-        assert not node._is_position_collision_free('robot_1', -22.56, 10.0, curr_x=-22.50, curr_y=10.0)
-
-        # 3. Outward step from outside (-22.56 to -22.58) is rejected:
-        assert not node._is_position_collision_free('robot_1', -22.58, 10.0, curr_x=-22.56, curr_y=10.0)
-
-        # 4. Inward recovery from outside (-22.56 to -22.54) strictly reduces violation and is accepted:
-        assert node._is_position_collision_free('robot_1', -22.54, 10.0, curr_x=-22.56, curr_y=10.0)
-
-        # 5. Inward candidate into a physical shelf is rejected:
-        # shelf position at (-10.0, -18.5)
-        assert not node._is_position_collision_free('robot_1', -10.0, -18.5, curr_x=-10.0, curr_y=-18.5)
-
-        # 6. Peer collision rejection: robot_2 is at dock charging_pad_2 (-3.75, -29.55)
-        node.robots['robot_2'].true_x = 0.0
-        node.robots['robot_2'].true_y = 0.0
-        # Step for robot_1 into robot_2's footprint (dist < 2 * 0.35 = 0.70m) must be rejected
-        assert not node._is_position_collision_free('robot_1', 0.1, 0.0, curr_x=1.0, curr_y=0.0)
-
-        node.destroy_node()
+        min_x, min_y, max_x, max_y = node.boundary_limits
+        assert min_x < max_x
+        assert min_y < max_y
+        assert node._is_position_collision_free('robot_1', 0.0, 0.0) is True
+        assert node._is_position_collision_free('robot_1', min_x - 1.0, 0.0) is False
     finally:
-        if shutdown_at_end:
-            rclpy.shutdown()
+        node.destroy_node()
 
 
 

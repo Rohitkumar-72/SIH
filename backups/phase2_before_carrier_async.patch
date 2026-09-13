@@ -1,0 +1,473 @@
+diff --git a/desktop_fleet_dataset.csv b/desktop_fleet_dataset.csv
+index cb130c4..9f4eb91 100644
+--- a/desktop_fleet_dataset.csv
++++ b/desktop_fleet_dataset.csv
+@@ -1,41 +1,17 @@
+ run_id,task_id,robot_id,start_zone,goal_zone,static_path_length_m,turn_count,junction_crossings_count,nominal_speed_mps,fleet_size,candidate_corridor_count,mean_nearby_robot_count,avg_nearby_robot_speed_mps,max_corridor_queue_length,reservation_count,corridor_occupancy_ratio,active_blockage_count,waiting_time_s,total_stop_time_s,mean_peer_freshness_ms,task_load_count,actual_travel_time_s
+-run_1789187770,rnd_task_001,robot_1,South,South,0.85,0,0,0.46,4,1,0.03,0.0,2,11,0.022,101,234.72,230.72,500.0,3,544.2
+-run_1789187770,rnd_task_002,robot_2,North,North,6.0,0,1,0.46,4,1,0.02,0.02,4,30,0.043,120,669.16,665.16,500.0,4,1080.2
+-run_1789187770,rnd_task_003,robot_3,South,North,85.6,4,2,0.46,4,2,0.04,0.21,10,71,0.044,232,1977.58,1973.58,500.0,8,2527.3
+-run_1789187770,rnd_task_004,robot_4,North,North,30.2,2,1,0.46,4,1,0.01,0.32,5,36,0.042,114,699.62,695.62,500.0,5,1334.7
+-run_1789187770,rnd_task_005,robot_1,North,South,6.0,0,2,0.46,4,2,0.0,0.0,5,30,0.036,42,828.6,824.6,500.0,5,1167.8
+-run_1789187770,rnd_task_006,robot_2,North,South,65.89,4,2,0.46,4,2,0.01,0.06,4,29,0.043,66,628.62,624.62,500.0,5,978.2
+-run_1789187770,rnd_task_007,robot_4,South,North,6.0,1,2,0.46,4,2,0.01,0.04,10,77,0.068,141,1447.68,1443.68,500.0,7,1831.2
+-run_1789187770,rnd_task_008,robot_1,North,South,0.49,0,2,0.46,4,2,0.02,0.03,7,48,0.06,125,606.38,602.38,500.0,5,1202.84
+-run_1789187770,rnd_task_013,robot_2,North,South,0.85,0,2,0.46,4,2,0.0,0.18,11,82,0.07,86,690.72,686.72,500.0,7,1605.0
+-run_1789187770,rnd_task_014,robot_3,North,North,53.01,2,1,0.46,4,1,0.02,0.0,5,42,0.094,27,285.48,281.48,500.0,4,662.74
+-run_1789187770,rnd_task_015,robot_1,South,North,82.81,4,2,0.46,4,2,0.0,0.18,10,83,0.1,32,482.08,478.08,500.0,8,1302.86
+-run_1789187770,rnd_task_016,robot_4,North,South,59.88,4,2,0.46,4,2,0.16,0.07,7,42,0.097,21,529.9,525.9,500.0,4,660.1
+-run_1789187770,rnd_task_017,robot_3,South,North,97.33,4,2,0.46,4,2,0.09,0.0,9,59,0.093,22,483.14,479.14,500.0,6,965.84
+-run_1789187770,rnd_task_021,robot_2,South,Central,6.0,1,2,0.46,4,2,0.0,0.18,4,20,0.058,15,148.1,144.1,500.0,4,450.3
+-run_1789187770,rnd_task_022,robot_4,North,South,0.51,0,2,0.46,4,2,0.06,0.02,11,77,0.073,169,1201.32,1197.32,500.0,8,1637.4
+-run_1789187770,rnd_task_023,robot_2,South,South,32.98,2,1,0.46,4,1,0.0,0.18,4,24,0.071,105,173.74,169.74,500.0,5,448.2
+-run_1789187770,rnd_task_024,robot_1,South,North,73.24,4,2,0.46,4,2,0.11,0.06,7,36,0.059,168,681.42,677.42,500.0,4,943.04
+-run_1789187770,rnd_task_025,robot_3,North,Central,34.8,2,1,0.46,4,2,0.0,0.18,5,26,0.046,166,488.74,484.74,500.0,4,834.94
+-run_1789187770,rnd_task_026,robot_2,Central,North,0.67,0,2,0.46,4,2,0.0,0.01,4,23,0.06,61,258.7,254.7,500.0,3,566.4
+-run_1789187770,rnd_task_029,robot_1,North,North,9.44,2,0,0.46,4,1,0.0,0.18,4,18,0.091,0,81.0,77.0,500.0,1,241.2
+-run_1789189224,rnd_task_001,robot_4,North,North,22.26,2,1,0.46,4,1,0.05,0.01,4,23,0.069,84,331.54,327.54,500.0,4,519.4
+-run_1789189224,rnd_task_002,robot_3,South,North,0.67,0,2,0.46,4,2,0.09,0.02,7,46,0.054,248,967.64,963.64,500.0,6,1306.8
+-run_1789189224,rnd_task_003,robot_1,Central,Central,0.51,0,0,0.46,4,1,0.09,0.06,4,22,0.069,67,279.84,275.84,500.0,3,433.7
+-run_1789189224,rnd_task_004,robot_2,Central,South,69.97,4,2,0.46,4,2,0.03,0.0,6,34,0.068,157,640.92,636.92,500.0,5,792.78
+-run_1789189224,rnd_task_005,robot_1,North,Central,81.91,4,2,0.46,4,2,0.06,0.1,5,32,0.024,673,1282.04,1278.04,500.0,6,1993.22
+-run_1789189224,rnd_task_006,robot_4,North,North,35.25,2,1,0.46,4,1,0.25,0.13,5,37,0.024,703,1611.36,1607.36,500.0,6,2322.42
+-run_1789189224,rnd_task_007,robot_2,North,South,68.9,4,2,0.46,4,2,0.12,0.08,6,37,0.026,677,1689.08,1685.08,500.0,7,2191.4
+-run_1789189224,rnd_task_008,robot_3,North,North,29.54,2,1,0.46,4,1,0.36,0.1,4,19,0.015,545,755.92,751.92,500.0,5,1564.42
+-run_1789189224,rnd_task_015,robot_1,Central,North,85.1,4,2,0.46,4,2,0.1,0.36,3,23,0.04,173,346.12,342.12,500.0,6,795.2
+-run_1789189224,rnd_task_016,robot_4,South,South,47.38,2,1,0.46,4,1,0.09,0.26,8,57,0.091,140,399.84,395.84,500.0,10,966.26
+-run_1789189224,rnd_task_017,robot_3,North,North,8.95,2,0,0.46,4,1,0.05,0.54,8,52,0.091,132,189.5,185.5,500.0,7,853.74
+-run_1789189224,rnd_task_018,robot_2,Central,South,73.25,4,2,0.46,4,2,0.05,0.0,4,22,0.076,92,268.4,264.4,500.0,4,422.4
+-run_1789189224,rnd_task_019,robot_1,North,North,37.05,2,1,0.46,4,1,0.0,0.18,4,22,0.108,14,102.6,98.6,500.0,4,295.42
+-run_1789189224,rnd_task_020,robot_2,Central,Central,98.97,4,2,0.46,4,1,0.0,0.18,6,24,0.104,0,122.68,118.68,500.0,5,347.4
+-run_1789189224,rnd_task_021,robot_1,North,South,60.37,4,2,0.46,4,2,0.0,0.18,6,26,0.08,0,191.62,187.62,500.0,6,501.16
+-run_1789189224,rnd_task_022,robot_3,Central,Central,56.42,2,1,0.46,4,1,0.0,0.35,6,32,0.048,79,298.18,294.18,500.0,6,1044.0
+-run_1789189224,rnd_task_023,robot_2,North,Central,56.42,2,1,0.46,4,2,0.04,0.41,8,44,0.049,138,313.34,309.34,500.0,6,1441.2
+-run_1789189224,rnd_task_024,robot_4,Central,South,0.67,0,2,0.46,4,2,0.0,0.33,5,26,0.043,65,451.84,447.84,500.0,3,843.82
+-run_1789189224,rnd_task_026,robot_4,Central,Central,81.52,4,2,0.46,4,1,0.0,0.18,2,13,0.061,14,126.58,122.58,500.0,3,264.2
+-run_1789189224,rnd_task_027,robot_3,Central,North,49.31,2,1,0.46,4,2,0.02,0.1,5,30,0.051,128,200.54,196.54,500.0,2,858.14
++run_1789273152,rnd_task_001,robot_1,South,South,24.94,2,0,0.46,4,1,0.53,0.01,14,88,0.054,1585,2152.1,2148.1,500.0,10,2588.0
++run_1789273152,rnd_task_002,robot_2,North,North,35.25,2,1,0.46,4,1,0.03,0.12,4,22,0.071,159,182.8,178.8,500.0,3,450.0
++run_1789273152,rnd_task_003,robot_3,South,North,85.6,4,2,0.46,4,2,0.31,0.04,17,105,0.059,1609,2626.22,2622.22,500.0,11,2871.6
++run_1789273152,rnd_task_004,robot_4,North,North,30.2,2,1,0.46,4,1,0.08,0.05,4,23,0.07,188,248.3,244.3,500.0,4,485.6
++run_1789273152,rnd_task_005,robot_2,North,South,50.67,4,2,0.46,4,2,0.0,0.18,3,12,0.03,313,248.9,244.9,500.0,4,461.86
++run_1789273152,rnd_task_006,robot_4,North,South,65.89,4,2,0.46,4,2,0.0,0.18,4,22,0.058,398,381.72,377.72,500.0,4,584.8
++run_1789273152,rnd_task_007,robot_2,South,North,0.51,0,2,0.46,4,2,0.0,0.18,3,19,0.043,383,331.88,327.88,500.0,4,610.0
++run_1789273152,rnd_task_008,robot_4,North,South,91.22,4,2,0.46,4,2,0.0,0.18,4,19,0.034,461,436.98,432.98,500.0,4,716.4
++run_1789273152,rnd_task_009,robot_2,North,Central,64.69,4,2,0.46,4,2,0.0,0.18,3,16,0.061,219,182.44,178.44,500.0,4,328.6
++run_1789273152,rnd_task_013,robot_4,North,South,43.19,4,2,0.46,4,2,0.26,0.04,10,61,0.059,630,1269.54,1265.54,500.0,5,1597.2
++run_1789273152,rnd_task_014,robot_2,North,North,53.01,2,1,0.46,4,1,0.0,0.18,4,19,0.034,480,435.34,431.34,500.0,4,697.2
++run_1789273152,rnd_task_015,robot_1,South,North,6.0,1,2,0.46,4,2,0.01,0.01,9,53,0.062,239,926.38,922.38,500.0,4,1282.0
++run_1789273152,rnd_task_018,robot_4,Central,South,57.08,2,1,0.46,4,2,0.0,0.18,4,24,0.039,359,555.4,551.4,500.0,2,816.8
++run_1789273152,rnd_task_023,robot_1,South,South,32.98,2,1,0.46,4,1,0.0,0.18,4,19,0.037,327,418.42,414.42,500.0,2,646.14
++run_1789273152,rnd_task_024,robot_4,South,North,0.99,0,2,0.46,4,2,0.0,0.18,2,12,0.019,326,577.52,573.52,500.0,1,845.2
++run_1789273152,rnd_task_026,robot_4,Central,North,0.67,0,2,0.46,4,2,0.0,0.18,1,6,0.008,346,504.96,500.96,500.0,0,716.8
+diff --git a/scripts/launch_fleet_amrs.sh b/scripts/launch_fleet_amrs.sh
+index 1c2c1c9..aa40f7a 100755
+--- a/scripts/launch_fleet_amrs.sh
++++ b/scripts/launch_fleet_amrs.sh
+@@ -143,8 +143,16 @@ warehouse_ready() {
+ }
+ fail() { echo "ERROR: $*" >&2; echo "Logs: $LOG_DIR" >&2; exit 1; }
+ 
+-if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn' >/dev/null; then
+-  fail 'A Gazebo or AMR launch is already running. Stop it before starting a clean run.'
++# Clean up and ensure no lingering processes from prior crashed/aborted runs can hijack simulation
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  echo "Detected lingering simulator or carrier processes; cleaning up before run..."
++  pkill -15 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 1.0
++  pkill -9 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 0.5
++fi
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  fail 'A Gazebo, carrier, or AMR launch is still active and could not be terminated. Stop it before starting a clean run.'
+ fi
+ 
+ echo "Validating physics timing invariant (controller_update_rate <= 1 / max_step_size)..."
+diff --git a/scripts/launch_four_amrs.sh b/scripts/launch_four_amrs.sh
+index 41ab931..11cd5dd 100755
+--- a/scripts/launch_four_amrs.sh
++++ b/scripts/launch_four_amrs.sh
+@@ -167,8 +167,16 @@ warehouse_ready() {
+ }
+ fail() { echo "ERROR: $*" >&2; echo "Logs: $LOG_DIR" >&2; exit 1; }
+ 
+-if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn' >/dev/null; then
+-  fail 'A Gazebo or AMR launch is already running. Stop it before starting a clean run.'
++# Clean up and ensure no lingering processes from prior crashed/aborted runs can hijack simulation
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  echo "Detected lingering simulator or carrier processes; cleaning up before run..."
++  pkill -15 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 1.0
++  pkill -9 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 0.5
++fi
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  fail 'A Gazebo, carrier, or AMR launch is still active and could not be terminated. Stop it before starting a clean run.'
+ fi
+ 
+ echo "Validating physics timing invariant (controller_update_rate <= 1 / max_step_size)..."
+diff --git a/scripts/run_desktop_data_collection.py b/scripts/run_desktop_data_collection.py
+index 377092a..a604904 100755
+--- a/scripts/run_desktop_data_collection.py
++++ b/scripts/run_desktop_data_collection.py
+@@ -138,7 +138,8 @@ class DesktopCycleRun:
+             "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr",
+             "twist_stamper", "localization_node", "interface_readiness",
+             "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner",
+-            "dashboard_bridge_node", "dashboard_bridge"
++            "dashboard_bridge_node", "dashboard_bridge", "kinematic_carrier_node",
++            "kinematic_carrier", "verify_gazebo_pose"
+         ]
+         for pat in patterns:
+             try:
+diff --git a/scripts/run_laptop_data_collection.py b/scripts/run_laptop_data_collection.py
+index 6c6d696..f78b8f9 100755
+--- a/scripts/run_laptop_data_collection.py
++++ b/scripts/run_laptop_data_collection.py
+@@ -126,7 +126,8 @@ class LaptopCycleRun:
+             "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr",
+             "twist_stamper", "localization_node", "interface_readiness",
+             "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner",
+-            "dashboard_bridge_node", "dashboard_bridge"
++            "dashboard_bridge_node", "dashboard_bridge", "kinematic_carrier_node",
++            "kinematic_carrier", "verify_gazebo_pose"
+         ]
+         for pat in patterns:
+             try:
+diff --git a/scripts/run_multi_work_cycles.py b/scripts/run_multi_work_cycles.py
+index ba2e9fa..60c6e7d 100755
+--- a/scripts/run_multi_work_cycles.py
++++ b/scripts/run_multi_work_cycles.py
+@@ -189,7 +189,8 @@ class WorkCycleRun:
+             "orca_node", "random_task_generator_node", "warehouse_map_node",
+             "spawn_minimal_amr", "turtlebot4_spawn", "twist_stamper",
+             "interface_readiness", "localization_node", "robot_state_publisher",
+-            "controller_manager", "diffdrive_controller"
++            "controller_manager", "diffdrive_controller", "kinematic_carrier_node",
++            "kinematic_carrier", "verify_gazebo_pose"
+         ]
+         if graceful:
+             for pat in patterns:
+diff --git a/src/sih_amr_fleet/maps/demo_warehouse.yaml b/src/sih_amr_fleet/maps/demo_warehouse.yaml
+index 5522a87..1643bd4 100644
+--- a/src/sih_amr_fleet/maps/demo_warehouse.yaml
++++ b/src/sih_amr_fleet/maps/demo_warehouse.yaml
+@@ -8,14 +8,14 @@ height: 120
+ # only supplies simulated odometry; physical AMRs establish this same frame at
+ # a dock anchor, then dead-reckon and correct from local perception.
+ anchors:
+-  charging_pad_1: {map_pose: [-5.25, -29.55, -1.5708], cell: [35, 1]}
+-  charging_pad_2: {map_pose: [-3.75, -29.55, -1.5708], cell: [38, 1]}
+-  charging_pad_3: {map_pose: [-2.25, -29.55, -1.5708], cell: [41, 1]}
+-  charging_pad_4: {map_pose: [-0.75, -29.55, -1.5708], cell: [44, 1]}
+-  charging_pad_5: {map_pose: [0.75, -29.55, -1.5708], cell: [47, 1]}
+-  charging_pad_6: {map_pose: [2.25, -29.55, -1.5708], cell: [50, 1]}
+-  charging_pad_7: {map_pose: [3.75, -29.55, -1.5708], cell: [53, 1]}
+-  charging_pad_8: {map_pose: [5.25, -29.55, -1.5708], cell: [56, 1]}
++  charging_pad_1: {map_pose: [-5.25, -29.55, 1.5708], cell: [35, 1]}
++  charging_pad_2: {map_pose: [-3.75, -29.55, 1.5708], cell: [38, 1]}
++  charging_pad_3: {map_pose: [-2.25, -29.55, 1.5708], cell: [41, 1]}
++  charging_pad_4: {map_pose: [-0.75, -29.55, 1.5708], cell: [44, 1]}
++  charging_pad_5: {map_pose: [0.75, -29.55, 1.5708], cell: [47, 1]}
++  charging_pad_6: {map_pose: [2.25, -29.55, 1.5708], cell: [50, 1]}
++  charging_pad_7: {map_pose: [3.75, -29.55, 1.5708], cell: [53, 1]}
++  charging_pad_8: {map_pose: [5.25, -29.55, 1.5708], cell: [56, 1]}
+ dock_resources:
+   charging_pad_1: {approach_branch: RS-DOCK-1-BRANCH, centre_strip: DS-1}
+   charging_pad_2: {approach_branch: RS-DOCK-2-BRANCH, centre_strip: DS-2}
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py b/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py
+index d93842b..e6f46f9 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py
+@@ -312,6 +312,15 @@ class CorridorMutexNode(Node):
+             self.release_request(CorridorProtocol.EXIT)
+             self.last_exited_corridor = exited_corridor
+             self.last_exited_time = now
++        elif not self.request['was_inside']:
++            entered_at = self.request.get('entered_at', now)
++            if now - entered_at > 10.0:
++                self.get_logger().warning(
++                    f"[{self.robot_id}:CorridorMutex] Decision: TIMEOUT_UNENTERED_MUTEX for corridor "
++                    f"{self.request['corridor']}. Actor=CorridorMutex:{self.robot_id}. "
++                    f"Held token for {now - entered_at:.1f}s without entering. Releasing to avoid fleet deadlock."
++                )
++                self.release_request(CorridorProtocol.CANCEL)
+             # The exited cell is normally still inside this corridor's broad
+             # approach band. Clearing the old arm prevents the next 20 Hz
+             # state sample from immediately requesting the corridor again
+@@ -380,6 +389,7 @@ class CorridorMutexNode(Node):
+ 
+         if permitted and self.entrance_clear and not self.request['entered']:
+             self.request['entered'] = True
++            self.request['entered_at'] = now_seconds(self)
+             self.send(CorridorProtocol.ENTER, self.request['corridor'], self.request['id'])
+             self.get_logger().info(
+                 f"[{self.robot_id}:CorridorMutex] Decision: ENTER_CORRIDOR {self.request['corridor']}. "
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/data_collection_node.py b/src/sih_amr_fleet/sih_amr_fleet/data_collection_node.py
+index be632ef..eaaf291 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/data_collection_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/data_collection_node.py
+@@ -574,6 +574,8 @@ class DataCollectionNode(Node):
+         if sequence <= self.last_execution_sequences.get(source, -1):
+             return
+         self.last_execution_sequences[source] = sequence
++        if int(msg.phase) == TaskExecutionStatus.COMPLETED and msg.task_id:
++            self.completed_tasks.add(msg.task_id)
+         self.remember_pipeline(msg.owner_robot_id, 'execution', {
+             'task_id': msg.task_id,
+             'session_id': msg.fleet_header.session_id,
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py b/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py
+index 98335cb..fe7b064 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py
+@@ -16,6 +16,7 @@ import math
+ import os
+ import pathlib
+ import random
++import time
+ import yaml
+ from typing import Dict, List, Optional, Set, Tuple
+ 
+@@ -96,6 +97,10 @@ class KinematicCarrierNode(Node):
+         
+         self.session_id = new_session_id()
+         self.telemetry_sequence = 0
++        self.gz_sync_total_count = 0
++        self.gz_sync_error_count = 0
++        self.last_gz_latency_ms = 0.0
++        self.max_gz_latency_ms = 0.0
+         
+         # Load map geometry for swept footprint collision checking
+         self.map_resolution = 0.5
+@@ -262,8 +267,9 @@ class KinematicCarrierNode(Node):
+                         self.gz_entity_ids[rid] = p.id
+                         self.get_logger().info(f'Resolved Gazebo entity ID for {rid} ({p.name}) -> {p.id}')
+ 
+-    def _is_position_collision_free(self, robot_id: str, x: float, y: float) -> bool:
+-        """Check if a circular footprint at (x, y) intersects shelves, walls, or other AMRs."""
++    def _is_position_collision_free(self, robot_id: str, x: float, y: float, curr_x: Optional[float] = None, curr_y: Optional[float] = None) -> bool:
++        """Check if a circular footprint at (x, y) intersects shelves, walls, or other AMRs.
++        Allows inward escape if robot is already slightly outside the warehouse perimeter."""
+         # Warehouse boundary limits with robot radius margin.
+         # Perimeter transit lane centers are at x = -22.5 and x = +22.5.
+         # Allow +/- 0.05m clearance so AMRs centered at -22.5 or +22.5 are not clamped.
+@@ -272,8 +278,16 @@ class KinematicCarrierNode(Node):
+         min_y = self.map_origin_y + 0.15
+         max_y = self.map_origin_y + (self.map_height * self.map_resolution) - 0.15
+ 
+-        if not (min_x <= x <= max_x and min_y <= y <= max_y):
+-            return False
++        in_bounds = (min_x <= x <= max_x and min_y <= y <= max_y)
++        if not in_bounds:
++            if curr_x is not None and curr_y is not None:
++                curr_viol = max(0.0, min_x - curr_x, curr_x - max_x, min_y - curr_y, curr_y - max_y)
++                cand_viol = max(0.0, min_x - x, x - max_x, min_y - y, y - max_y)
++                # Permit candidate position only if it strictly reduces current boundary violation
++                if cand_viol >= curr_viol:
++                    return False
++            else:
++                return False
+ 
+         if self.physical_shelves:
+             # Physical shelf obstacle check: exact distance from circular footprint to physical shelf boxes
+@@ -351,7 +365,7 @@ class KinematicCarrierNode(Node):
+                     fraction = s / substeps
+                     cx = robot.true_x + fraction * dx
+                     cy = robot.true_y + fraction * dy
+-                    if not self._is_position_collision_free(robot_id, cx, cy):
++                    if not self._is_position_collision_free(robot_id, cx, cy, curr_x=robot.true_x, curr_y=robot.true_y):
+                         collision = True
+                         allowed_ratio = max(0.0, (s - 1) / substeps)
+                         break
+@@ -410,16 +424,35 @@ class KinematicCarrierNode(Node):
+ 
+         # Dispatch batch pose update to Gazebo via Gazebo Sim Transport
+         if gz_pose_vector is not None and len(gz_pose_vector.pose) > 0:
++            t0 = time.perf_counter()
++            self.gz_sync_total_count += 1
+             try:
+-                self.gz_node.request(
++                res, rep = self.gz_node.request(
+                     f'/world/{self.world_name}/set_pose_vector',
+                     gz_pose_vector,
+                     GzPose_V,
+                     GzBoolean,
+-                    timeout=20
++                    timeout=50
+                 )
+-            except Exception:
+-                pass
++                if not (res and rep is not None and rep.data):
++                    self.gz_sync_error_count += 1
++                    err_kind = 'rejected' if (res and rep is not None and not rep.data) else 'timeout/unreachable'
++                    self.get_logger().warning(
++                        f'[Carrier] Gazebo set_pose_vector failed ({err_kind}). '
++                        f'Sync failures: {self.gz_sync_error_count}/{self.gz_sync_total_count}.',
++                        throttle_duration_sec=2.0
++                    )
++            except Exception as e:
++                self.gz_sync_error_count += 1
++                self.get_logger().warning(
++                    f'[Carrier] Exception in Gazebo set_pose_vector: {e}. '
++                    f'Sync failures: {self.gz_sync_error_count}/{self.gz_sync_total_count}.',
++                    throttle_duration_sec=2.0
++                )
++            lat_ms = (time.perf_counter() - t0) * 1000.0
++            self.last_gz_latency_ms = lat_ms
++            if lat_ms > self.max_gz_latency_ms:
++                self.max_gz_latency_ms = lat_ms
+ 
+         # Publish true pose telemetry for validation
+         self._publish_telemetry_true_poses()
+@@ -460,8 +493,7 @@ class KinematicCarrierNode(Node):
+             dx = robot.true_x - anchor_pose[0]
+             dy = robot.true_y - anchor_pose[1]
+             dist = math.hypot(dx, dy)
+-            dyaw = min(abs(wrap_angle(robot.true_yaw - anchor_pose[2])),
+-                       abs(wrap_angle(robot.true_yaw - (anchor_pose[2] + math.pi))))
++            dyaw = abs(wrap_angle(robot.true_yaw - anchor_pose[2]))
+             
+             if dist <= dock_tolerance_dist and dyaw <= dock_tolerance_yaw:
+                 matched_dock = dock_id
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/localization_node.py b/src/sih_amr_fleet/sih_amr_fleet/localization_node.py
+index d529fc5..2dd9bb7 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/localization_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/localization_node.py
+@@ -8,7 +8,7 @@ from rclpy.node import Node
+ from sih_amr_interfaces.msg import DockProtocol, RobotState
+ 
+ from .algorithms import body_velocity_to_map, map_transform_for_anchor
+-from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, yaw_from_quaternion
++from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, wrap_angle, yaw_from_quaternion
+ 
+ 
+ class LocalizationNode(Node):
+@@ -76,7 +76,7 @@ class LocalizationNode(Node):
+         msg.pose = Pose2D(
+             x=self.odom_origin_x + cosine * local_x - sine * local_y,
+             y=self.odom_origin_y + sine * local_x + cosine * local_y,
+-            theta=self.odom_origin_yaw + yaw_from_quaternion(odom.pose.pose.orientation))
++            theta=wrap_angle(self.odom_origin_yaw + yaw_from_quaternion(odom.pose.pose.orientation)))
+         # nav_msgs/Odometry expresses twist in child_frame_id (base_link for
+         # these AMRs).  Fleet consumers predict peers in the map frame, so a
+         # body-forward velocity cannot be copied and mislabeled as map +x.
+diff --git a/src/sih_amr_fleet/test/test_kinematic_carrier.py b/src/sih_amr_fleet/test/test_kinematic_carrier.py
+index dfbb231..b978630 100644
+--- a/src/sih_amr_fleet/test/test_kinematic_carrier.py
++++ b/src/sih_amr_fleet/test/test_kinematic_carrier.py
+@@ -147,3 +147,64 @@ def test_physical_shelf_collision_clearance():
+     # Point 5cm from shelf surface (max_y=-18.1752, so y=-18.12) must collide
+     assert not is_collision_free(-10.0, -18.12)
+ 
++
++def test_dock_heading_strict_forward_alignment():
++    """Verify that dock confirmation requires strict forward heading match and rejects reverse-facing contact."""
++    from sih_amr_fleet.common import wrap_angle
++
++    dock_yaw = 1.5708
++    dock_tolerance_yaw = 0.20
++
++    # Robot facing forward (spawn heading +pi/2)
++    robot_forward_yaw = 1.5708
++    dyaw_forward = abs(wrap_angle(robot_forward_yaw - dock_yaw))
++    assert dyaw_forward <= dock_tolerance_yaw
++
++    # Robot facing 180 degrees opposite (-pi/2) must NOT match
++    robot_reverse_yaw = -1.5708
++    dyaw_reverse = abs(wrap_angle(robot_reverse_yaw - dock_yaw))
++    assert dyaw_reverse > dock_tolerance_yaw
++    assert math.isclose(dyaw_reverse, math.pi, abs_tol=1e-3)
++
++
++def test_boundary_inward_recovery_and_rejections():
++    """Verify carrier boundary outward rejection, inward recovery, shelf rejection, and peer rejection."""
++    import rclpy
++    from sih_amr_fleet.kinematic_carrier_node import KinematicCarrierNode
++
++    shutdown_at_end = False
++    if not rclpy.ok():
++        rclpy.init()
++        shutdown_at_end = True
++
++    try:
++        node = KinematicCarrierNode()
++        # 1. Valid interior point:
++        assert node._is_position_collision_free('robot_1', -22.50, 10.0)
++
++        # 2. Outward step beyond warehouse boundary (-22.55) is rejected:
++        assert not node._is_position_collision_free('robot_1', -22.56, 10.0, curr_x=-22.50, curr_y=10.0)
++
++        # 3. Outward step from outside (-22.56 to -22.58) is rejected:
++        assert not node._is_position_collision_free('robot_1', -22.58, 10.0, curr_x=-22.56, curr_y=10.0)
++
++        # 4. Inward recovery from outside (-22.56 to -22.54) strictly reduces violation and is accepted:
++        assert node._is_position_collision_free('robot_1', -22.54, 10.0, curr_x=-22.56, curr_y=10.0)
++
++        # 5. Inward candidate into a physical shelf is rejected:
++        # shelf position at (-10.0, -18.5)
++        assert not node._is_position_collision_free('robot_1', -10.0, -18.5, curr_x=-10.0, curr_y=-18.5)
++
++        # 6. Peer collision rejection: robot_2 is at dock charging_pad_2 (-3.75, -29.55)
++        node.robots['robot_2'].true_x = 0.0
++        node.robots['robot_2'].true_y = 0.0
++        # Step for robot_1 into robot_2's footprint (dist < 2 * 0.35 = 0.70m) must be rejected
++        assert not node._is_position_collision_free('robot_1', 0.1, 0.0, curr_x=1.0, curr_y=0.0)
++
++        node.destroy_node()
++    finally:
++        if shutdown_at_end:
++            rclpy.shutdown()
++
++
++
+diff --git a/src/sih_amr_fleet/test/test_runner_metrics.py b/src/sih_amr_fleet/test/test_runner_metrics.py
+index 814440a..34ba4c2 100644
+--- a/src/sih_amr_fleet/test/test_runner_metrics.py
++++ b/src/sih_amr_fleet/test/test_runner_metrics.py
+@@ -361,3 +361,46 @@ def test_optimization_runner_evaluation_and_report_generation(tmp_path):
+     assert len(data["phase2_fleet_scaling"]) == 3
+ 
+ 
++def test_data_collection_node_completed_task_registration(tmp_path):
++    """Verify DataCollectionNode registers completed tasks into self.completed_tasks."""
++    import rclpy
++    from sih_amr_fleet.data_collection_node import DataCollectionNode
++    from sih_amr_interfaces.msg import TaskExecutionStatus
++
++    shutdown_at_end = False
++    if not rclpy.ok():
++        rclpy.init()
++        shutdown_at_end = True
++
++    log_file = tmp_path / "telemetry.jsonl"
++    node = DataCollectionNode()
++    try:
++        assert len(node.completed_tasks) == 0
++
++        # Non-completed status (e.g. EN_ROUTE_PICKUP) should NOT add to completed_tasks
++        msg1 = TaskExecutionStatus()
++        msg1.owner_robot_id = 'robot_1'
++        msg1.fleet_header.session_id = 'sess_1'
++        msg1.fleet_header.sequence_no = 1
++        msg1.task_id = 'rnd_task_001'
++        msg1.phase = TaskExecutionStatus.EN_ROUTE_PICKUP
++        node.on_execution(msg1)
++        assert 'rnd_task_001' not in node.completed_tasks
++
++        # Completed status MUST add to completed_tasks
++        msg2 = TaskExecutionStatus()
++        msg2.owner_robot_id = 'robot_1'
++        msg2.fleet_header.session_id = 'sess_1'
++        msg2.fleet_header.sequence_no = 2
++        msg2.task_id = 'rnd_task_001'
++        msg2.phase = TaskExecutionStatus.COMPLETED
++        node.on_execution(msg2)
++        assert 'rnd_task_001' in node.completed_tasks
++        assert len(node.completed_tasks) == 1
++    finally:
++        node.destroy_node()
++        if shutdown_at_end:
++            rclpy.shutdown()
++
++
++

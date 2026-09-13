@@ -463,8 +463,8 @@ class ConstantVelocityTrack:
         self.variance *= (1.0 - gain)
 
 
-def avoidance_velocity(preferred, self_xy, peers, radius, horizon, max_speed):
-    """Reciprocal velocity-obstacle approximation with uncertainty inflation."""
+def avoidance_velocity(preferred, self_xy, peers, radius, horizon, max_speed, self_id=None):
+    """Reciprocal velocity-obstacle approximation with uncertainty inflation and 2D CPA."""
     vx, vy = preferred
     for peer in peers:
         dx, dy = peer['x'] - self_xy[0], peer['y'] - self_xy[1]
@@ -473,12 +473,42 @@ def avoidance_velocity(preferred, self_xy, peers, radius, horizon, max_speed):
         if separation < 1e-6:
             vx, vy = 0.0, 0.0
             continue
-        closing = ((vx - peer['vx']) * dx + (vy - peer['vy']) * dy) / separation
-        predicted_distance = separation - closing * horizon
-        if predicted_distance < 2.0 * effective_radius and closing > 0.0:
-            push = (2.0 * effective_radius - predicted_distance) / max(horizon, 0.1)
-            vx -= push * dx / separation
-            vy -= push * dy / separation
+
+        v_rel_x = peer['vx'] - vx
+        v_rel_y = peer['vy'] - vy
+        v_rel_sq = v_rel_x * v_rel_x + v_rel_y * v_rel_y
+
+        closing = - (dx * v_rel_x + dy * v_rel_y)
+        if closing <= 0.0:
+            continue
+
+        if v_rel_sq > 1e-6:
+            t_cpa = closing / v_rel_sq
+            t_star = max(0.0, min(t_cpa, horizon))
+        else:
+            t_star = horizon
+
+        rx = dx + t_star * v_rel_x
+        ry = dy + t_star * v_rel_y
+        d_min = math.hypot(rx, ry)
+
+        if d_min < 2.0 * effective_radius:
+            overlap = 2.0 * effective_radius - d_min
+            push = overlap / max(t_star, 0.2)
+            peer_id = peer.get('id') or peer.get('robot_id')
+            if self_id is not None and peer_id:
+                yield_factor = 0.0 if str(self_id) < str(peer_id) else 1.0
+            else:
+                yield_factor = 0.5
+
+            if yield_factor > 0.0:
+                if d_min > 0.01:
+                    vx -= yield_factor * push * (rx / d_min)
+                    vy -= yield_factor * push * (ry / d_min)
+                else:
+                    vx -= yield_factor * push * (dx / separation)
+                    vy -= yield_factor * push * (dy / separation)
+
     speed = math.hypot(vx, vy)
     if speed > max_speed:
         vx, vy = vx * max_speed / speed, vy * max_speed / speed

@@ -1,0 +1,1635 @@
+diff --git a/.gitignore b/.gitignore
+index c82a38a..6298102 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,4 +1,3 @@
+-AGENTS.md
+ implementation.md
+ tools/four_amr_poses.env.local
+ __pycache__/
+diff --git a/desktop_fleet_dataset.csv b/desktop_fleet_dataset.csv
+index cb130c4..9f4eb91 100644
+--- a/desktop_fleet_dataset.csv
++++ b/desktop_fleet_dataset.csv
+@@ -1,41 +1,17 @@
+ run_id,task_id,robot_id,start_zone,goal_zone,static_path_length_m,turn_count,junction_crossings_count,nominal_speed_mps,fleet_size,candidate_corridor_count,mean_nearby_robot_count,avg_nearby_robot_speed_mps,max_corridor_queue_length,reservation_count,corridor_occupancy_ratio,active_blockage_count,waiting_time_s,total_stop_time_s,mean_peer_freshness_ms,task_load_count,actual_travel_time_s
+-run_1789187770,rnd_task_001,robot_1,South,South,0.85,0,0,0.46,4,1,0.03,0.0,2,11,0.022,101,234.72,230.72,500.0,3,544.2
+-run_1789187770,rnd_task_002,robot_2,North,North,6.0,0,1,0.46,4,1,0.02,0.02,4,30,0.043,120,669.16,665.16,500.0,4,1080.2
+-run_1789187770,rnd_task_003,robot_3,South,North,85.6,4,2,0.46,4,2,0.04,0.21,10,71,0.044,232,1977.58,1973.58,500.0,8,2527.3
+-run_1789187770,rnd_task_004,robot_4,North,North,30.2,2,1,0.46,4,1,0.01,0.32,5,36,0.042,114,699.62,695.62,500.0,5,1334.7
+-run_1789187770,rnd_task_005,robot_1,North,South,6.0,0,2,0.46,4,2,0.0,0.0,5,30,0.036,42,828.6,824.6,500.0,5,1167.8
+-run_1789187770,rnd_task_006,robot_2,North,South,65.89,4,2,0.46,4,2,0.01,0.06,4,29,0.043,66,628.62,624.62,500.0,5,978.2
+-run_1789187770,rnd_task_007,robot_4,South,North,6.0,1,2,0.46,4,2,0.01,0.04,10,77,0.068,141,1447.68,1443.68,500.0,7,1831.2
+-run_1789187770,rnd_task_008,robot_1,North,South,0.49,0,2,0.46,4,2,0.02,0.03,7,48,0.06,125,606.38,602.38,500.0,5,1202.84
+-run_1789187770,rnd_task_013,robot_2,North,South,0.85,0,2,0.46,4,2,0.0,0.18,11,82,0.07,86,690.72,686.72,500.0,7,1605.0
+-run_1789187770,rnd_task_014,robot_3,North,North,53.01,2,1,0.46,4,1,0.02,0.0,5,42,0.094,27,285.48,281.48,500.0,4,662.74
+-run_1789187770,rnd_task_015,robot_1,South,North,82.81,4,2,0.46,4,2,0.0,0.18,10,83,0.1,32,482.08,478.08,500.0,8,1302.86
+-run_1789187770,rnd_task_016,robot_4,North,South,59.88,4,2,0.46,4,2,0.16,0.07,7,42,0.097,21,529.9,525.9,500.0,4,660.1
+-run_1789187770,rnd_task_017,robot_3,South,North,97.33,4,2,0.46,4,2,0.09,0.0,9,59,0.093,22,483.14,479.14,500.0,6,965.84
+-run_1789187770,rnd_task_021,robot_2,South,Central,6.0,1,2,0.46,4,2,0.0,0.18,4,20,0.058,15,148.1,144.1,500.0,4,450.3
+-run_1789187770,rnd_task_022,robot_4,North,South,0.51,0,2,0.46,4,2,0.06,0.02,11,77,0.073,169,1201.32,1197.32,500.0,8,1637.4
+-run_1789187770,rnd_task_023,robot_2,South,South,32.98,2,1,0.46,4,1,0.0,0.18,4,24,0.071,105,173.74,169.74,500.0,5,448.2
+-run_1789187770,rnd_task_024,robot_1,South,North,73.24,4,2,0.46,4,2,0.11,0.06,7,36,0.059,168,681.42,677.42,500.0,4,943.04
+-run_1789187770,rnd_task_025,robot_3,North,Central,34.8,2,1,0.46,4,2,0.0,0.18,5,26,0.046,166,488.74,484.74,500.0,4,834.94
+-run_1789187770,rnd_task_026,robot_2,Central,North,0.67,0,2,0.46,4,2,0.0,0.01,4,23,0.06,61,258.7,254.7,500.0,3,566.4
+-run_1789187770,rnd_task_029,robot_1,North,North,9.44,2,0,0.46,4,1,0.0,0.18,4,18,0.091,0,81.0,77.0,500.0,1,241.2
+-run_1789189224,rnd_task_001,robot_4,North,North,22.26,2,1,0.46,4,1,0.05,0.01,4,23,0.069,84,331.54,327.54,500.0,4,519.4
+-run_1789189224,rnd_task_002,robot_3,South,North,0.67,0,2,0.46,4,2,0.09,0.02,7,46,0.054,248,967.64,963.64,500.0,6,1306.8
+-run_1789189224,rnd_task_003,robot_1,Central,Central,0.51,0,0,0.46,4,1,0.09,0.06,4,22,0.069,67,279.84,275.84,500.0,3,433.7
+-run_1789189224,rnd_task_004,robot_2,Central,South,69.97,4,2,0.46,4,2,0.03,0.0,6,34,0.068,157,640.92,636.92,500.0,5,792.78
+-run_1789189224,rnd_task_005,robot_1,North,Central,81.91,4,2,0.46,4,2,0.06,0.1,5,32,0.024,673,1282.04,1278.04,500.0,6,1993.22
+-run_1789189224,rnd_task_006,robot_4,North,North,35.25,2,1,0.46,4,1,0.25,0.13,5,37,0.024,703,1611.36,1607.36,500.0,6,2322.42
+-run_1789189224,rnd_task_007,robot_2,North,South,68.9,4,2,0.46,4,2,0.12,0.08,6,37,0.026,677,1689.08,1685.08,500.0,7,2191.4
+-run_1789189224,rnd_task_008,robot_3,North,North,29.54,2,1,0.46,4,1,0.36,0.1,4,19,0.015,545,755.92,751.92,500.0,5,1564.42
+-run_1789189224,rnd_task_015,robot_1,Central,North,85.1,4,2,0.46,4,2,0.1,0.36,3,23,0.04,173,346.12,342.12,500.0,6,795.2
+-run_1789189224,rnd_task_016,robot_4,South,South,47.38,2,1,0.46,4,1,0.09,0.26,8,57,0.091,140,399.84,395.84,500.0,10,966.26
+-run_1789189224,rnd_task_017,robot_3,North,North,8.95,2,0,0.46,4,1,0.05,0.54,8,52,0.091,132,189.5,185.5,500.0,7,853.74
+-run_1789189224,rnd_task_018,robot_2,Central,South,73.25,4,2,0.46,4,2,0.05,0.0,4,22,0.076,92,268.4,264.4,500.0,4,422.4
+-run_1789189224,rnd_task_019,robot_1,North,North,37.05,2,1,0.46,4,1,0.0,0.18,4,22,0.108,14,102.6,98.6,500.0,4,295.42
+-run_1789189224,rnd_task_020,robot_2,Central,Central,98.97,4,2,0.46,4,1,0.0,0.18,6,24,0.104,0,122.68,118.68,500.0,5,347.4
+-run_1789189224,rnd_task_021,robot_1,North,South,60.37,4,2,0.46,4,2,0.0,0.18,6,26,0.08,0,191.62,187.62,500.0,6,501.16
+-run_1789189224,rnd_task_022,robot_3,Central,Central,56.42,2,1,0.46,4,1,0.0,0.35,6,32,0.048,79,298.18,294.18,500.0,6,1044.0
+-run_1789189224,rnd_task_023,robot_2,North,Central,56.42,2,1,0.46,4,2,0.04,0.41,8,44,0.049,138,313.34,309.34,500.0,6,1441.2
+-run_1789189224,rnd_task_024,robot_4,Central,South,0.67,0,2,0.46,4,2,0.0,0.33,5,26,0.043,65,451.84,447.84,500.0,3,843.82
+-run_1789189224,rnd_task_026,robot_4,Central,Central,81.52,4,2,0.46,4,1,0.0,0.18,2,13,0.061,14,126.58,122.58,500.0,3,264.2
+-run_1789189224,rnd_task_027,robot_3,Central,North,49.31,2,1,0.46,4,2,0.02,0.1,5,30,0.051,128,200.54,196.54,500.0,2,858.14
++run_1789273152,rnd_task_001,robot_1,South,South,24.94,2,0,0.46,4,1,0.53,0.01,14,88,0.054,1585,2152.1,2148.1,500.0,10,2588.0
++run_1789273152,rnd_task_002,robot_2,North,North,35.25,2,1,0.46,4,1,0.03,0.12,4,22,0.071,159,182.8,178.8,500.0,3,450.0
++run_1789273152,rnd_task_003,robot_3,South,North,85.6,4,2,0.46,4,2,0.31,0.04,17,105,0.059,1609,2626.22,2622.22,500.0,11,2871.6
++run_1789273152,rnd_task_004,robot_4,North,North,30.2,2,1,0.46,4,1,0.08,0.05,4,23,0.07,188,248.3,244.3,500.0,4,485.6
++run_1789273152,rnd_task_005,robot_2,North,South,50.67,4,2,0.46,4,2,0.0,0.18,3,12,0.03,313,248.9,244.9,500.0,4,461.86
++run_1789273152,rnd_task_006,robot_4,North,South,65.89,4,2,0.46,4,2,0.0,0.18,4,22,0.058,398,381.72,377.72,500.0,4,584.8
++run_1789273152,rnd_task_007,robot_2,South,North,0.51,0,2,0.46,4,2,0.0,0.18,3,19,0.043,383,331.88,327.88,500.0,4,610.0
++run_1789273152,rnd_task_008,robot_4,North,South,91.22,4,2,0.46,4,2,0.0,0.18,4,19,0.034,461,436.98,432.98,500.0,4,716.4
++run_1789273152,rnd_task_009,robot_2,North,Central,64.69,4,2,0.46,4,2,0.0,0.18,3,16,0.061,219,182.44,178.44,500.0,4,328.6
++run_1789273152,rnd_task_013,robot_4,North,South,43.19,4,2,0.46,4,2,0.26,0.04,10,61,0.059,630,1269.54,1265.54,500.0,5,1597.2
++run_1789273152,rnd_task_014,robot_2,North,North,53.01,2,1,0.46,4,1,0.0,0.18,4,19,0.034,480,435.34,431.34,500.0,4,697.2
++run_1789273152,rnd_task_015,robot_1,South,North,6.0,1,2,0.46,4,2,0.01,0.01,9,53,0.062,239,926.38,922.38,500.0,4,1282.0
++run_1789273152,rnd_task_018,robot_4,Central,South,57.08,2,1,0.46,4,2,0.0,0.18,4,24,0.039,359,555.4,551.4,500.0,2,816.8
++run_1789273152,rnd_task_023,robot_1,South,South,32.98,2,1,0.46,4,1,0.0,0.18,4,19,0.037,327,418.42,414.42,500.0,2,646.14
++run_1789273152,rnd_task_024,robot_4,South,North,0.99,0,2,0.46,4,2,0.0,0.18,2,12,0.019,326,577.52,573.52,500.0,1,845.2
++run_1789273152,rnd_task_026,robot_4,Central,North,0.67,0,2,0.46,4,2,0.0,0.18,1,6,0.008,346,504.96,500.96,500.0,0,716.8
+diff --git a/scripts/launch_fleet_amrs.sh b/scripts/launch_fleet_amrs.sh
+index 1c2c1c9..e1211b5 100755
+--- a/scripts/launch_fleet_amrs.sh
++++ b/scripts/launch_fleet_amrs.sh
+@@ -60,7 +60,6 @@ write_run_event simulation_profile "sensor_profile=$SENSOR_PROFILE lidar_hz=$LID
+ 
+ source /opt/ros/jazzy/setup.bash
+ [[ -f "$OVERLAY/setup.bash" ]] && source "$OVERLAY/setup.bash"
+-[[ -f "$SIH_ROOT/install/setup.bash" ]] && source "$SIH_ROOT/install/setup.bash"
+ [[ -f "$WORKSPACE/install/setup.bash" ]] && source "$WORKSPACE/install/setup.bash"
+ set -u
+ 
+@@ -143,8 +142,16 @@ warehouse_ready() {
+ }
+ fail() { echo "ERROR: $*" >&2; echo "Logs: $LOG_DIR" >&2; exit 1; }
+ 
+-if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn' >/dev/null; then
+-  fail 'A Gazebo or AMR launch is already running. Stop it before starting a clean run.'
++# Clean up and ensure no lingering processes from prior crashed/aborted runs can hijack simulation
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  echo "Detected lingering simulator or carrier processes; cleaning up before run..."
++  pkill -15 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 1.0
++  pkill -9 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 0.5
++fi
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  fail 'A Gazebo, carrier, or AMR launch is still active and could not be terminated. Stop it before starting a clean run.'
+ fi
+ 
+ echo "Validating physics timing invariant (controller_update_rate <= 1 / max_step_size)..."
+diff --git a/scripts/launch_four_amrs.sh b/scripts/launch_four_amrs.sh
+index 41ab931..11cd5dd 100755
+--- a/scripts/launch_four_amrs.sh
++++ b/scripts/launch_four_amrs.sh
+@@ -167,8 +167,16 @@ warehouse_ready() {
+ }
+ fail() { echo "ERROR: $*" >&2; echo "Logs: $LOG_DIR" >&2; exit 1; }
+ 
+-if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn' >/dev/null; then
+-  fail 'A Gazebo or AMR launch is already running. Stop it before starting a clean run.'
++# Clean up and ensure no lingering processes from prior crashed/aborted runs can hijack simulation
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  echo "Detected lingering simulator or carrier processes; cleaning up before run..."
++  pkill -15 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 1.0
++  pkill -9 -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' 2>/dev/null || true
++  sleep 0.5
++fi
++if pgrep -f '[g]z sim|[r]os_gz_bridge|[s]pawn_minimal_amr|[t]urtlebot4_spawn|[k]inematic_carrier' >/dev/null; then
++  fail 'A Gazebo, carrier, or AMR launch is still active and could not be terminated. Stop it before starting a clean run.'
+ fi
+ 
+ echo "Validating physics timing invariant (controller_update_rate <= 1 / max_step_size)..."
+diff --git a/scripts/run_desktop_data_collection.py b/scripts/run_desktop_data_collection.py
+index 377092a..a604904 100755
+--- a/scripts/run_desktop_data_collection.py
++++ b/scripts/run_desktop_data_collection.py
+@@ -138,7 +138,8 @@ class DesktopCycleRun:
+             "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr",
+             "twist_stamper", "localization_node", "interface_readiness",
+             "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner",
+-            "dashboard_bridge_node", "dashboard_bridge"
++            "dashboard_bridge_node", "dashboard_bridge", "kinematic_carrier_node",
++            "kinematic_carrier", "verify_gazebo_pose"
+         ]
+         for pat in patterns:
+             try:
+diff --git a/scripts/run_laptop_data_collection.py b/scripts/run_laptop_data_collection.py
+index 6c6d696..f78b8f9 100755
+--- a/scripts/run_laptop_data_collection.py
++++ b/scripts/run_laptop_data_collection.py
+@@ -126,7 +126,8 @@ class LaptopCycleRun:
+             "warehouse_map_node", "random_task_generator_node", "spawn_minimal_amr",
+             "twist_stamper", "localization_node", "interface_readiness",
+             "robot_state_publisher", "static_transform_publisher", "diffdrive_spawner",
+-            "dashboard_bridge_node", "dashboard_bridge"
++            "dashboard_bridge_node", "dashboard_bridge", "kinematic_carrier_node",
++            "kinematic_carrier", "verify_gazebo_pose"
+         ]
+         for pat in patterns:
+             try:
+diff --git a/scripts/run_multi_work_cycles.py b/scripts/run_multi_work_cycles.py
+index ba2e9fa..60c6e7d 100755
+--- a/scripts/run_multi_work_cycles.py
++++ b/scripts/run_multi_work_cycles.py
+@@ -189,7 +189,8 @@ class WorkCycleRun:
+             "orca_node", "random_task_generator_node", "warehouse_map_node",
+             "spawn_minimal_amr", "turtlebot4_spawn", "twist_stamper",
+             "interface_readiness", "localization_node", "robot_state_publisher",
+-            "controller_manager", "diffdrive_controller"
++            "controller_manager", "diffdrive_controller", "kinematic_carrier_node",
++            "kinematic_carrier", "verify_gazebo_pose"
+         ]
+         if graceful:
+             for pat in patterns:
+diff --git a/src/sih_amr_fleet/config/navigation.yaml b/src/sih_amr_fleet/config/navigation.yaml
+index 5e5005d..8918ed2 100644
+--- a/src/sih_amr_fleet/config/navigation.yaml
++++ b/src/sih_amr_fleet/config/navigation.yaml
+@@ -17,8 +17,9 @@ path_follower:
+ local_avoidance:
+   type: "ORCA"
+   time_horizon_s: 2.5
+-  robot_radius_m: 0.35
+-  safety_margin_m: 0.10
++  robot_radius_m: 0.28
++  physical_radius_m: 0.17
++  safety_margin_m: 0.11
+ 
+ safety_supervisor:
+   authoritative: true
+diff --git a/src/sih_amr_fleet/launch/fleet.launch.py b/src/sih_amr_fleet/launch/fleet.launch.py
+index b68b308..bc5b4b8 100644
+--- a/src/sih_amr_fleet/launch/fleet.launch.py
++++ b/src/sih_amr_fleet/launch/fleet.launch.py
+@@ -32,7 +32,9 @@ def robot_group(robot_id, map_file, pad_pose, tracking_speed, reservation_slot,
+         'linear_kp': 12.0,
+         'braking_deceleration_mps2': 60.0,
+         'braking_margin_m': 0.10,
+-        'robot_radius_m': 0.35,
++        'robot_physical_radius_m': 0.17,
++        'safety_margin_m': 0.11,
++        'robot_radius_m': 0.28,
+         'lidar_x_in_base_m': 0.00393584,
+         'lidar_y_in_base_m': 0.0,
+         'lidar_yaw_in_base_rad': 1.5707963267948966,
+diff --git a/src/sih_amr_fleet/maps/demo_warehouse.yaml b/src/sih_amr_fleet/maps/demo_warehouse.yaml
+index 5522a87..1643bd4 100644
+--- a/src/sih_amr_fleet/maps/demo_warehouse.yaml
++++ b/src/sih_amr_fleet/maps/demo_warehouse.yaml
+@@ -8,14 +8,14 @@ height: 120
+ # only supplies simulated odometry; physical AMRs establish this same frame at
+ # a dock anchor, then dead-reckon and correct from local perception.
+ anchors:
+-  charging_pad_1: {map_pose: [-5.25, -29.55, -1.5708], cell: [35, 1]}
+-  charging_pad_2: {map_pose: [-3.75, -29.55, -1.5708], cell: [38, 1]}
+-  charging_pad_3: {map_pose: [-2.25, -29.55, -1.5708], cell: [41, 1]}
+-  charging_pad_4: {map_pose: [-0.75, -29.55, -1.5708], cell: [44, 1]}
+-  charging_pad_5: {map_pose: [0.75, -29.55, -1.5708], cell: [47, 1]}
+-  charging_pad_6: {map_pose: [2.25, -29.55, -1.5708], cell: [50, 1]}
+-  charging_pad_7: {map_pose: [3.75, -29.55, -1.5708], cell: [53, 1]}
+-  charging_pad_8: {map_pose: [5.25, -29.55, -1.5708], cell: [56, 1]}
++  charging_pad_1: {map_pose: [-5.25, -29.55, 1.5708], cell: [35, 1]}
++  charging_pad_2: {map_pose: [-3.75, -29.55, 1.5708], cell: [38, 1]}
++  charging_pad_3: {map_pose: [-2.25, -29.55, 1.5708], cell: [41, 1]}
++  charging_pad_4: {map_pose: [-0.75, -29.55, 1.5708], cell: [44, 1]}
++  charging_pad_5: {map_pose: [0.75, -29.55, 1.5708], cell: [47, 1]}
++  charging_pad_6: {map_pose: [2.25, -29.55, 1.5708], cell: [50, 1]}
++  charging_pad_7: {map_pose: [3.75, -29.55, 1.5708], cell: [53, 1]}
++  charging_pad_8: {map_pose: [5.25, -29.55, 1.5708], cell: [56, 1]}
+ dock_resources:
+   charging_pad_1: {approach_branch: RS-DOCK-1-BRANCH, centre_strip: DS-1}
+   charging_pad_2: {approach_branch: RS-DOCK-2-BRANCH, centre_strip: DS-2}
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/algorithms.py b/src/sih_amr_fleet/sih_amr_fleet/algorithms.py
+index 9f52bbf..d9caad7 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/algorithms.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/algorithms.py
+@@ -464,22 +464,214 @@ class ConstantVelocityTrack:
+ 
+ 
+ def avoidance_velocity(preferred, self_xy, peers, radius, horizon, max_speed):
+-    """Reciprocal velocity-obstacle approximation with uncertainty inflation."""
++    """Reciprocal velocity-obstacle approximation with 2D Closest Point of Approach (CPA)."""
+     vx, vy = preferred
+     for peer in peers:
+         dx, dy = peer['x'] - self_xy[0], peer['y'] - self_xy[1]
+         separation = math.hypot(dx, dy)
+         effective_radius = radius + peer.get('radius_inflation', 0.0)
++        collision_envelope = 2.0 * effective_radius
++
+         if separation < 1e-6:
+             vx, vy = 0.0, 0.0
+             continue
+-        closing = ((vx - peer['vx']) * dx + (vy - peer['vy']) * dy) / separation
+-        predicted_distance = separation - closing * horizon
+-        if predicted_distance < 2.0 * effective_radius and closing > 0.0:
+-            push = (2.0 * effective_radius - predicted_distance) / max(horizon, 0.1)
+-            vx -= push * dx / separation
+-            vy -= push * dy / separation
++
++        if separation < collision_envelope:
++            # Immediate physical proximity: push directly away
++            push = (collision_envelope - separation) / max(horizon, 0.1)
++            vx -= push * (dx / separation)
++            vy -= push * (dy / separation)
++            continue
++
++        # Relative velocity of self towards peer
++        rel_vx = vx - peer.get('vx', 0.0)
++        rel_vy = vy - peer.get('vy', 0.0)
++        rel_speed_sq = rel_vx * rel_vx + rel_vy * rel_vy
++        if rel_speed_sq < 1e-6:
++            continue
++
++        # Check closing component along separation vector: dot = p_rel . v_rel
++        dot = dx * rel_vx + dy * rel_vy
++        if dot <= 0.0:
++            # Not closing / moving apart
++            continue
++
++        # Time of closest approach: t_cpa = (p_rel . v_rel) / ||v_rel||^2
++        t_cpa = dot / rel_speed_sq
++        if t_cpa > horizon:
++            # Closest approach is beyond avoidance horizon
++            continue
++
++        # 2D relative position at closest point of approach
++        cpa_x = dx - rel_vx * t_cpa
++        cpa_y = dy - rel_vy * t_cpa
++        d_cpa = math.hypot(cpa_x, cpa_y)
++
++        if d_cpa < collision_envelope:
++            # Collision predicted within horizon!
++            push = (collision_envelope - d_cpa) / max(horizon, 0.1)
++            # Push away from CPA miss vector, or radially if head-on
++            if d_cpa > 1e-4:
++                push_dir_x = cpa_x / d_cpa
++                push_dir_y = cpa_y / d_cpa
++            else:
++                push_dir_x = dx / separation
++                push_dir_y = dy / separation
++            vx -= push * push_dir_x
++            vy -= push * push_dir_y
++
+     speed = math.hypot(vx, vy)
+     if speed > max_speed:
+         vx, vy = vx * max_speed / speed, vy * max_speed / speed
+     return vx, vy
++
++
++def corridor_axial_holding_cell(corridor_cells, grid_width, grid_height,
++                                static_blocked, occupied_corridor_cells,
++                                start_cell, resolution_m=0.5,
++                                approach_dist_m=2.0):
++    """Select a reachable holding cell at the far edge of the approach zone for an occupied corridor.
++
++    Invariants:
++    - Uses only axial entrances based on corridor orientation (X or Y).
++    - Places the holding cell at the far edge of the approach zone (approach_dist_m, e.g. 2.0m),
++      never the immediately adjacent boundary cell.
++    - Ensures holding point is outside the corridor footprint and does not obstruct the exit.
++    """
++    if not corridor_cells:
++        return None
++
++    xs = [c[0] for c in corridor_cells]
++    ys = [c[1] for c in corridor_cells]
++    min_x, max_x = min(xs), max(xs)
++    min_y, max_y = min(ys), max(ys)
++    span_x = (max_x - min_x) * resolution_m
++    span_y = (max_y - min_y) * resolution_m
++    axis = 'x' if span_x >= span_y else 'y'
++
++    approach_cells = max(1, round(approach_dist_m / resolution_m))
++
++    # Generate axial candidates for both ends, testing from approach_cells down to 2
++    # (strictly offset >= 2 cells to avoid the immediate 1-cell mouth)
++    axial_entrances = []
++    if axis == 'x':
++        # Corridor runs along X; axial mouths are at min_x (West) and max_x (East)
++        west_candidates = []
++        for offset in range(approach_cells, 1, -1):
++            x_cand = min_x - offset
++            for y_cand in range(min_y, max_y + 1):
++                if 0 <= x_cand < grid_width and 0 <= y_cand < grid_height:
++                    west_candidates.append((x_cand, y_cand, offset))
++
++        east_candidates = []
++        for offset in range(approach_cells, 1, -1):
++            x_cand = max_x + offset
++            for y_cand in range(min_y, max_y + 1):
++                if 0 <= x_cand < grid_width and 0 <= y_cand < grid_height:
++                    east_candidates.append((x_cand, y_cand, offset))
++
++        axial_entrances = [west_candidates, east_candidates]
++    else:
++        # Corridor runs along Y; axial mouths are at min_y (South) and max_y (North)
++        south_candidates = []
++        for offset in range(approach_cells, 1, -1):
++            y_cand = min_y - offset
++            for x_cand in range(min_x, max_x + 1):
++                if 0 <= x_cand < grid_width and 0 <= y_cand < grid_height:
++                    south_candidates.append((x_cand, y_cand, offset))
++
++        north_candidates = []
++        for offset in range(approach_cells, 1, -1):
++            y_cand = max_y + offset
++            for x_cand in range(min_x, max_x + 1):
++                if 0 <= x_cand < grid_width and 0 <= y_cand < grid_height:
++                    north_candidates.append((x_cand, y_cand, offset))
++
++        axial_entrances = [south_candidates, north_candidates]
++
++    # Filter candidates by:
++    # 1. Strictly outside corridor footprint
++    # 2. Not in static_blocked
++    # 3. Not in occupied_corridor_cells
++    blocked = set(static_blocked) | set(occupied_corridor_cells) | set(corridor_cells)
++
++    valid_per_entrance = []
++    for candidates in axial_entrances:
++        valid = [c for c in candidates if (c[0], c[1]) not in blocked]
++        if valid:
++            valid_per_entrance.append(valid)
++
++    if not valid_per_entrance:
++        return None
++
++    # Pick the entrance closest to start_cell
++    def entrance_dist_to_start(cand_list):
++        return min(abs(c[0] - start_cell[0]) + abs(c[1] - start_cell[1]) for c in cand_list)
++
++    chosen_entrance_candidates = min(valid_per_entrance, key=entrance_dist_to_start)
++
++    # Within the chosen entrance, prefer the farthest setback (max offset)
++    chosen_entrance_candidates.sort(
++        key=lambda c: (-c[2], abs(c[0] - start_cell[0]) + abs(c[1] - start_cell[1]))
++    )
++
++    best = chosen_entrance_candidates[0]
++    return (best[0], best[1])
++
++
++def apply_right_hand_sublanes(waypoints, main_corridors_cells, origin, resolution, offset_m=0.40):
++    """Offset waypoints in 3.0m multi-robot main corridors into right-hand directional sublanes.
++
++    Invariants:
++    - Only waypoints within main corridor cells are offset.
++    - Final destination waypoint is NEVER offset so task stations and docks are reached precisely.
++    - Lateral offset vector is perpendicular to travel direction to the right: n_right = (u_y, -u_x).
++    - Opposing traffic in the same main corridor achieves 2 * offset_m = 0.80m lateral separation.
++    """
++    if not waypoints or len(waypoints) < 2 or not main_corridors_cells:
++        return waypoints
++
++    origin_x, origin_y = origin
++    n_pts = len(waypoints)
++    result = list(waypoints)
++
++    def get_xy(p):
++        if hasattr(p, 'x'):
++            return float(p.x), float(p.y)
++        return float(p[0]), float(p[1])
++
++    for i in range(n_pts - 1):  # Do not modify the final destination waypoint
++        wx, wy = get_xy(waypoints[i])
++        cx = round((wx - origin_x) / resolution)
++        cy = round((wy - origin_y) / resolution)
++        if (cx, cy) not in main_corridors_cells:
++            continue
++
++        next_wx, next_wy = get_xy(waypoints[i + 1])
++        dx = next_wx - wx
++        dy = next_wy - wy
++        dist = math.hypot(dx, dy)
++        if dist < 1e-4:
++            continue
++
++        # Right-hand normal vector: n_right = (u_y, -u_x)
++        ux = dx / dist
++        uy = dy / dist
++        nx = uy
++        ny = -ux
++
++        new_x = wx + offset_m * nx
++        new_y = wy + offset_m * ny
++
++        orig_wp = waypoints[i]
++        if hasattr(orig_wp, 'x'):
++            wp_type = type(orig_wp)
++            result[i] = wp_type(x=new_x, y=new_y, theta=getattr(orig_wp, 'theta', 0.0))
++        elif isinstance(orig_wp, tuple) and len(orig_wp) == 3:
++            result[i] = (new_x, new_y, orig_wp[2])
++        else:
++            result[i] = (new_x, new_y)
++
++    return result
++
++
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py b/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py
+index d93842b..b50bc5a 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/corridor_mutex_node.py
+@@ -312,6 +312,16 @@ class CorridorMutexNode(Node):
+             self.release_request(CorridorProtocol.EXIT)
+             self.last_exited_corridor = exited_corridor
+             self.last_exited_time = now
++        elif not self.request['was_inside']:
++            entered_at = self.request.get('entered_at', now)
++            if now - entered_at > 10.0:
++                self.get_logger().warning(
++                    f"[{self.robot_id}:CorridorMutex] Decision: TIMEOUT_UNENTERED_MUTEX for corridor "
++                    f"{self.request['corridor']}. Actor=CorridorMutex:{self.robot_id}. "
++                    f"Held token for {now - entered_at:.1f}s without entering. Releasing to avoid fleet deadlock."
++                )
++                self.release_request(CorridorProtocol.CANCEL)
++
+             # The exited cell is normally still inside this corridor's broad
+             # approach band. Clearing the old arm prevents the next 20 Hz
+             # state sample from immediately requesting the corridor again
+@@ -380,7 +390,9 @@ class CorridorMutexNode(Node):
+ 
+         if permitted and self.entrance_clear and not self.request['entered']:
+             self.request['entered'] = True
++            self.request['entered_at'] = now_seconds(self)
+             self.send(CorridorProtocol.ENTER, self.request['corridor'], self.request['id'])
++
+             self.get_logger().info(
+                 f"[{self.robot_id}:CorridorMutex] Decision: ENTER_CORRIDOR {self.request['corridor']}. "
+                 f"Actor=CorridorMutex:{self.robot_id}. Info: full grants received from peers {list(self.request['grants'])}, "
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py b/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py
+index 98335cb..ff8583e 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/kinematic_carrier_node.py
+@@ -16,6 +16,7 @@ import math
+ import os
+ import pathlib
+ import random
++import time
+ import yaml
+ from typing import Dict, List, Optional, Set, Tuple
+ 
+@@ -173,8 +174,18 @@ class KinematicCarrierNode(Node):
+         else:
+             self.get_logger().warning('gz.transport13 is not available; carrier poses will not sync to Gazebo')
+ 
+-        # Simulation clock handling
++        # Simulation clock handling and elapsed time tracking
+         self.last_sim_time = None
++        self.prev_sim_time_s = None
++        self.total_sim_time_integrated = 0.0
++        self.total_callback_count = 0
++        self.last_metrics_log_sim_s = 0.0
++        self.last_metrics_callback_count = 0
++        self.last_metrics_sim_s = 0.0
++        self.last_gz_latency_ms = 0.0
++        self.max_gz_latency_ms = 0.0
++        self.gz_sync_error_count = 0
++        self.gz_sync_total_count = 0
+         self.create_subscription(Clock, '/clock', self._on_clock, POSE_QOS)
+         
+         # 50 Hz simulation tick timer
+@@ -262,15 +273,22 @@ class KinematicCarrierNode(Node):
+                         self.gz_entity_ids[rid] = p.id
+                         self.get_logger().info(f'Resolved Gazebo entity ID for {rid} ({p.name}) -> {p.id}')
+ 
++    @property
++    def boundary_limits(self) -> Tuple[float, float, float, float]:
++        """Warehouse boundary limits with perimeter margin (min_x, min_y, max_x, max_y)."""
++        min_x = self.map_origin_x - 0.35
++        max_x = self.map_origin_x + (self.map_width * self.map_resolution) + 0.35
++        min_y = self.map_origin_y - 0.35
++        max_y = self.map_origin_y + (self.map_height * self.map_resolution) + 0.35
++        return min_x, min_y, max_x, max_y
++
+     def _is_position_collision_free(self, robot_id: str, x: float, y: float) -> bool:
+         """Check if a circular footprint at (x, y) intersects shelves, walls, or other AMRs."""
+         # Warehouse boundary limits with robot radius margin.
+         # Perimeter transit lane centers are at x = -22.5 and x = +22.5.
+-        # Allow +/- 0.05m clearance so AMRs centered at -22.5 or +22.5 are not clamped.
+-        min_x = self.map_origin_x - 0.05
+-        max_x = self.map_origin_x + (self.map_width * self.map_resolution) + 0.05
+-        min_y = self.map_origin_y + 0.15
+-        max_y = self.map_origin_y + (self.map_height * self.map_resolution) - 0.15
++        # Allow +/- 0.35m clearance so AMRs centered at -22.5 or +22.5 with radius 0.17m
++        # are not clamped due to cross-track tracking variance.
++        min_x, min_y, max_x, max_y = self.boundary_limits
+ 
+         if not (min_x <= x <= max_x and min_y <= y <= max_y):
+             return False
+@@ -316,64 +334,121 @@ class KinematicCarrierNode(Node):
+         return True
+ 
+     def _simulation_step(self):
+-        """Execute one 50 Hz kinematic motion integration and update cycle."""
+-        dt = 1.0 / max(1.0, self.update_rate_hz)
++        """Execute simulation-time-synchronized kinematic motion integration and update cycle."""
+         now_s = now_seconds(self)
++        if self.prev_sim_time_s is None:
++            self.prev_sim_time_s = now_s
++            return
++
++        dt = now_s - self.prev_sim_time_s
++        if dt < 0.0:
++            # Simulation clock reset or went backward
++            self.get_logger().warning(
++                f'Sim time went backwards: {now_s:.4f} < {self.prev_sim_time_s:.4f}. Resetting clock tracker.'
++            )
++            self.prev_sim_time_s = now_s
++            return
++
++        if dt <= 0.0:
++            # Clock has not advanced yet
++            return
++
++        # Cap max dt to 0.5s to prevent massive jumps across pauses,
++        # but retain the unintegrated remainder so no simulated time is discarded.
++        max_step_dt = 0.5
++        dt_to_integrate = min(dt, max_step_dt)
++        if dt > max_step_dt:
++            self.get_logger().warning(
++                f'Sim time step {dt:.3f}s exceeded {max_step_dt}s cap; integrating {dt_to_integrate:.3f}s '
++                f'and retaining {dt - dt_to_integrate:.3f}s remainder for subsequent step.'
++            )
++        self.prev_sim_time_s += dt_to_integrate
++        dt = dt_to_integrate
++
++        self.total_callback_count += 1
++        self.total_sim_time_integrated += dt
++
++        min_x, min_y, max_x, max_y = self.boundary_limits
++
++        # Nominal step is 1.0 / self.update_rate_hz (e.g. 0.02s)
++        nominal_dt = 1.0 / max(1.0, self.update_rate_hz)
++        # Subdivide dt into safe micro-substeps of <= 0.02s
++        num_substeps = max(1, math.ceil(dt / nominal_dt))
++        substep_dt = dt / num_substeps
+ 
+         gz_pose_vector = GzPose_V() if (GZ_TRANSPORT_AVAILABLE and self.gz_node) else None
+ 
++        # Track per-robot integrated displacement over this entire callback
++        robot_total_dist = {rid: 0.0 for rid in self.robots}
++        robot_total_dyaw = {rid: 0.0 for rid in self.robots}
++
++        # Substep motion integration
++        for _ in range(num_substeps):
++            for robot_id, robot in self.robots.items():
++                if now_s - robot.last_cmd_time > 0.5:
++                    v = 0.0
++                    w = 0.0
++                else:
++                    v = robot.cmd_linear_x
++                    w = robot.cmd_angular_z
++
++                sub_dx = v * math.cos(robot.true_yaw) * substep_dt
++                sub_dy = v * math.sin(robot.true_yaw) * substep_dt
++                sub_dyaw = w * substep_dt
++
++                # Swept footprint check (subdivide movement to prevent tunnelling)
++                step_dist = math.hypot(sub_dx, sub_dy)
++                internal_substeps = max(1, math.ceil(step_dist / 0.02))
++                allowed_ratio = 1.0
++                collision = False
++
++                if step_dist > 1e-4:
++                    initially_free = self._is_position_collision_free(robot_id, robot.true_x, robot.true_y)
++
++                    for s in range(1, internal_substeps + 1):
++                        fraction = s / internal_substeps
++                        cx = robot.true_x + fraction * sub_dx
++                        cy = robot.true_y + fraction * sub_dy
++                        if not self._is_position_collision_free(robot_id, cx, cy):
++                            if not initially_free:
++                                # Escape recovery: if the robot is already outside bounds, allow motion
++                                # if the step moves inward toward valid bounds
++                                cur_err = (max(0.0, min_x - robot.true_x) + max(0.0, robot.true_x - max_x) +
++                                           max(0.0, min_y - robot.true_y) + max(0.0, robot.true_y - max_y))
++                                new_err = (max(0.0, min_x - cx) + max(0.0, cx - max_x) +
++                                           max(0.0, min_y - cy) + max(0.0, cy - max_y))
++                                if new_err < cur_err:
++                                    continue
++                            collision = True
++                            allowed_ratio = max(0.0, (s - 1) / internal_substeps)
++                            break
++
++                if collision:
++                    robot.stalled = True
++                    actual_sub_dx = allowed_ratio * sub_dx
++                    actual_sub_dy = allowed_ratio * sub_dy
++                    actual_sub_dyaw = sub_dyaw
++                else:
++                    robot.stalled = False
++                    actual_sub_dx = sub_dx
++                    actual_sub_dy = sub_dy
++                    actual_sub_dyaw = sub_dyaw
++
++                robot.true_x += actual_sub_dx
++                robot.true_y += actual_sub_dy
++                robot.true_yaw = wrap_angle(robot.true_yaw + actual_sub_dyaw)
++
++                sub_dist = math.copysign(math.hypot(actual_sub_dx, actual_sub_dy), v)
++                robot_total_dist[robot_id] += sub_dist
++                robot_total_dyaw[robot_id] += actual_sub_dyaw
++
++        # Post-substep updates, odometry publishing, and Gazebo sync
+         for robot_id, robot in self.robots.items():
+-            # Command timeout: if no cmd_vel received within 0.5s, decelerate to 0
+-            if now_s - robot.last_cmd_time > 0.5:
+-                v = 0.0
+-                w = 0.0
+-            else:
+-                v = robot.cmd_linear_x
+-                w = robot.cmd_angular_z
+-
+-            # Kinematic candidate step
+-            dx = v * math.cos(robot.true_yaw) * dt
+-            dy = v * math.sin(robot.true_yaw) * dt
+-            dyaw = w * dt
+-
+-            target_x = robot.true_x + dx
+-            target_y = robot.true_y + dy
+-            target_yaw = wrap_angle(robot.true_yaw + dyaw)
+-
+-            # Swept-footprint check (subdivide movement to prevent tunnelling)
+-            step_dist = math.hypot(dx, dy)
+-            substeps = max(1, math.ceil(step_dist / 0.02))
+-            allowed_ratio = 1.0
+-            collision = False
+-
+-            if step_dist > 1e-4:
+-                for s in range(1, substeps + 1):
+-                    fraction = s / substeps
+-                    cx = robot.true_x + fraction * dx
+-                    cy = robot.true_y + fraction * dy
+-                    if not self._is_position_collision_free(robot_id, cx, cy):
+-                        collision = True
+-                        allowed_ratio = max(0.0, (s - 1) / substeps)
+-                        break
+-
+-            if collision:
+-                robot.stalled = True
+-                actual_dx = allowed_ratio * dx
+-                actual_dy = allowed_ratio * dy
+-                # Unconditionally allow in-place rotation so circular AMR can pivot away
+-                actual_dyaw = dyaw
+-            else:
+-                robot.stalled = False
+-                actual_dx = dx
+-                actual_dy = dy
+-                actual_dyaw = dyaw
+-
+-            # Update hidden true pose
+-            robot.true_x += actual_dx
+-            robot.true_y += actual_dy
+-            robot.true_yaw = wrap_angle(robot.true_yaw + actual_dyaw)
+-            robot.true_vx = (actual_dx / dt) if dt > 0 else 0.0
+-            robot.true_vy = (actual_dy / dt) if dt > 0 else 0.0
++            actual_dist = robot_total_dist[robot_id]
++            actual_dyaw = robot_total_dyaw[robot_id]
++
++            robot.true_vx = (actual_dist / dt) if dt > 0 else 0.0
++            robot.true_vy = 0.0
+             robot.true_wz = (actual_dyaw / dt) if dt > 0 else 0.0
+ 
+             # Append to Gazebo pose vector message (only for entities with resolved IDs)
+@@ -392,12 +467,11 @@ class KinematicCarrierNode(Node):
+                 p.orientation.w = math.cos(half_yaw)
+ 
+             # Generate simulated wheel odometry
+-            true_dist = math.copysign(math.hypot(actual_dx, actual_dy), v)
+             scale = 1.0 + self.odom_scale_error
+             noise_dist = random.gauss(0.0, self.odom_noise_std) if self.odom_noise_std > 0 else 0.0
+             noise_yaw = random.gauss(0.0, self.yaw_noise_std) if self.yaw_noise_std > 0 else 0.0
+-            
+-            meas_dist = true_dist * scale + noise_dist
++
++            meas_dist = actual_dist * scale + noise_dist
+             meas_dyaw = actual_dyaw + (self.gyro_drift_rate * dt) + noise_yaw
+ 
+             robot.local_x += meas_dist * math.cos(robot.local_yaw)
+@@ -405,26 +479,63 @@ class KinematicCarrierNode(Node):
+             robot.local_yaw = wrap_angle(robot.local_yaw + meas_dyaw)
+             robot.odom_seq += 1
+ 
+-            self._publish_odometry(robot, dt, v, w)
++            v_cmd = robot.cmd_linear_x if now_s - robot.last_cmd_time <= 0.5 else 0.0
++            w_cmd = robot.cmd_angular_z if now_s - robot.last_cmd_time <= 0.5 else 0.0
++            self._publish_odometry(robot, dt, v_cmd, w_cmd, actual_dist)
+             self._check_anchor_proximity(robot)
+ 
+-        # Dispatch batch pose update to Gazebo via Gazebo Sim Transport
++        # Dispatch batch pose update to Gazebo via Gazebo Sim Transport with latency measurement
+         if gz_pose_vector is not None and len(gz_pose_vector.pose) > 0:
++            t0 = time.perf_counter()
++            self.gz_sync_total_count += 1
+             try:
+-                self.gz_node.request(
++                res, rep = self.gz_node.request(
+                     f'/world/{self.world_name}/set_pose_vector',
+                     gz_pose_vector,
+                     GzPose_V,
+                     GzBoolean,
+-                    timeout=20
++                    timeout=50
+                 )
+-            except Exception:
+-                pass
++                if not (res and rep is not None and rep.data):
++                    self.gz_sync_error_count += 1
++                    err_kind = 'rejected' if (res and rep is not None and not rep.data) else 'timeout/unreachable'
++                    self.get_logger().warning(
++                        f'[Carrier] Gazebo set_pose_vector failed ({err_kind}). '
++                        f'Sync failures: {self.gz_sync_error_count}/{self.gz_sync_total_count}.',
++                        throttle_duration_sec=2.0
++                    )
++            except Exception as e:
++                self.gz_sync_error_count += 1
++                self.get_logger().warning(
++                    f'[Carrier] Exception in Gazebo set_pose_vector: {e}. '
++                    f'Sync failures: {self.gz_sync_error_count}/{self.gz_sync_total_count}.',
++                    throttle_duration_sec=2.0
++                )
++            lat_ms = (time.perf_counter() - t0) * 1000.0
++            self.last_gz_latency_ms = lat_ms
++            if lat_ms > self.max_gz_latency_ms:
++                self.max_gz_latency_ms = lat_ms
+ 
+         # Publish true pose telemetry for validation
+         self._publish_telemetry_true_poses()
+ 
+-    def _publish_odometry(self, robot: RobotKinematicState, dt: float, cmd_v: float, cmd_w: float):
++        # Diagnostics logging every 5 sim seconds
++        if now_s - self.last_metrics_log_sim_s >= 5.0:
++            sim_elapsed = now_s - self.last_metrics_sim_s
++            cb_count = self.total_callback_count - self.last_metrics_callback_count
++            effective_rate = (cb_count / sim_elapsed) if sim_elapsed > 0 else 0.0
++            self.get_logger().info(
++                f'[CarrierTelemetry] SimRate: {effective_rate:.2f} callbacks/sim-sec '
++                f'(target {self.update_rate_hz:.1f} Hz, {num_substeps} substeps/tick). '
++                f'GZ request latency: last={self.last_gz_latency_ms:.1f}ms max={self.max_gz_latency_ms:.1f}ms. '
++                f'GZ sync errors: {self.gz_sync_error_count}/{self.gz_sync_total_count}.'
++            )
++            self.last_metrics_log_sim_s = now_s
++            self.last_metrics_sim_s = now_s
++            self.last_metrics_callback_count = self.total_callback_count
++            self.max_gz_latency_ms = 0.0
++
++    def _publish_odometry(self, robot: RobotKinematicState, dt: float, cmd_v: float, cmd_w: float, true_dist: float = 0.0):
+         """Publish standard nav_msgs/Odometry for localization_node."""
+         odom_msg = Odometry()
+         odom_msg.header.stamp = self.get_clock().now().to_msg()
+@@ -444,8 +555,10 @@ class KinematicCarrierNode(Node):
+         odom_msg.pose.covariance[7] = cov_val
+         odom_msg.pose.covariance[35] = cov_val
+         
+-        # Body-frame twist reflects actual chassis motion
+-        odom_msg.twist.twist.linear.x = robot.true_vx
++        # Body-frame twist reflects actual chassis motion in base_link (forward vx, zero vy)
++        body_vx = (true_dist / dt) if dt > 0 else 0.0
++        odom_msg.twist.twist.linear.x = body_vx
++        odom_msg.twist.twist.linear.y = 0.0
+         odom_msg.twist.twist.angular.z = robot.true_wz
+         
+         self.odom_publishers[robot.robot_id].publish(odom_msg)
+@@ -460,8 +573,7 @@ class KinematicCarrierNode(Node):
+             dx = robot.true_x - anchor_pose[0]
+             dy = robot.true_y - anchor_pose[1]
+             dist = math.hypot(dx, dy)
+-            dyaw = min(abs(wrap_angle(robot.true_yaw - anchor_pose[2])),
+-                       abs(wrap_angle(robot.true_yaw - (anchor_pose[2] + math.pi))))
++            dyaw = abs(wrap_angle(robot.true_yaw - anchor_pose[2]))
+             
+             if dist <= dock_tolerance_dist and dyaw <= dock_tolerance_yaw:
+                 matched_dock = dock_id
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/localization_node.py b/src/sih_amr_fleet/sih_amr_fleet/localization_node.py
+index d529fc5..2dd9bb7 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/localization_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/localization_node.py
+@@ -8,7 +8,7 @@ from rclpy.node import Node
+ from sih_amr_interfaces.msg import DockProtocol, RobotState
+ 
+ from .algorithms import body_velocity_to_map, map_transform_for_anchor
+-from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, yaw_from_quaternion
++from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, wrap_angle, yaw_from_quaternion
+ 
+ 
+ class LocalizationNode(Node):
+@@ -76,7 +76,7 @@ class LocalizationNode(Node):
+         msg.pose = Pose2D(
+             x=self.odom_origin_x + cosine * local_x - sine * local_y,
+             y=self.odom_origin_y + sine * local_x + cosine * local_y,
+-            theta=self.odom_origin_yaw + yaw_from_quaternion(odom.pose.pose.orientation))
++            theta=wrap_angle(self.odom_origin_yaw + yaw_from_quaternion(odom.pose.pose.orientation)))
+         # nav_msgs/Odometry expresses twist in child_frame_id (base_link for
+         # these AMRs).  Fleet consumers predict peers in the map frame, so a
+         # body-forward velocity cannot be copied and mislabeled as map +x.
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/orca_node.py b/src/sih_amr_fleet/sih_amr_fleet/orca_node.py
+index e49a6f5..4e65470 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/orca_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/orca_node.py
+@@ -1,29 +1,50 @@
+ import math
+ import rclpy
+-from geometry_msgs.msg import Twist
++from geometry_msgs.msg import Pose2D, Twist
+ from rclpy.node import Node
+-from sih_amr_interfaces.msg import PeerTrackArray, RobotState
++from std_msgs.msg import Bool
++from sih_amr_interfaces.msg import CorridorProtocol, PeerTrackArray, RobotState
+ 
+ from .algorithms import avoidance_velocity, finite_command
+-from .common import FLEET_STATE_QOS, POSE_QOS
++from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, now_seconds
+ 
+ 
+ class OrcaNode(Node):
+     """Produces an uncertainty-inflated reciprocal-velocity safety candidate."""
+     def __init__(self):
+         super().__init__('orca_node')
+-        self.radius = self.declare_parameter('robot_radius_m', 0.35).value
++        self.physical_radius = self.declare_parameter('robot_physical_radius_m', 0.17).value
++        self.safety_margin = self.declare_parameter('safety_margin_m', 0.11).value
++        default_radius = self.physical_radius + self.safety_margin
++        self.radius = self.declare_parameter('robot_radius_m', default_radius).value
+         self.max_speed = self.declare_parameter('max_speed_mps', 6.0).value
+         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
+         self.pose, self.desired, self.tracks = None, Twist(), []
++        self.yielding_to = None
++        self.yield_started_at = 0.0
++        self.yield_escalated = False
++        self.corridor_protected = False
++        self.peer_corridors = {}
+         self._received_local_state = False
+         self.pub = self.create_publisher(Twist, 'cmd_vel_candidate', FLEET_STATE_QOS)
+         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
+         self.create_subscription(RobotState, 'state', self.on_local_state, POSE_QOS)
++        self.create_subscription(Pose2D, 'pose', lambda msg: setattr(self, 'pose', msg), POSE_QOS)
+         self.create_subscription(Twist, 'cmd_vel_desired', lambda msg: setattr(self, 'desired', msg), FLEET_STATE_QOS)
+         self.create_subscription(PeerTrackArray, 'peer_tracks', lambda msg: setattr(self, 'tracks', msg.tracks), FLEET_STATE_QOS)
++        self.create_subscription(Bool, 'corridor_protected', lambda msg: setattr(self, 'corridor_protected', msg.data), FLEET_STATE_QOS)
++        self.create_subscription(CorridorProtocol, '/fleet/corridor_protocol', self.on_corridor, PROTOCOL_QOS)
+         self.create_timer(0.1, self.control)
+ 
++    def on_corridor(self, msg):
++        source = msg.fleet_header.robot_id
++        if source == self.robot_id:
++            return
++        if msg.event == CorridorProtocol.ENTER:
++            self.peer_corridors[source] = msg.corridor_id
++        elif msg.event in (CorridorProtocol.EXIT, CorridorProtocol.RELEASE, CorridorProtocol.CANCEL):
++            self.peer_corridors.pop(source, None)
++
+     def on_state(self, msg):
+         if msg.fleet_header.robot_id == self.robot_id:
+             self.pose = msg.pose
+@@ -35,21 +56,141 @@ class OrcaNode(Node):
+                 self._received_local_state = True
+                 self.get_logger().info('ORCA received first local RobotState sample')
+ 
++    def peer_outranks_self(self, peer_id: str) -> bool:
++        """Resource-aware priority: protected corridor ownership outranks robot ID."""
++        self_in_corridor = getattr(self, 'corridor_protected', False)
++        peer_in_corridor = peer_id in self.peer_corridors
++
++        if self_in_corridor and not peer_in_corridor:
++            # Self is inside protected corridor; never yield to outside peer
++            return False
++        if peer_in_corridor and not self_in_corridor:
++            # Peer is inside protected corridor; peer outranks outside waiter
++            return True
++
++        # Final tie-breaker for simultaneous open-space encounters: smaller robot_id wins
++        return peer_id < self.robot_id
++
+     def control(self):
+         result = Twist()
++        now = now_seconds(self)
+         if self.pose is not None and finite_command(self.desired.linear.x, self.desired.angular.z):
+             direction = (math.cos(self.pose.theta), math.sin(self.pose.theta))
+             preferred = (self.desired.linear.x * direction[0], self.desired.linear.x * direction[1])
+             peers = [
+                 {'x': p.pose.x, 'y': p.pose.y, 'vx': p.twist.linear.x, 'vy': p.twist.linear.y,
+-                 'radius_inflation': 2.0 * math.sqrt(max(p.covariance_trace, 0.0))}
++                 'radius_inflation': min(0.08, 2.0 * math.sqrt(max(p.covariance_trace, 0.0))),
++                 'robot_id': p.robot_id}
+                 for p in self.tracks
+                 if all(math.isfinite(value) for value in (
+                     p.pose.x, p.pose.y, p.twist.linear.x, p.twist.linear.y, p.covariance_trace))
+             ]
+-            vx, vy = avoidance_velocity(preferred, (self.pose.x, self.pose.y), peers, self.radius, 1.5, self.max_speed)
+-            result.linear.x = vx * direction[0] + vy * direction[1]
+-            result.angular.z = self.desired.angular.z
++
++            # 1. Update existing yield latch (release geometrically or escalate)
++            if self.yielding_to is not None:
++                peer_track = next((p for p in peers if p.get('robot_id') == self.yielding_to), None)
++                yield_duration = now - self.yield_started_at
++                if peer_track is None:
++                    # Peer is out of perception range -> clear latch
++                    self.yielding_to = None
++                    self.yield_escalated = False
++                else:
++                    dx = peer_track['x'] - self.pose.x
++                    dy = peer_track['y'] - self.pose.y
++                    longitudinal = dx * direction[0] + dy * direction[1]
++                    lateral = abs(-dx * direction[1] + dy * direction[0])
++                    dist = math.hypot(dx, dy)
++
++                    # Geometrical clearance:
++                    # 1. Peer has crossed behind us: longitudinal < -self.radius
++                    # 2. Or peer has moved alongside/away: longitudinal <= 0.0 and (dist > 2.0 or lateral > 2.0 * self.radius)
++                    # 3. Or peer is moving away in our heading: peer_approach_speed < -0.05 and dist > 1.0
++                    # 4. Or standoff timeout: open-space yield older than 3.0s without peer approach clears
++                    peer_approach_speed = -(peer_track.get('vx', 0.0) * direction[0] + peer_track.get('vy', 0.0) * direction[1])
++                    peer_cleared = (
++                        longitudinal < -self.radius or
++                        (longitudinal <= 0.0 and (dist > 2.0 or lateral > 2.0 * self.radius)) or
++                        (peer_approach_speed < -0.05 and dist > 1.0) or
++                        (yield_duration > 3.0 and peer_approach_speed <= 0.05 and self.yielding_to not in self.peer_corridors)
++                    )
++                    if peer_cleared:
++                        self.get_logger().info(
++                            f'[{self.robot_id}:ORCA] Yield cleared: peer {self.yielding_to} has passed/cleared '
++                            f'(longitudinal={longitudinal:.2f}m, lateral={lateral:.2f}m, dist={dist:.2f}m).'
++                        )
++                        self.yielding_to = None
++                        self.yield_escalated = False
++                    elif yield_duration > 8.0 and not self.yield_escalated:
++                        self.yield_escalated = True
++                        self.get_logger().warning(
++                            f'[{self.robot_id}:ORCA] Escalation: STANDOFF_PERSISTS. Actor=ORCA:{self.robot_id}. '
++                            f'Yielding to {self.yielding_to} for {yield_duration:.1f}s without clearance. '
++                            f'Maintaining stop to prevent collision.'
++                        )
++
++            # 2. Resource-aware encounter arbitration (evaluate BEFORE CPA avoidance)
++            if self.yielding_to is None and peers and self.desired.linear.x > 0.01:
++                for p in peers:
++                    peer_id = p.get('robot_id')
++                    if not peer_id or not self.peer_outranks_self(peer_id):
++                        continue
++                    dx = p['x'] - self.pose.x
++                    dy = p['y'] - self.pose.y
++                    longitudinal = dx * direction[0] + dy * direction[1]
++                    lateral = abs(-dx * direction[1] + dy * direction[0])
++                    dist = math.hypot(dx, dy)
++                    # Peer is ahead in our path (lateral < 0.60m), within 2.5m
++                    if 0.0 < longitudinal < 2.5 and lateral < 0.60:
++                        peer_approach_speed = -(p.get('vx', 0.0) * direction[0] + p.get('vy', 0.0) * direction[1])
++                        should_yield = False
++                        if peer_id in self.peer_corridors:
++                            should_yield = True
++                        elif peer_approach_speed > 0.05:
++                            should_yield = True
++
++                        if should_yield:
++                            self.yielding_to = peer_id
++                            self.yield_started_at = now
++                            self.yield_escalated = False
++                            reason = "corridor_owner" if peer_id in self.peer_corridors else "id_priority"
++                            self.get_logger().info(
++                                f'[{self.robot_id}:ORCA] Decision: YIELD_RIGHT_OF_WAY. Actor=ORCA:{self.robot_id}. '
++                                f'Yielding to peer={peer_id} ({reason}, dist={dist:.2f}m, peer_speed={peer_approach_speed:.2f}mps).',
++                                throttle_duration_sec=3.0
++                            )
++                            break
++
++            # 3. Command generation
++            if self.yielding_to is not None:
++                # When yielding, hold stop (0.0 m/s). Reverse manoeuvres are safely managed
++                # by PathFollower's clearance-checked recovery protocol.
++                result.linear.x = 0.0
++                result.angular.z = self.desired.angular.z
++            else:
++                # Filter peers: outranked peers are expected to yield; only apply emergency
++                # CPA avoidance against them if within immediate contact distance (< 2 * radius + 0.1)
++                avoidance_peers = []
++                for p in peers:
++                    peer_id = p.get('robot_id')
++                    dist = math.hypot(p['x'] - self.pose.x, p['y'] - self.pose.y)
++                    if peer_id and not self.peer_outranks_self(peer_id):
++                        if dist < 2.0 * self.radius + 0.1:
++                            avoidance_peers.append(p)
++                    else:
++                        avoidance_peers.append(p)
++
++                vx, vy = avoidance_velocity(
++                    preferred, (self.pose.x, self.pose.y), avoidance_peers, self.radius, 1.5, self.max_speed
++                )
++                result.linear.x = vx * direction[0] + vy * direction[1]
++                result.angular.z = self.desired.angular.z
++
++                # Avoidance must not accelerate a stopped AMR or exceed desired speed
++                if self.desired.linear.x <= 0.01:
++                    result.linear.x = 0.0
++                else:
++                    result.linear.x = min(self.desired.linear.x, max(0.0, result.linear.x))
++
+             if peers and abs(result.linear.x - self.desired.linear.x) > 0.05:
+                 self.get_logger().info(
+                     f'[{self.robot_id}:ORCA] Decision: AVOID_PEER_ADJUSTMENT. Actor=ORCA:{self.robot_id}. '
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/path_follower_node.py b/src/sih_amr_fleet/sih_amr_fleet/path_follower_node.py
+index 9729c1b..d0230e1 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/path_follower_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/path_follower_node.py
+@@ -18,6 +18,9 @@ class PathFollowerNode(Node):
+         self.robot_id = self.declare_parameter('robot_id', 'robot_1').value
+         self.kp = self.declare_parameter('linear_kp', 0.8).value
+         self.turn_in_place_threshold = self.declare_parameter('turn_in_place_threshold_rad', 0.40).value
++        self.turn_in_place_enter_rad = self.declare_parameter('turn_in_place_enter_rad', 0.60).value
++        self.turn_in_place_exit_rad = self.declare_parameter('turn_in_place_exit_rad', 0.25).value
++        self.lookahead_distance = self.declare_parameter('lookahead_distance_m', 0.80).value
+         self.waypoint_tolerance = self.declare_parameter('waypoint_tolerance_m', 0.18).value
+         self.task_stop_radius = self.declare_parameter('task_stop_radius_m', 0.40).value
+         self.task_slow_radius = self.declare_parameter('task_slow_radius_m', 2.0).value
+@@ -35,8 +38,14 @@ class PathFollowerNode(Node):
+         self.recovery_start_pose = None
+         self.recovery_cooldown_until = 0.0
+         self.safety_stop_started = None
++        self.safety_stop = False
++        self.route_infeasible_since = None
++        self.retained_route_max_s = 3.0
+         self.session_id, self.sequence = new_session_id(), 0
+         self._received_local_state = False
++        self._turn_latch = None
++        self.route_progress_index = 0
++        self.in_turn_mode = False
+         self.pub = self.create_publisher(Twist, 'cmd_vel_desired', FLEET_STATE_QOS)
+         self.event_pub = self.create_publisher(FleetEvent, '/fleet/recovery_event', PROTOCOL_QOS)
+         self.create_subscription(RobotState, '/fleet/robot_state', self.on_state, FLEET_STATE_QOS)
+@@ -63,19 +72,50 @@ class PathFollowerNode(Node):
+             if not self._received_local_state:
+                 self._received_local_state = True
+                 self.get_logger().info('Path follower received first local RobotState sample')
+-    def on_route(self, msg): self.route = msg if msg.route_feasible else None
++    def on_route(self, msg):
++        now = now_seconds(self)
++        if msg.route_feasible:
++            is_same_task = (self.route is not None and self.route.task_id == msg.task_id)
++            self.route = msg
++            self.route_infeasible_since = None
++            if not is_same_task:
++                self.route_progress_index = 0
++                self._turn_latch = None
++                self.in_turn_mode = False
++            else:
++                if msg.waypoints:
++                    self.route_progress_index = min(self.route_progress_index, len(msg.waypoints) - 1)
++        else:
++            # Guarded route retention: retain last valid route for at most 3.0 simulation seconds
++            if self.route is not None:
++                if self.route_infeasible_since is None:
++                    self.route_infeasible_since = now
++                elif now - self.route_infeasible_since > self.retained_route_max_s:
++                    self.route = None
++                    self.route_infeasible_since = None
++                    self.route_progress_index = 0
++            else:
++                self.route = None
++                self.route_infeasible_since = None
++                self.route_progress_index = 0
++
+     def on_execution(self, msg):
+         if msg.owner_robot_id == self.robot_id:
+             if (msg.phase == TaskExecutionStatus.COMPLETED or
+                     (self.route is not None and self.route.task_id != msg.task_id)):
+                 self.route = None
++                self.route_progress_index = 0
++                self._turn_latch = None
++                self.in_turn_mode = False
+             self.execution_target = msg.target
+             self.execution_phase = msg.phase
+             self.hold = msg.phase in (TaskExecutionStatus.PICKUP_WAIT, TaskExecutionStatus.DROPOFF_WAIT, TaskExecutionStatus.COMPLETED)
++
+     def on_safety(self, msg):
+         if msg.fleet_header.robot_id != self.robot_id:
+             return
+         now = now_seconds(self)
++        self.safety_stop = (msg.level == SafetyState.STOP)
+         if self.recovery_state == 'REVERSING' and msg.level == SafetyState.STOP:
+             self.recovery_state = 'IDLE'
+             self.recovery_cooldown_until = now + self.recovery_cooldown_s
+@@ -102,28 +142,80 @@ class PathFollowerNode(Node):
+     def route_target(self):
+         if self.pose is None or self.route is None or not self.route.waypoints:
+             return None
+-        if len(self.route.waypoints) == 1:
+-            return self.route.waypoints[0]
+-        distances = [math.hypot(point.x - self.pose.x, point.y - self.pose.y)
+-                     for point in self.route.waypoints]
+-        nearest_index = min(range(len(distances)), key=distances.__getitem__)
+-        target_index = min(nearest_index + 1, len(distances) - 1)
+-        while target_index < len(distances) - 1 and distances[target_index] <= self.waypoint_tolerance:
+-            target_index += 1
+-        return self.route.waypoints[target_index]
++        waypoints = self.route.waypoints
++        n_pts = len(waypoints)
++        if n_pts == 1:
++            return waypoints[0]
++
++        # Monotonic progress update: advance progress_index forward as waypoints are reached
++        curr_idx = min(self.route_progress_index, n_pts - 1)
++        while curr_idx < n_pts - 1:
++            pt = waypoints[curr_idx]
++            dist_to_pt = math.hypot(pt.x - self.pose.x, pt.y - self.pose.y)
++            if dist_to_pt <= self.waypoint_tolerance:
++                curr_idx += 1
++                continue
++            next_pt = waypoints[curr_idx + 1]
++            seg_dx = next_pt.x - pt.x
++            seg_dy = next_pt.y - pt.y
++            seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy
++            if seg_len_sq > 1e-4:
++                proj = ((self.pose.x - pt.x) * seg_dx + (self.pose.y - pt.y) * seg_dy) / seg_len_sq
++                if proj >= 0.85:
++                    curr_idx += 1
++                    continue
++            break
++
++        self.route_progress_index = curr_idx
++
++        # Forward lookahead target selection (Pure Pursuit / carrot along waypoints)
++        target_idx = curr_idx
++        accum_dist = math.hypot(waypoints[target_idx].x - self.pose.x, waypoints[target_idx].y - self.pose.y)
++        while target_idx < n_pts - 1 and accum_dist < self.lookahead_distance:
++            step_dist = math.hypot(
++                waypoints[target_idx + 1].x - waypoints[target_idx].x,
++                waypoints[target_idx + 1].y - waypoints[target_idx].y
++            )
++            accum_dist += step_dist
++            target_idx += 1
++
++        return waypoints[target_idx]
+ 
+     def steer_to(self, target, speed_limit, angular_limit=1.2):
+         cmd = Twist()
+         dx, dy = target.x - self.pose.x, target.y - self.pose.y
+         desired = math.atan2(dy, dx)
+-        angular_error = math.atan2(
++        raw_error = math.atan2(
+             math.sin(desired - self.pose.theta), math.cos(desired - self.pose.theta))
++
++        # Directional turn latching prevents high-frequency limit cycles / chatter
++        # when heading error wraps around +/- pi (180-degree turnarounds).
++        if abs(raw_error) > 2.8:
++            if self._turn_latch is None:
++                self._turn_latch = 1.0 if raw_error >= 0.0 else -1.0
++            angular_error = self._turn_latch * abs(raw_error)
++        elif abs(raw_error) < 0.40:
++            self._turn_latch = None
++            angular_error = raw_error
++        elif self._turn_latch is not None:
++            angular_error = self._turn_latch * abs(raw_error)
++        else:
++            angular_error = raw_error
++
+         cmd.angular.z = clamp(2.0 * angular_error, -angular_limit, angular_limit)
+-        # Differential-drive AMRs must finish a grid-direction change before
+-        # translating.  Moving while rotating from the south-facing docks was
+-        # the direct cause of robots 2 and 3 arcing into the south wall.
+-        if abs(angular_error) < self.turn_in_place_threshold:
++
++        # Turn-mode hysteresis:
++        # Enter turn-in-place mode when |angular_error| > turn_in_place_enter_rad (0.60 rad)
++        # Exit turn-in-place mode when |angular_error| < turn_in_place_exit_rad (0.25 rad)
++        if abs(angular_error) > self.turn_in_place_enter_rad:
++            self.in_turn_mode = True
++        elif abs(angular_error) < self.turn_in_place_exit_rad:
++            self.in_turn_mode = False
++
++        if not self.in_turn_mode:
+             cmd.linear.x = max(0.0, speed_limit) * max(0.0, math.cos(angular_error))
++        else:
++            cmd.linear.x = 0.0
+         return cmd
+ 
+     def task_speed_limit(self):
+@@ -148,6 +240,31 @@ class PathFollowerNode(Node):
+     def control(self):
+         cmd = Twist()
+         now = now_seconds(self)
++
++        # Expire retained route if retention window (<= 3.0s) has passed
++        if self.route is not None and self.route_infeasible_since is not None:
++            if now - self.route_infeasible_since > self.retained_route_max_s:
++                self.route = None
++                self.route_infeasible_since = None
++
++        # Safety stops and corridor holds strictly override motion and retained routes
++        if self.safety_stop or not self.clear or self.speed_cap <= 0.01:
++            if self.recovery_state not in ('VERIFY', 'REVERSING') and not (self.docking_final and self.clear):
++                if not self.clear or self.speed_cap <= 0.01:
++                    self.get_logger().warning(
++                        f'[{self.robot_id}:PathFollower] Decision: HOLD_CORRIDOR_BLOCKED. Actor=PathFollower:{self.robot_id}. '
++                        f'Info: corridor_motion_allowed={self.clear}, speed_cap={self.speed_cap}.',
++                        throttle_duration_sec=4.0
++                    )
++                elif self.safety_stop:
++                    self.get_logger().warning(
++                        f'[{self.robot_id}:PathFollower] Decision: SAFETY_STOP_OVERRIDE. Actor=PathFollower:{self.robot_id}. '
++                        f'Info: safety supervisor STOP active.',
++                        throttle_duration_sec=4.0
++                    )
++                self.pub.publish(cmd)
++                return
++
+         if self.recovery_state == 'VERIFY':
+             if now - self.recovery_started >= 0.5:
+                 if reverse_recovery_allowed(self.reverse_clearance, self.recovery_reverse_m, self.recovery_margin_m,
+diff --git a/src/sih_amr_fleet/sih_amr_fleet/whca_planner_node.py b/src/sih_amr_fleet/sih_amr_fleet/whca_planner_node.py
+index 143b50c..32481c8 100644
+--- a/src/sih_amr_fleet/sih_amr_fleet/whca_planner_node.py
++++ b/src/sih_amr_fleet/sih_amr_fleet/whca_planner_node.py
+@@ -9,7 +9,9 @@ from sih_amr_interfaces.msg import (
+     TaskExecutionStatus, TrajectoryIntent
+ )
+ 
+-from .algorithms import clear_nearfield_blockages, lane_waypoint_overrides, whca_star
++from .algorithms import (
++    apply_right_hand_sublanes, clear_nearfield_blockages, corridor_axial_holding_cell, lane_waypoint_overrides, whca_star
++)
+ from .common import FLEET_STATE_QOS, POSE_QOS, PROTOCOL_QOS, header, new_session_id, now_seconds, stamp_seconds
+ from .map_geometry import map_geometry_from_data
+ from .warehouse_tasks import narrow_lanes
+@@ -49,6 +51,7 @@ class WhcaPlannerNode(Node):
+         self._received_local_state = False
+ 
+         self.corridors = {}
++        self.main_corridor_cells = set()
+         self.occupied_corridors = {}
+ 
+         if map_file:
+@@ -90,6 +93,15 @@ class WhcaPlannerNode(Node):
+                 else:
+                     for c in cells: cell_set.add(tuple(c))
+                 self.corridors[name] = cell_set
++            self.main_corridor_cells = set()
++            for name, cells in data.get('corridors', {}).items():
++                if len(cells) == 2 and isinstance(cells[0], list) and isinstance(cells[1], list):
++                    x1, y1 = cells[0]; x2, y2 = cells[1]
++                    for x in range(min(x1, x2), max(x1, x2) + 1):
++                        for y in range(min(y1, y2), max(y1, y2) + 1):
++                            self.main_corridor_cells.add((x, y))
++                else:
++                    for c in cells: self.main_corridor_cells.add(tuple(c))
+             if data.get('generate_narrow_lane_mutex_resources', False):
+                 zones = data.get('shelf_layout', {}).get('y_zones', {})
+                 for zone, rows in zones.items():
+@@ -255,15 +267,35 @@ class WhcaPlannerNode(Node):
+         for peer_id, corridor_name in self.occupied_corridors.items():
+             occupied_corridor_cells.update(self.corridors.get(corridor_name, set()))
+ 
++        # If goal is inside an occupied corridor, plan to an axial holding cell
++        # at the far edge of the 2.0 m approach zone while waiting for mutex clearance.
++        effective_goal = goal
++        if goal in occupied_corridor_cells:
++            for c_name, c_cells in self.corridors.items():
++                if goal in c_cells:
++                    holding_cell = corridor_axial_holding_cell(
++                        c_cells, self.width, self.height,
++                        self.static_blocked, occupied_corridor_cells,
++                        start, self.resolution, approach_dist_m=2.0
++                    )
++                    if holding_cell is not None:
++                        effective_goal = holding_cell
++                        self.get_logger().info(
++                            f'[{self.robot_id}:WHCA] Rerouted goal {goal} in occupied corridor {c_name} '
++                            f'to axial safe holding cell {effective_goal} (2.0m setback).',
++                            throttle_duration_sec=3.0
++                        )
++                    break
++
+         planning_blockages = clear_nearfield_blockages(
+-            set(self.blockages) | occupied_corridor_cells, start, goal,
+-            clear_goal=False if goal in occupied_corridor_cells else True,
++            set(self.blockages) | occupied_corridor_cells, start, effective_goal,
++            clear_goal=True,
+             clearance_cells=1,
+         )
+ 
+         heading = self.pose.theta if self.pose is not None else None
+         path = whca_star(
+-            start, goal, self.static_blocked | planning_blockages, reservations,
++            start, effective_goal, self.static_blocked | planning_blockages, reservations,
+             self.width, self.height, self.horizon, self.reservation_buffer_cells,
+             heading_rad=heading
+         )
+@@ -297,13 +329,16 @@ class WhcaPlannerNode(Node):
+         msg.route_feasible = bool(path)
+         msg.failure_reason = '' if path else 'no conflict-free route in current WHCA* window'
+         msg.cells = [GridCell(x=x, y=y, time_slot=t) for x, y, t in path]
+-        msg.waypoints = [self.to_pose((x, y)) for x, y, _ in path]
++        raw_waypoints = [self.to_pose((x, y)) for x, y, _ in path]
+         if path and (path[-1][0], path[-1][1]) == goal and target is not None:
+-            msg.waypoints[-1] = Pose2D(
++            raw_waypoints[-1] = Pose2D(
+                 x=float(target.x),
+                 y=float(target.y),
+                 theta=float(getattr(target, 'theta', 0.0))
+             )
++        msg.waypoints = apply_right_hand_sublanes(
++            raw_waypoints, self.main_corridor_cells, (self.origin_x, self.origin_y), self.resolution, offset_m=0.40
++        )
+         self.pub.publish(msg)
+ 
+         nav_path = Path()
+diff --git a/src/sih_amr_fleet/test/test_algorithms.py b/src/sih_amr_fleet/test/test_algorithms.py
+index 710f069..9eb19d2 100644
+--- a/src/sih_amr_fleet/test/test_algorithms.py
++++ b/src/sih_amr_fleet/test/test_algorithms.py
+@@ -247,6 +247,22 @@ def test_avoidance_uncertainty_inflation():
+     assert abs(safe_large_cov[1]) > abs(safe_small_cov[1])
+ 
+ 
++def test_avoidance_parallel_lane_not_slowed():
++    # AMR and peer pass in parallel lanes with 1.2m lateral offset
++    safe = avoidance_velocity(
++        preferred=(0.45, 0.0),
++        self_xy=(0.0, 0.0),
++        peers=[{'x': 2.0, 'y': 1.2, 'vx': -0.45, 'vy': 0.0, 'radius_inflation': 0.0}],
++        radius=0.28,
++        horizon=1.5,
++        max_speed=0.45
++    )
++    # d_cpa is 1.2m > 2*0.28m, so safe velocity remains unchanged at full preferred speed
++    assert safe[0] == pytest.approx(0.45)
++    assert safe[1] == pytest.approx(0.0)
++
++
++
+ def test_avoidance_clips_max_speed():
+     safe = avoidance_velocity(
+         preferred=(0.8, 0.8),
+@@ -1046,3 +1062,94 @@ def test_corridor_approach_cells_only_at_longitudinal_caps():
+         node.destroy_node()
+ 
+ 
++def test_orca_node_suppresses_reversal_and_yields_by_priority():
++    import rclpy
++    from geometry_msgs.msg import Pose2D, Twist
++    from sih_amr_interfaces.msg import PeerTrack
++    from sih_amr_fleet.orca_node import OrcaNode
++
++    if not rclpy.ok():
++        rclpy.init()
++
++    # Robot 2 facing East, desiring forward 0.46 m/s
++    node = OrcaNode()
++    node.robot_id = 'robot_2'
++    node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
++    node.desired = Twist()
++    node.desired.linear.x = 0.46
++
++    # Peer Robot 1 approaching head-on
++    peer = PeerTrack()
++    peer.robot_id = 'robot_1'
++    peer.pose = Pose2D(x=1.0, y=0.0, theta=math.pi)
++    peer.twist = Twist()
++    peer.twist.linear.x = -0.46
++    peer.covariance_trace = 0.05
++    node.tracks = [peer]
++
++    try:
++        node.control()
++        assert node.yielding_to == 'robot_1', "robot_2 should yield to higher-priority robot_1"
++
++        # While peer is still in front at x=1.0m, elapsed time must NOT release yield latch
++        node.yield_started_at -= 3.5
++        node.control()
++        assert node.yielding_to == 'robot_1', "yield latch must remain held while peer is in front"
++
++        # Peer crosses behind robot 2 (x = -0.35m < -radius)
++        peer.pose.x = -0.35
++        node.control()
++        assert node.yielding_to is None, "yield latch should clear once peer has crossed behind"
++
++        # Now test Robot 1 under identical head-on condition
++        node.robot_id = 'robot_1'
++        node.yielding_to = None
++        peer.robot_id = 'robot_2'
++        peer.pose.x = 1.0
++        peer.twist.linear.x = -0.46
++        node.control()
++        assert node.yielding_to is None, "robot_1 has higher priority and should not yield"
++    finally:
++        node.destroy_node()
++
++
++def test_path_follower_turn_latch():
++    import rclpy
++    from geometry_msgs.msg import Pose2D
++    from sih_amr_fleet.path_follower_node import PathFollowerNode
++
++    if not rclpy.ok():
++        rclpy.init()
++
++    node = PathFollowerNode()
++    try:
++        # 1. 180-degree turnaround: target is directly South (-1.57), robot faces North (+1.57)
++        node.pose = Pose2D(x=5.50, y=-9.68, theta=1.5708)
++        target = Pose2D(x=5.50, y=-10.70, theta=0.0)
++        cmd1 = node.steer_to(target, speed_limit=0.46)
++        assert cmd1.linear.x == 0.0, "Must turn in place when turnaround angle >= 0.40 rad"
++        assert abs(cmd1.angular.z) == 1.2, "Must turn at max angular speed during 180 turnaround"
++        latch_sign = node._turn_latch
++        assert latch_sign is not None, "Must engage turn direction latch near +/- pi"
++
++        # Now simulate heading crossing the branch cut (slight jitter)
++        node.pose.theta = -1.5708 + 0.05
++        cmd2 = node.steer_to(target, speed_limit=0.46)
++        # Heading error is now small (-0.05), latch should release
++        assert node._turn_latch is None, "Latch should clear once aligned within 0.8 rad"
++        assert cmd2.linear.x > 0.40, "Should accelerate to forward speed when aligned"
++
++        # 2. Gentle tracking: heading error 0.25 rad (~14 deg) maintains high forward tracking speed
++        node.pose = Pose2D(x=0.0, y=0.0, theta=0.0)
++        gentle_target = Pose2D(x=math.cos(0.25), y=math.sin(0.25), theta=0.0)
++        cmd_gentle = node.steer_to(gentle_target, speed_limit=0.46)
++        assert cmd_gentle.linear.x > 0.40, "Gentle tracking must maintain forward speed"
++
++        # 3. Turn in place for heading error >= 0.40 rad:
++        pivot_target = Pose2D(x=math.cos(0.70), y=math.sin(0.70), theta=0.0)
++        cmd_pivot = node.steer_to(pivot_target, speed_limit=0.46)
++        assert cmd_pivot.linear.x == 0.0, "Turn >= 0.40 rad must rotate in place without forward arcing"
++    finally:
++        node.destroy_node()
++
++
+diff --git a/src/sih_amr_fleet/test/test_kinematic_carrier.py b/src/sih_amr_fleet/test/test_kinematic_carrier.py
+index dfbb231..bae0be0 100644
+--- a/src/sih_amr_fleet/test/test_kinematic_carrier.py
++++ b/src/sih_amr_fleet/test/test_kinematic_carrier.py
+@@ -98,6 +98,35 @@ def test_zero_noise_odometry_match():
+     assert abs(robot.local_yaw) < 1e-6
+ 
+ 
++def test_odometry_body_frame_twist():
++    """Verify that odometry twist is in base_link body frame and produces correct map velocity."""
++    from sih_amr_fleet.algorithms import body_velocity_to_map
++
++    dt = 0.02
++    cmd_v = 0.46
++    # 1. Westbound robot (yaw = pi)
++    yaw_west = math.pi
++    dx_west = cmd_v * math.cos(yaw_west) * dt
++    dy_west = cmd_v * math.sin(yaw_west) * dt
++    true_dist_west = math.copysign(math.hypot(dx_west, dy_west), cmd_v)
++    body_vx_west = true_dist_west / dt
++    assert abs(body_vx_west - cmd_v) < 1e-6
++    map_vx, map_vy = body_velocity_to_map(body_vx_west, 0.0, yaw_west)
++    assert abs(map_vx - (-0.46)) < 1e-5
++    assert abs(map_vy - 0.0) < 1e-5
++
++    # 2. Northbound robot (yaw = pi / 2)
++    yaw_north = math.pi / 2.0
++    dx_north = cmd_v * math.cos(yaw_north) * dt
++    dy_north = cmd_v * math.sin(yaw_north) * dt
++    true_dist_north = math.copysign(math.hypot(dx_north, dy_north), cmd_v)
++    body_vx_north = true_dist_north / dt
++    assert abs(body_vx_north - cmd_v) < 1e-6
++    map_vx, map_vy = body_velocity_to_map(body_vx_north, 0.0, yaw_north)
++    assert abs(map_vx - 0.0) < 1e-5
++    assert abs(map_vy - 0.46) < 1e-5
++
++
+ def test_physical_shelf_collision_clearance():
+     """Verify physical shelf collision logic allows passage down all warehouse aisles and detects contact."""
+     import yaml
+@@ -147,3 +176,114 @@ def test_physical_shelf_collision_clearance():
+     # Point 5cm from shelf surface (max_y=-18.1752, so y=-18.12) must collide
+     assert not is_collision_free(-10.0, -18.12)
+ 
++
++def test_multirate_carrier_integration():
++    """Verify that carrier distance traveled per sim-second is rate-independent.
++    
++    A robot commanded at 0.46 m/s must advance 0.46 m in 1.0 simulated second,
++    regardless of whether callbacks fire at 50 Hz (0.02s dt), 25 Hz (0.04s dt),
++    or 11.46 Hz (~0.087s dt).
++    """
++    v_cmd = 0.46
++    sim_duration = 1.0  # 1.0 sim-second
++
++    for rate_hz in [50.0, 25.0, 15.87, 11.46, 10.0]:
++        robot = RobotKinematicState('robot_test', x=0.0, y=0.0, yaw=0.0)
++        nominal_dt = 0.02
++        dt_callback = 1.0 / rate_hz
++        elapsed = 0.0
++        total_dist = 0.0
++
++        while elapsed < sim_duration - 1e-9:
++            step_dt = min(dt_callback, sim_duration - elapsed)
++            # Micro-substeps of <= 0.02s
++            num_substeps = max(1, math.ceil(step_dt / nominal_dt))
++            substep_dt = step_dt / num_substeps
++
++            for _ in range(num_substeps):
++                dx = v_cmd * math.cos(robot.true_yaw) * substep_dt
++                dy = v_cmd * math.sin(robot.true_yaw) * substep_dt
++                robot.true_x += dx
++                robot.true_y += dy
++                total_dist += math.hypot(dx, dy)
++
++            elapsed += step_dt
++
++        assert abs(total_dist - (v_cmd * sim_duration)) < 1e-4, (
++            f'Failed for rate {rate_hz} Hz: got {total_dist}m, expected {v_cmd * sim_duration}m'
++        )
++        assert abs(robot.true_x - (v_cmd * sim_duration)) < 1e-4
++
++
++def test_substepping_avoids_tunneling():
++    """Verify that substepping catches collisions even with large elapsed dt."""
++    # Obstacle is at x = 0.20, robot starts at x = 0.0 with radius 0.17.
++    # Contact occurs when center reaches x = 0.20 - 0.17 = 0.03m.
++    robot = RobotKinematicState('robot_test', x=0.0, y=0.0, yaw=0.0)
++    v_cmd = 0.5  # m/s
++    obstacle_x = 0.20
++    robot_radius = 0.17
++    contact_threshold_x = obstacle_x - robot_radius  # 0.03m
++
++    def is_free(cx, cy):
++        return cx < contact_threshold_x
++
++    # One large dt step of 0.1s: without substepping, robot would jump to x = 0.05 (penetrating)
++    large_dt = 0.10
++    nominal_dt = 0.02
++    num_substeps = max(1, math.ceil(large_dt / nominal_dt))
++    substep_dt = large_dt / num_substeps
++
++    collided = False
++    for _ in range(num_substeps):
++        dx = v_cmd * substep_dt
++        if not is_free(robot.true_x + dx, robot.true_y):
++            collided = True
++            break
++        robot.true_x += dx
++
++    assert collided, "Substepping failed to detect obstacle"
++    assert robot.true_x <= contact_threshold_x + 1e-5
++
++
++def test_large_dt_retains_unintegrated_remainder():
++    """Verify that when dt > 0.5s, carrier integrates up to cap and retains unintegrated remainder."""
++    prev_sim_time_s = 100.0
++    now_s = 100.8  # dt = 0.8s > 0.5s cap
++    max_step_dt = 0.5
++
++    dt = now_s - prev_sim_time_s
++    dt_to_integrate = min(dt, max_step_dt)
++    prev_sim_time_s += dt_to_integrate
++    integrated_1 = dt_to_integrate
++
++    assert integrated_1 == 0.5
++    # On next tick at now_s = 100.8, remainder is now_s - prev_sim_time_s
++    dt_next = now_s - prev_sim_time_s
++    assert abs(dt_next - 0.3) < 1e-9, f"Expected 0.3s remainder, got {dt_next}"
++    integrated_2 = min(dt_next, max_step_dt)
++    prev_sim_time_s += integrated_2
++
++    total_integrated = integrated_1 + integrated_2
++    assert abs(total_integrated - 0.8) < 1e-9, f"Expected 0.8s total integration, got {total_integrated}"
++    assert abs(prev_sim_time_s - now_s) < 1e-9
++
++
++def test_boundary_recovery_scoped_attributes():
++    """Verify that carrier boundary limits are accessible properties and prevent NameError."""
++    import rclpy
++    from sih_amr_fleet.kinematic_carrier_node import KinematicCarrierNode
++    if not rclpy.ok():
++        rclpy.init()
++    node = KinematicCarrierNode()
++    try:
++        min_x, min_y, max_x, max_y = node.boundary_limits
++        assert min_x < max_x
++        assert min_y < max_y
++        assert node._is_position_collision_free('robot_1', 0.0, 0.0) is True
++        assert node._is_position_collision_free('robot_1', min_x - 1.0, 0.0) is False
++    finally:
++        node.destroy_node()
++
++
++
