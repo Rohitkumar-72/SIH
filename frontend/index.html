@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css?v=spec_v3" />
 </head>
 <body>
@@ -15,11 +16,9 @@
   <header class="app-navbar">
     <div class="nav-left">
       <div class="brand-badge">
-        <div class="brand-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
-          </svg>
-        </div>
+       <div class="brand-icon">
+  <img src="https://i.ibb.co/whvFNJJB/ae.jpg" alt="AM-CORD AI">
+</div> 
         <div class="brand-text">
           <span class="brand-name">AM-CORD AI</span>
           <span class="brand-sub">Autonomous Mobility Coordination AI</span>
@@ -558,51 +557,387 @@
     <!-- ================================================================= -->
     <!-- 6. REPORTS PAGE                                                   -->
     <!-- ================================================================= -->
-    <section class="page-view" id="page-reports">
-      <div class="page-inner-content">
-        <div class="page-header-row">
-          <div>
-            <h2 class="page-heading">Shift & Fleet Performance Reports</h2>
-            <p class="page-subheading">Comprehensive summaries for warehouse operations managers and maintenance teams.</p>
-          </div>
-          <div class="header-actions">
-            <button class="btn-solid-primary" onclick="alert('Report generation PDF initiated!')">Generate Shift Summary</button>
-          </div>
+    <!-- ================================================================= -->
+<!-- 6. REPORTS PAGE                                                   -->
+<!-- ================================================================= -->
+<section class="page-view" id="page-reports">
+
+  <div class="reports-page">
+
+    <!-- ===================== REPORT HEADER ===================== -->
+    <div class="reports-header">
+
+      <div class="reports-title-area">
+        <div class="reports-main-icon">
+          <i class="fa-regular fa-file-lines"></i>
         </div>
 
-        <div class="report-cards-grid">
-          <div class="report-doc-card">
-            <div class="doc-icon">📊</div>
-            <div class="doc-info">
-              <h3>Daily SLA & Order Fulfillment Report</h3>
-              <p>Total orders completed: 142 • On-time SLA rate: 98.6% • Avg turnaround: 1m 24s</p>
-              <span class="doc-date">Generated Today at 08:00 AM</span>
-            </div>
-            <button class="btn-outline btn-sm">Download PDF</button>
-          </div>
-
-          <div class="report-doc-card">
-            <div class="doc-icon">🔋</div>
-            <div class="doc-info">
-              <h3>Battery Health & Inductive Pad Diagnostics</h3>
-              <p>Fleet battery cycles: Nominal • Pad efficiency: 99.1% • No thermal anomalies detected</p>
-              <span class="doc-date">Generated Yesterday at 11:30 PM</span>
-            </div>
-            <button class="btn-outline btn-sm">Download PDF</button>
-          </div>
-
-          <div class="report-doc-card">
-            <div class="doc-icon">🚧</div>
-            <div class="doc-info">
-              <h3>Warehouse Aisle Obstacle & Congestion Log</h3>
-              <p>Dynamic blockages detected: 3 • Automatic WHCA* reroutes: 3 • Zero collisions recorded</p>
-              <span class="doc-date">Generated Yesterday at 06:00 PM</span>
-            </div>
-            <button class="btn-outline btn-sm">Download PDF</button>
-          </div>
+        <div>
+          <h2>Reports</h2>
+          <p>
+            Comprehensive summaries for warehouse operations,
+            fleet performance and system health.
+          </p>
         </div>
       </div>
-    </section>
+
+      <div class="reports-status-area">
+
+        <div class="reports-updated">
+          <i class="fa-regular fa-calendar"></i>
+          <div>
+            <span>Last Updated</span>
+            <strong>Sep 18, 2026&nbsp; • &nbsp;11:00 AM</strong>
+          </div>
+        </div>
+
+        <div class="reports-online">
+          <span class="online-dot"></span>
+          System Online
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ===================== REPORT CATEGORIES ===================== -->
+    <div class="report-category-bar">
+
+      <button class="report-category active">
+        <i class="fa-regular fa-file-lines"></i>
+        <span>All Reports</span>
+      </button>
+
+      <button class="report-category">
+        <i class="fa-solid fa-chart-column"></i>
+        <span>Performance</span>
+      </button>
+
+      <button class="report-category">
+        <i class="fa-solid fa-battery-three-quarters"></i>
+        <span>Fleet &amp; Battery</span>
+      </button>
+
+      <button class="report-category">
+        <i class="fa-solid fa-gear"></i>
+        <span>Operations</span>
+      </button>
+
+      <button class="report-category">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Logs &amp; Events</span>
+      </button>
+
+      <button class="report-category">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Diagnostics</span>
+      </button>
+
+    </div>
+
+
+    <!-- ===================== REPORT 1 ===================== -->
+    <div class="modern-report-card report-green">
+
+      <div class="report-card-icon">
+        <i class="fa-solid fa-chart-column"></i>
+      </div>
+
+      <div class="report-card-content">
+
+        <h3>Daily SLA &amp; Order Fulfillment Report</h3>
+
+        <p>
+          Total orders completed, SLA performance,
+          on-time rate and average turnaround time.
+        </p>
+
+        <div class="report-meta">
+          <span class="meta-today">
+            <i class="fa-regular fa-calendar"></i>
+            Today
+          </span>
+
+          <span>
+            <i class="fa-regular fa-clock"></i>
+            08:00 AM
+          </span>
+
+          <span>
+            <i class="fa-regular fa-file"></i>
+            PDF
+          </span>
+        </div>
+
+      </div>
+
+      <div class="report-metrics">
+
+        <div class="report-metric">
+          <i class="fa-solid fa-box"></i>
+          <span>Total Orders</span>
+          <strong>142</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-solid fa-bullseye"></i>
+          <span>On-time SLA</span>
+          <strong>98.6%</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-regular fa-clock"></i>
+          <span>Avg. Turnaround</span>
+          <strong>1m 24s</strong>
+        </div>
+
+      </div>
+
+      <button
+        class="report-download green-download"
+        onclick="alert('Daily SLA Report PDF generation started!')"
+      >
+        <i class="fa-solid fa-download"></i>
+        Download PDF
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+    </div>
+
+
+    <!-- ===================== REPORT 2 ===================== -->
+    <div class="modern-report-card report-blue">
+
+      <div class="report-card-icon">
+        <i class="fa-solid fa-battery-three-quarters"></i>
+      </div>
+
+      <div class="report-card-content">
+
+        <h3>Battery Health &amp; Inductive Pad Diagnostics</h3>
+
+        <p>
+          Fleet battery cycles, charge levels and pad efficiency.
+          Thermal anomalies (if any).
+        </p>
+
+        <div class="report-meta">
+          <span class="meta-today">
+            <i class="fa-regular fa-calendar"></i>
+            Today
+          </span>
+
+          <span>
+            <i class="fa-regular fa-clock"></i>
+            11:30 PM
+          </span>
+
+          <span>
+            <i class="fa-regular fa-file"></i>
+            PDF
+          </span>
+        </div>
+
+      </div>
+
+      <div class="report-metrics">
+
+        <div class="report-metric">
+          <i class="fa-solid fa-battery-full"></i>
+          <span>Fleet Battery Avg.</span>
+          <strong>99.1%</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Pad Efficiency</span>
+          <strong>99.1%</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Thermal Anomalies</span>
+          <strong>0</strong>
+        </div>
+
+      </div>
+
+      <button
+        class="report-download blue-download"
+        onclick="alert('Battery Diagnostics PDF generation started!')"
+      >
+        <i class="fa-solid fa-download"></i>
+        Download PDF
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+    </div>
+
+
+    <!-- ===================== REPORT 3 ===================== -->
+    <div class="modern-report-card report-orange">
+
+      <div class="report-card-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+
+      <div class="report-card-content">
+
+        <h3>Warehouse Aisle Obstacle &amp; Congestion Log</h3>
+
+        <p>
+          Dynamic blockages, WHCA* reroutes and
+          zero collisions record.
+        </p>
+
+        <div class="report-meta">
+          <span class="meta-today">
+            <i class="fa-regular fa-calendar"></i>
+            Today
+          </span>
+
+          <span>
+            <i class="fa-regular fa-clock"></i>
+            06:00 PM
+          </span>
+
+          <span>
+            <i class="fa-regular fa-file"></i>
+            PDF
+          </span>
+        </div>
+
+      </div>
+
+      <div class="report-metrics">
+
+        <div class="report-metric">
+          <i class="fa-solid fa-cube"></i>
+          <span>Blockages Detected</span>
+          <strong>3</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-solid fa-arrows-to-circle"></i>
+          <span>Reroutes (WHCA*)</span>
+          <strong>3</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Collisions</span>
+          <strong>0</strong>
+        </div>
+
+      </div>
+
+      <button
+        class="report-download orange-download"
+        onclick="alert('Warehouse Congestion Log PDF generation started!')"
+      >
+        <i class="fa-solid fa-download"></i>
+        Download PDF
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+    </div>
+
+
+    <!-- ===================== REPORT 4 ===================== -->
+    <div class="modern-report-card report-purple">
+
+      <div class="report-card-icon">
+        <i class="fa-regular fa-file-lines"></i>
+      </div>
+
+      <div class="report-card-content">
+
+        <h3>Fleet Performance Summary</h3>
+
+        <p>
+          Robot productivity, utilization, distance travelled
+          and mission status.
+        </p>
+
+        <div class="report-meta">
+          <span class="meta-today">
+            <i class="fa-regular fa-calendar"></i>
+            Today
+          </span>
+
+          <span>
+            <i class="fa-regular fa-clock"></i>
+            12:00 AM
+          </span>
+
+          <span>
+            <i class="fa-regular fa-file"></i>
+            PDF
+          </span>
+        </div>
+
+      </div>
+
+      <div class="report-metrics">
+
+        <div class="report-metric">
+          <i class="fa-solid fa-robot"></i>
+          <span>Active Robots</span>
+          <strong>8 / 8</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Utilization</span>
+          <strong>96.8%</strong>
+        </div>
+
+        <div class="report-metric">
+          <i class="fa-solid fa-location-dot"></i>
+          <span>Distance (Total)</span>
+          <strong>52.4 km</strong>
+        </div>
+
+      </div>
+
+      <button
+        class="report-download purple-download"
+        onclick="alert('Fleet Performance PDF generation started!')"
+      >
+        <i class="fa-solid fa-download"></i>
+        Download PDF
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+    </div>
+
+
+    <!-- ===================== REPORT FOOTER ===================== -->
+    <div class="reports-footer">
+
+      <div class="reports-footer-info">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>
+          Reports are generated from real-time data and historical logs.
+          All times are in system local time.
+        </span>
+      </div>
+
+      <div class="auto-refresh">
+        <i class="fa-solid fa-arrows-rotate"></i>
+        <span>Auto-refresh: 5 min</span>
+
+        <label class="refresh-switch">
+          <input type="checkbox" checked>
+          <span></span>
+        </label>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
 
   </div>
 
@@ -764,7 +1099,7 @@
       </div>
     </div>
   </div>
-
-  <script src="app.js?v=spec_v2"></script>
+<script src="dashboard-upgrade.js"></script>
+<script src="app.js?v=spec_v2"></script>
 </body>
 </html>

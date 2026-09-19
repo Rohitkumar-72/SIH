@@ -231,6 +231,8 @@ const APP_STATE = {
   selectedRobotId: 'robot_1',
   taskViewMode: 'table',
   streamPaused: false,
+  lastTelemetryAt: 0,
+  liveUiLastRender: 0,
   
   // Real dataset metrics
   datasetStats: {
@@ -716,6 +718,7 @@ function startRestTelemetryPolling() {
 function handleLiveTelemetryPayload(data) {
   if (!data) return;
   APP_STATE.isLiveConnected = true;
+  APP_STATE.lastTelemetryAt = Date.now();
   updateConnectionStatus(true);
 
   if (data.robots) {
@@ -893,6 +896,11 @@ function initNavigation() {
     APP_STATE.viewMode = mode;
     [btnDash2D, btnMap2D].forEach(b => b && b.classList.toggle('active', mode === '2D'));
     [btnDash3D, btnMap3D].forEach(b => b && b.classList.toggle('active', mode === '3D'));
+
+    const glf2d = document.getElementById('glf-2d');
+    const glf3d = document.getElementById('glf-3d');
+    glf2d?.classList.toggle('active', mode === '2D');
+    glf3d?.classList.toggle('active', mode === '3D');
   }
 
   if (btnDash2D) btnDash2D.addEventListener('click', () => setViewMode('2D'));
@@ -1024,31 +1032,66 @@ function resizeActiveCanvases() {
 }
 window.addEventListener('resize', resizeActiveCanvases);
 
-function projectWorld(wx, wy, wz, cWidth, cHeight, mode = '2D') {
+function projectWorld(wx, wy, wz = 0, cWidth, cHeight, mode = '2D') {
   if (mode === '2D') {
-    const scale = Math.min(cWidth / (WAREHOUSE_CONFIG.width_m + 6), cHeight / (WAREHOUSE_CONFIG.height_m + 6));
+    const scale = Math.min(
+      cWidth / (WAREHOUSE_CONFIG.width_m + 6),
+      cHeight / (WAREHOUSE_CONFIG.height_m + 6)
+    );
     const sx = cWidth / 2 + (wx * scale);
     const sy = cHeight / 2 - (wy * scale);
-    return { x: sx, y: sy, scale };
-  } else {
-    const isoScale = Math.min(cWidth / 68, cHeight / 68) * 0.95;
-    const isoAngle = Math.PI / 6;
-    const isoX = (wx - wy * 0.8) * Math.cos(isoAngle);
-    const isoY = (wx + wy * 0.8) * Math.sin(isoAngle) - (wz * 1.6);
-    const sx = cWidth / 2 + (isoX * isoScale);
-    const sy = cHeight / 2 + (isoY * isoScale) + 30;
-    return { x: sx, y: sy, scale: isoScale };
+    return { x: sx, y: sy, scale, depth: 1 };
+  }
+
+  // STRAIGHT 3D CAMERA
+  // Keep X horizontal and Y vertical on screen so the warehouse does not
+  // appear rotated/diamond-shaped. Z is used for the height of racks/robots.
+  // This is an orthographic 3D projection: straight warehouse aisles stay
+  // straight while still showing real 3D height and depth.
+  const elevation = 0.68;
+  const floorDepthScale = Math.sin(elevation);
+  const heightScale = Math.cos(elevation);
+
+  const scale = Math.min(
+    cWidth / (WAREHOUSE_CONFIG.width_m + 6),
+    cHeight / (WAREHOUSE_CONFIG.height_m * floorDepthScale + 10)
+  );
+
+  const sx = cWidth / 2 + 50 + wx * scale;
+  const sy = cHeight * 0.56 - wy * floorDepthScale * scale - wz * heightScale * scale;
+
+  return {
+    x: sx,
+    y: sy,
+    scale,
+    depth: wy
+  };
+}
+
+function drawPoly(ctx, points, fill, stroke = null, lineWidth = 1) {
+  if (!points || points.length < 3) return;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+  ctx.closePath();
+  if (fill) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
   }
 }
 
 function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
   ctx.clearRect(0, 0, cWidth, cHeight);
-
-  ctx.fillStyle = mode === '3D' ? '#e2e8f0' : '#f8fafc';
+  ctx.fillStyle = mode === '3D' ? '#070b12' : '#0d0d0e';
   ctx.fillRect(0, 0, cWidth, cHeight);
 
   if (mode === '2D') {
-    ctx.fillStyle = '#f1f5f9';
+    ctx.fillStyle = '#0b0b0c';
     for (const c of WAREHOUSE_CONFIG.corridors) {
       if (c.orientation === 'V') {
         const p1 = projectWorld(c.x - c.width / 2, WAREHOUSE_CONFIG.height_m / 2, 0, cWidth, cHeight, mode);
@@ -1060,10 +1103,61 @@ function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
         ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
       }
     }
+  } else {
+    // 3D warehouse floor.
+    const floor = [
+      projectWorld(-22.5, -30, 0, cWidth, cHeight, mode),
+      projectWorld(22.5, -30, 0, cWidth, cHeight, mode),
+      projectWorld(22.5, 30, 0, cWidth, cHeight, mode),
+      projectWorld(-22.5, 30, 0, cWidth, cHeight, mode)
+    ];
+    drawPoly(ctx, floor, '#111827', '#334155', 1.5);
+
+    // Subtle floor grid gives depth/perspective cues.
+    ctx.strokeStyle = 'rgba(148,163,184,0.12)';
+    ctx.lineWidth = 1;
+    for (let x = -20; x <= 20; x += 5) {
+      const a = projectWorld(x, -30, 0.01, cWidth, cHeight, mode);
+      const b = projectWorld(x, 30, 0.01, cWidth, cHeight, mode);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    for (let y = -30; y <= 30; y += 5) {
+      const a = projectWorld(-22.5, y, 0.01, cWidth, cHeight, mode);
+      const b = projectWorld(22.5, y, 0.01, cWidth, cHeight, mode);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    // Perspective corridor lanes.
+    for (const c of WAREHOUSE_CONFIG.corridors) {
+      let poly;
+      if (c.orientation === 'V') {
+        poly = [
+          projectWorld(c.x - c.width / 2, -30, 0.02, cWidth, cHeight, mode),
+          projectWorld(c.x + c.width / 2, -30, 0.02, cWidth, cHeight, mode),
+          projectWorld(c.x + c.width / 2, 30, 0.02, cWidth, cHeight, mode),
+          projectWorld(c.x - c.width / 2, 30, 0.02, cWidth, cHeight, mode)
+        ];
+      } else {
+        poly = [
+          projectWorld(-22.5, c.y - c.height / 2, 0.02, cWidth, cHeight, mode),
+          projectWorld(22.5, c.y - c.height / 2, 0.02, cWidth, cHeight, mode),
+          projectWorld(22.5, c.y + c.height / 2, 0.02, cWidth, cHeight, mode),
+          projectWorld(-22.5, c.y + c.height / 2, 0.02, cWidth, cHeight, mode)
+        ];
+      }
+      drawPoly(ctx, poly, 'rgba(30,41,59,0.78)', 'rgba(96,165,250,0.16)', 1);
+    }
   }
 
+  // Charging pads.
   for (const pad of WAREHOUSE_CONFIG.charging_pads) {
-    const p = projectWorld(pad.x, pad.y, 0, cWidth, cHeight, mode);
+    const p = projectWorld(pad.x, pad.y, 0.08, cWidth, cHeight, mode);
     if (mode === '2D') {
       const pw = 2.4 * p.scale;
       const ph = 1.8 * p.scale;
@@ -1074,24 +1168,32 @@ function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
       ctx.roundRect(p.x - pw / 2, p.y - ph / 2, pw, ph, 4);
       ctx.fill();
       ctx.stroke();
-
       ctx.fillStyle = '#065f46';
       ctx.font = 'bold 9px Inter';
       ctx.textAlign = 'center';
       ctx.fillText(`⚡ ${pad.id}`, p.x, p.y + 3);
     } else {
-      ctx.fillStyle = '#a7f3d0';
-      ctx.strokeStyle = '#059669';
+      const r = Math.max(5, 8 * Math.min(1.6, p.scale));
+      ctx.fillStyle = 'rgba(16,185,129,0.28)';
+      ctx.strokeStyle = '#10b981';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      ctx.fillStyle = '#a7f3d0';
+      ctx.font = 'bold 9px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(pad.id, p.x, p.y - r - 4);
     }
   }
 
-  const shelvesSorted = mode === '3D' 
-    ? [...WAREHOUSE_CONFIG.shelves].sort((a, b) => (a.x + a.y) - (b.x + b.y))
+  // Sort racks by projected depth for painter's algorithm.
+  const shelvesSorted = mode === '3D'
+    ? [...WAREHOUSE_CONFIG.shelves].sort((a, b) =>
+        projectWorld(a.x, a.y, 0, cWidth, cHeight, mode).depth -
+        projectWorld(b.x, b.y, 0, cWidth, cHeight, mode).depth
+      )
     : WAREHOUSE_CONFIG.shelves;
 
   for (const s of shelvesSorted) {
@@ -1115,38 +1217,55 @@ function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
       ctx.lineTo(p.x + sw / 4, p.y + sh / 2);
       ctx.stroke();
     } else {
-      const pBase = projectWorld(s.x, s.y, 0, cWidth, cHeight, mode);
-      const pTop = projectWorld(s.x, s.y, s.depth_3d, cWidth, cHeight, mode);
-      const bW = 18;
-      const bH = 10;
-      const bHeight = pBase.y - pTop.y;
+      const hw = s.w / 2;
+      const hd = s.h / 2;
+      const z0 = 0;
+      const z1 = s.depth_3d || 2.2;
 
-      ctx.fillStyle = '#cbd5e1';
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.rect(pTop.x - bW / 2, pTop.y, bW, bHeight);
-      ctx.fill();
-      ctx.stroke();
+      const b = [
+        projectWorld(s.x - hw, s.y - hd, z0, cWidth, cHeight, mode),
+        projectWorld(s.x + hw, s.y - hd, z0, cWidth, cHeight, mode),
+        projectWorld(s.x + hw, s.y + hd, z0, cWidth, cHeight, mode),
+        projectWorld(s.x - hw, s.y + hd, z0, cWidth, cHeight, mode)
+      ];
+      const t = [
+        projectWorld(s.x - hw, s.y - hd, z1, cWidth, cHeight, mode),
+        projectWorld(s.x + hw, s.y - hd, z1, cWidth, cHeight, mode),
+        projectWorld(s.x + hw, s.y + hd, z1, cWidth, cHeight, mode),
+        projectWorld(s.x - hw, s.y + hd, z1, cWidth, cHeight, mode)
+      ];
 
-      ctx.fillStyle = '#e2e8f0';
-      ctx.beginPath();
-      ctx.rect(pTop.x - bW / 2, pTop.y - bH, bW, bH);
-      ctx.fill();
-      ctx.stroke();
+      // Three visible rack faces.
+      drawPoly(ctx, [b[0], b[1], t[1], t[0]], '#94a3b8', '#64748b', 0.8);
+      drawPoly(ctx, [b[1], b[2], t[2], t[1]], '#64748b', '#475569', 0.8);
+      drawPoly(ctx, [t[0], t[1], t[2], t[3]], '#e2e8f0', '#cbd5e1', 0.8);
+
+      // Shelf beams.
+      for (const frac of [0.25, 0.5, 0.75]) {
+        const z = z1 * frac;
+        const q1 = projectWorld(s.x - hw, s.y - hd, z, cWidth, cHeight, mode);
+        const q2 = projectWorld(s.x + hw, s.y - hd, z, cWidth, cHeight, mode);
+        ctx.strokeStyle = 'rgba(51,65,85,0.8)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(q1.x, q1.y);
+        ctx.lineTo(q2.x, q2.y);
+        ctx.stroke();
+      }
     }
   }
 
+  // Dynamic obstacles.
   for (const obs of APP_STATE.obstacles) {
-    const p = projectWorld(obs.x, obs.y, 0, cWidth, cHeight, mode);
+    const p = projectWorld(obs.x, obs.y, mode === '3D' ? 0.6 : 0, cWidth, cHeight, mode);
+    const size = mode === '3D' ? Math.max(8, Math.min(16, p.scale * 1.5)) : 14;
     ctx.fillStyle = '#fef2f2';
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.roundRect(p.x - 14, p.y - 14, 28, 28, 4);
+    ctx.roundRect(p.x - size, p.y - size, size * 2, size * 2, 4);
     ctx.fill();
     ctx.stroke();
-
     ctx.fillStyle = '#dc2626';
     ctx.font = 'bold 10px Inter';
     ctx.textAlign = 'center';
@@ -1155,42 +1274,39 @@ function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
 
   if (APP_STATE.showTrails) {
     for (const bot of APP_STATE.robots) {
-      // 1. Draw breadcrumb motion trail
       if (bot.breadcrumbs && bot.breadcrumbs.length > 1) {
-        ctx.strokeStyle = bot.color ? `${bot.color}88` : 'rgba(96, 165, 250, 0.4)';
-        ctx.lineWidth = 2.0;
+        ctx.strokeStyle = bot.color ? `${bot.color}88` : 'rgba(96,165,250,0.4)';
+        ctx.lineWidth = mode === '3D' ? 2 : 2;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
-        const p0 = projectWorld(bot.breadcrumbs[0].x, bot.breadcrumbs[0].y, 0, cWidth, cHeight, mode);
+        const p0 = projectWorld(bot.breadcrumbs[0].x, bot.breadcrumbs[0].y, 0.08, cWidth, cHeight, mode);
         ctx.moveTo(p0.x, p0.y);
         for (let i = 1; i < bot.breadcrumbs.length; i++) {
-          const pt = projectWorld(bot.breadcrumbs[i].x, bot.breadcrumbs[i].y, 0, cWidth, cHeight, mode);
+          const pt = projectWorld(bot.breadcrumbs[i].x, bot.breadcrumbs[i].y, 0.08, cWidth, cHeight, mode);
           ctx.lineTo(pt.x, pt.y);
         }
         ctx.stroke();
         ctx.setLineDash([]);
       }
 
-      // 2. Draw planned future route waypoints
       if (bot.path && bot.path.length > 1) {
-        ctx.strokeStyle = bot.id === APP_STATE.selectedRobotId ? '#2563eb' : (bot.color || '#60a5fa');
-        ctx.lineWidth = bot.id === APP_STATE.selectedRobotId ? 3.0 : 1.8;
+        ctx.strokeStyle = bot.id === APP_STATE.selectedRobotId ? '#60a5fa' : (bot.color || '#60a5fa');
+        ctx.lineWidth = bot.id === APP_STATE.selectedRobotId ? 3 : 1.8;
         ctx.beginPath();
-
-        const pStart = projectWorld(bot.x, bot.y, 0, cWidth, cHeight, mode);
+        const pStart = projectWorld(bot.x, bot.y, mode === '3D' ? 0.18 : 0, cWidth, cHeight, mode);
         ctx.moveTo(pStart.x, pStart.y);
 
         for (let i = bot.pathIdx; i < bot.path.length; i++) {
-          const pNode = projectWorld(bot.path[i].x, bot.path[i].y, 0, cWidth, cHeight, mode);
+          const pNode = projectWorld(bot.path[i].x, bot.path[i].y, mode === '3D' ? 0.08 : 0, cWidth, cHeight, mode);
           ctx.lineTo(pNode.x, pNode.y);
         }
         ctx.stroke();
 
         const dest = bot.path[bot.path.length - 1];
-        const pDest = projectWorld(dest.x, dest.y, 0, cWidth, cHeight, mode);
+        const pDest = projectWorld(dest.x, dest.y, mode === '3D' ? 0.08 : 0, cWidth, cHeight, mode);
         ctx.fillStyle = bot.color || '#2563eb';
         ctx.beginPath();
-        ctx.arc(pDest.x, pDest.y, 5, 0, Math.PI * 2);
+        ctx.arc(pDest.x, pDest.y, mode === '3D' ? 5 : 5, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1.5;
@@ -1199,46 +1315,91 @@ function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
     }
   }
 
-  for (const bot of APP_STATE.robots) {
-    const p = projectWorld(bot.x, bot.y, mode === '3D' ? 0.4 : 0, cWidth, cHeight, mode);
+  // Draw robots last so they stay visible above racks/routes.
+  const robotDrawList = mode === '3D'
+    ? [...APP_STATE.robots].sort((a, b) =>
+        projectWorld(a.x, a.y, 0, cWidth, cHeight, mode).depth -
+        projectWorld(b.x, b.y, 0, cWidth, cHeight, mode).depth
+      )
+    : APP_STATE.robots;
+
+  for (const bot of robotDrawList) {
+    const z = mode === '3D' ? 0.8 : 0;
+    const p = projectWorld(bot.x, bot.y, z, cWidth, cHeight, mode);
     const isSelected = bot.id === APP_STATE.selectedRobotId;
+    const robotRadius = mode === '3D' ? Math.max(6, Math.min(11, p.scale * 0.65)) : 9;
 
     if (isSelected) {
-      ctx.strokeStyle = 'rgba(37, 99, 235, 0.4)';
+      ctx.strokeStyle = 'rgba(96,165,250,0.75)';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, robotRadius + 7, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    ctx.fillStyle = bot.color || '#3b82f6';
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
+    if (mode === '3D') {
+      const bodyH = Math.max(5, Math.min(13, p.scale * 1.0));
+      const base = projectWorld(bot.x, bot.y, 0.05, cWidth, cHeight, mode);
+      const top = projectWorld(bot.x, bot.y, 0.8, cWidth, cHeight, mode);
 
+      ctx.fillStyle = bot.color || '#3b82f6';
+      ctx.beginPath();
+      ctx.ellipse(base.x, base.y, robotRadius, robotRadius * 0.62, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.20)';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(base.x - robotRadius, base.y);
+      ctx.lineTo(top.x - robotRadius * 0.72, top.y);
+      ctx.lineTo(top.x + robotRadius * 0.72, top.y);
+      ctx.lineTo(base.x + robotRadius, base.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(top.x, top.y, Math.max(2.5, robotRadius * 0.28), 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = bot.color || '#3b82f6';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, robotRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
+    // Heading arrow.
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(-bot.theta);
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(6, 0);
-    ctx.lineTo(2, -3);
-    ctx.lineTo(2, 3);
+    ctx.moveTo(robotRadius + 4, 0);
+    ctx.lineTo(robotRadius - 1, -3);
+    ctx.lineTo(robotRadius - 1, 3);
     ctx.fill();
     ctx.restore();
 
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#e2e8f0';
     ctx.font = 'bold 10px JetBrains Mono';
     ctx.textAlign = 'center';
-    ctx.fillText(bot.name, p.x, p.y + 20);
+    ctx.fillText(bot.name, p.x, p.y + robotRadius + 14);
 
     if (APP_STATE.showThoughts && bot.thought) {
       drawMinimalThoughtBubble(ctx, p.x, p.y - 18, bot.thought);
     }
   }
+
+  // Small mode label makes it obvious that the camera actually changed.
+  ctx.fillStyle = 'rgba(226,232,240,0.72)';
+  ctx.font = '600 10px Inter';
+  ctx.textAlign = 'left';
+  ctx.fillText(mode === '3D' ? 'LIVE • 3D PERSPECTIVE' : 'LIVE • 2D TOP-DOWN', 12, 18);
 }
 
 function drawMinimalThoughtBubble(ctx, x, y, text) {
@@ -1273,30 +1434,42 @@ let lastAnimTime = performance.now();
 function updateSimulationEngine(dt) {
   if (APP_STATE.isPaused || APP_STATE.isEStopped) return;
 
-  if (APP_STATE.isLiveConnected) {
-    // Smooth real-time pose interpolation towards incoming ROS 2 coordinates
+  const telemetryFresh = APP_STATE.isLiveConnected &&
+    APP_STATE.lastTelemetryAt > 0 &&
+    (Date.now() - APP_STATE.lastTelemetryAt) < 1500;
+
+  // Live mode: smoothly interpolate to ROS/telemetry targets.
+  if (telemetryFresh) {
     for (const bot of APP_STATE.robots) {
-      if (bot.targetX !== undefined) {
+      if (bot.targetX !== undefined && bot.targetY !== undefined) {
         const lerpSpeed = Math.min(1.0, dt * 10.0);
+        const oldX = bot.x;
+        const oldY = bot.y;
         bot.x += (bot.targetX - bot.x) * lerpSpeed;
         bot.y += (bot.targetY - bot.y) * lerpSpeed;
-        let diff = bot.targetTheta - bot.theta;
+
+        const dx = bot.targetX - oldX;
+        const dy = bot.targetY - oldY;
+        if (Math.hypot(dx, dy) > 0.002) bot.speed = Math.hypot(dx, dy) / Math.max(dt, 0.001);
+
+        let diff = (bot.targetTheta ?? bot.theta) - bot.theta;
         while (diff > Math.PI) diff -= 2 * Math.PI;
         while (diff < -Math.PI) diff += 2 * Math.PI;
         bot.theta += diff * lerpSpeed;
       }
+      updateTaskProgressFromRobot(bot);
     }
+
     updateUberDirectionCard();
     return;
   }
 
+  // Standalone/demo mode. The fleet keeps moving even without ROS.
   for (const t of APP_STATE.tasks) {
     if (t.status === 'PICKUP_WAIT' || t.status === 'DROPOFF_WAIT') {
       if (t.dwell_remaining > 0) {
         t.dwell_remaining = Math.max(0, t.dwell_remaining - dt * APP_STATE.simSpeed);
-        if (t.dwell_remaining === 0) {
-          advanceTaskDwellComplete(t);
-        }
+        if (t.dwell_remaining === 0) advanceTaskDwellComplete(t);
       }
     }
   }
@@ -1305,35 +1478,325 @@ function updateSimulationEngine(dt) {
     if (bot.isCharging) {
       bot.battery = Math.min(100, bot.battery + dt * 2.0 * APP_STATE.simSpeed);
     } else {
-      bot.battery = Math.max(0, bot.battery - dt * 0.08 * APP_STATE.simSpeed);
+      bot.battery = Math.max(5, bot.battery - dt * 0.08 * APP_STATE.simSpeed);
+    }
+
+    if (!bot.path || bot.path.length === 0 || bot.pathIdx >= bot.path.length) {
+      if (bot.taskId) {
+        // A task route should always exist; rebuild it if it was lost.
+        const task = APP_STATE.tasks.find(t => t.task_id === bot.taskId);
+        if (task) {
+          const target = (bot.state || '').includes('DROPOFF') ? task.dropoff : task.pickup;
+          bot.path = generateNavPath(bot.x, bot.y, target.x, target.y);
+          bot.pathIdx = 0;
+        }
+      } else {
+        assignIdlePatrolPath(bot);
+      }
     }
 
     if (bot.path && bot.path.length > 0 && bot.pathIdx < bot.path.length) {
       const targetWp = bot.path[bot.pathIdx];
       const dx = targetWp.x - bot.x;
       const dy = targetWp.y - bot.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      const dist = Math.hypot(dx, dy);
 
       if (dist < 0.25) {
+        bot.x = targetWp.x;
+        bot.y = targetWp.y;
         bot.pathIdx++;
+
         if (bot.pathIdx >= bot.path.length) {
-          handleRobotArrival(bot);
+          if (bot.taskId) {
+            handleRobotArrival(bot);
+          } else {
+            // Continuous patrol for robots that currently have no task.
+            assignIdlePatrolPath(bot);
+          }
         }
       } else {
         const angle = Math.atan2(dy, dx);
         bot.theta = angle;
-        const step = (bot.speed || 0.8) * dt * APP_STATE.simSpeed;
+
+        // Give every moving demo robot a realistic cruising speed.
+        if (!bot.speed || bot.speed < 0.15) bot.speed = 0.75 + (bot.id.charCodeAt(6) % 4) * 0.08;
+
+        const step = bot.speed * dt * APP_STATE.simSpeed;
         bot.x += Math.cos(angle) * Math.min(step, dist);
         bot.y += Math.sin(angle) * Math.min(step, dist);
 
         const hx = Math.min(44, Math.max(0, Math.floor(bot.x + 22.5)));
         const hy = Math.min(59, Math.max(0, Math.floor(bot.y + 30.0)));
         APP_STATE.heatmapGrid[hy][hx] += dt * 0.4;
+
+        updateTaskProgressFromRobot(bot);
       }
     }
   }
 
   updateUberDirectionCard();
+}
+
+function updateTaskProgressFromRobot(bot) {
+  if (!bot || !bot.taskId) return;
+  const task = APP_STATE.tasks.find(t => t.task_id === bot.taskId);
+  if (!task || !bot.path || bot.path.length < 2) return;
+
+  const completed = Math.max(0, Math.min(bot.pathIdx, bot.path.length - 1));
+  const routePct = completed / Math.max(1, bot.path.length - 1);
+
+  if (task.status === 'EN_ROUTE_PICKUP' || task.status === 'ASSIGNED') {
+    task.progress_pct = Math.max(10, Math.min(49, Math.round(10 + routePct * 39)));
+  } else if (task.status === 'EN_ROUTE_DROPOFF') {
+    task.progress_pct = Math.max(60, Math.min(89, Math.round(60 + routePct * 29)));
+  }
+}
+
+function assignIdlePatrolPath(bot) {
+  if (!bot || bot.taskId) return;
+
+  const patrolSets = [
+    [
+      { x: -19.0, y: -14.5 }, { x: -9.0, y: -14.5 },
+      { x: -9.0, y: 10.0 }, { x: -19.0, y: 10.0 }
+    ],
+    [
+      { x: 19.0, y: -14.5 }, { x: 9.0, y: -14.5 },
+      { x: 9.0, y: 10.0 }, { x: 19.0, y: 10.0 }
+    ],
+    [
+      { x: -9.0, y: -8.5 }, { x: 9.0, y: -8.5 },
+      { x: 9.0, y: 8.5 }, { x: -9.0, y: 8.5 }
+    ],
+    [
+      { x: -2.5, y: 12.5 }, { x: 2.5, y: 20.5 },
+      { x: 15.5, y: 20.5 }, { x: 15.5, y: 12.5 }
+    ]
+  ];
+
+  const index = Math.max(0, parseInt((bot.id || 'robot_1').replace(/\D/g, ''), 10) - 1) % patrolSets.length;
+  const points = patrolSets[index];
+
+  let nearest = 0;
+  let nearestDist = Infinity;
+  points.forEach((p, i) => {
+    const d = Math.hypot(bot.x - p.x, bot.y - p.y);
+    if (d < nearestDist) {
+      nearestDist = d;
+      nearest = i;
+    }
+  });
+
+  const ordered = [];
+  for (let i = 0; i < points.length; i++) {
+    ordered.push(points[(nearest + i) % points.length]);
+  }
+
+  // Return to the first point so the path is a continuous loop.
+  ordered.push(ordered[0]);
+
+  bot.path = ordered.map(p => ({ x: p.x, y: p.y }));
+  bot.pathIdx = 0;
+  bot.isCharging = false;
+  bot.state = 'PATROLLING';
+  bot.speed = 0.75 + index * 0.06;
+  bot.thought = 'Autonomous patrol • fleet ready';
+}
+
+function initializeFleetSimulation() {
+  // Bind the canonical active tasks to their assigned robots.
+  for (const bot of APP_STATE.robots) {
+    bot.targetX = bot.x;
+    bot.targetY = bot.y;
+    bot.targetTheta = bot.theta;
+    bot.breadcrumbs = bot.breadcrumbs || [];
+    bot.safe = true;
+  }
+
+  for (const task of APP_STATE.tasks) {
+    if (!task.assigned_robot_id) continue;
+    const bot = APP_STATE.robots.find(r => r.id === task.assigned_robot_id);
+    if (!bot) continue;
+
+    if (task.status === 'COMPLETED' || task.status === 'FAILED') continue;
+
+    bot.taskId = task.task_id;
+    const target = task.status.includes('DROPOFF') ? task.dropoff : task.pickup;
+    bot.state = task.status;
+    bot.speed = 0.9;
+    bot.thought = task.status.includes('DROPOFF')
+      ? `En Route Dropoff -> ${task.dropoff.station_id}`
+      : `En Route Pickup -> ${task.pickup.rack_id}`;
+    bot.path = generateNavPath(bot.x, bot.y, target.x, target.y);
+    bot.pathIdx = 0;
+  }
+
+  // Every unassigned robot gets a continuous autonomous patrol route.
+  for (const bot of APP_STATE.robots) {
+    if (!bot.taskId) assignIdlePatrolPath(bot);
+  }
+
+  // Start the first CBBA allocation shortly after the UI is ready.
+  setTimeout(() => allocateNextAnnouncedTask(), 700);
+}
+
+function updateLiveFleetUI(force = false) {
+  const now = performance.now();
+  if (!force && now - (APP_STATE.liveUiLastRender || 0) < 120) return;
+  APP_STATE.liveUiLastRender = now;
+
+  renderGlobalLiveFleet();
+  renderSidebarAmrCards();
+  updateUberDirectionCard();
+  updateTaskSummaryMetrics();
+  updateStatisticsUI();
+
+  // Keep existing task/log screens live without rebuilding them every animation frame.
+  if (APP_STATE.activeTab === 'tasks') {
+    renderTasksTable();
+    if (APP_STATE.taskViewMode === 'cards') renderTaskCards();
+  }
+  if (APP_STATE.activeTab === 'logs') renderLogsTable();
+  renderRecentLogsDashboard();
+}
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[ch]));
+}
+
+function initGlobalLiveFleetOverlay() {
+  if (document.getElementById('global-live-fleet')) return;
+
+  const style = document.createElement('style');
+  style.id = 'global-live-fleet-style';
+  style.textContent = `
+    #global-live-fleet {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 360px;
+      z-index: 9999;
+      background: rgba(3, 7, 18, 0.96);
+      color: #e2e8f0;
+      border: 1px solid rgba(96,165,250,.32);
+      border-radius: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.42);
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+      font-family: Inter, system-ui, sans-serif;
+    }
+    #global-live-fleet .glf-head {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid rgba(148,163,184,.14);
+    }
+    #global-live-fleet .glf-title { font-weight:800; font-size:12px; letter-spacing:.04em; }
+    #global-live-fleet .glf-live { color:#34d399; font-size:10px; font-weight:800; }
+    #global-live-fleet .glf-actions { display:flex; gap:4px; }
+    #global-live-fleet button {
+      border:1px solid rgba(148,163,184,.25); background:#111827; color:#cbd5e1;
+      border-radius:6px; padding:3px 7px; cursor:pointer; font-size:10px;
+    }
+    #global-live-fleet button.active { background:#2563eb; color:#fff; border-color:#60a5fa; }
+    #global-live-fleet .glf-canvas-wrap { height:150px; background:#070b12; }
+    #global-live-fleet canvas { width:100%; height:100%; display:block; }
+    #global-live-fleet .glf-robots {
+      display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:8px;
+      max-height:92px; overflow:auto;
+    }
+    #global-live-fleet .glf-robot {
+      display:flex; align-items:center; justify-content:space-between; gap:5px;
+      padding:5px 6px; border-radius:7px; background:rgba(15,23,42,.9);
+      font-size:9px; border:1px solid rgba(148,163,184,.08);
+    }
+    #global-live-fleet .glf-name { display:flex; align-items:center; gap:5px; font-weight:800; }
+    #global-live-fleet .glf-dot { width:7px; height:7px; border-radius:50%; flex:none; }
+    #global-live-fleet .glf-state { color:#94a3b8; }
+    #global-live-fleet.minimized { width:auto; }
+    #global-live-fleet.minimized .glf-body { display:none; }
+    #global-live-fleet.minimized .glf-head { border:0; }
+  `;
+  document.head.appendChild(style);
+
+  const panel = document.createElement('div');
+  panel.id = 'global-live-fleet';
+  panel.innerHTML = `
+    <div class="glf-head">
+      <div>
+        <div class="glf-title">● LIVE FLEET VISUALIZATION</div>
+        <div class="glf-live" id="glf-connection">STANDALONE SIMULATION</div>
+      </div>
+      <div class="glf-actions">
+        <button id="glf-2d" class="active">2D</button>
+        <button id="glf-3d">3D</button>
+        <button id="glf-minimize">—</button>
+      </div>
+    </div>
+    <div class="glf-body">
+      <div class="glf-canvas-wrap"><canvas id="glf-canvas"></canvas></div>
+      <div class="glf-robots" id="glf-robots"></div>
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  const glf2d = document.getElementById('glf-2d');
+  const glf3d = document.getElementById('glf-3d');
+  glf2d.addEventListener('click', () => {
+    APP_STATE.viewMode = '2D';
+    glf2d.classList.add('active');
+    glf3d.classList.remove('active');
+    document.getElementById('dash-btn-2d')?.classList.add('active');
+    document.getElementById('dash-btn-3d')?.classList.remove('active');
+    document.getElementById('map-btn-2d')?.classList.add('active');
+    document.getElementById('map-btn-3d')?.classList.remove('active');
+  });
+  glf3d.addEventListener('click', () => {
+    APP_STATE.viewMode = '3D';
+    glf3d.classList.add('active');
+    glf2d.classList.remove('active');
+    document.getElementById('dash-btn-3d')?.classList.add('active');
+    document.getElementById('dash-btn-2d')?.classList.remove('active');
+    document.getElementById('map-btn-3d')?.classList.add('active');
+    document.getElementById('map-btn-2d')?.classList.remove('active');
+  });
+  document.getElementById('glf-minimize').addEventListener('click', () => {
+    panel.classList.toggle('minimized');
+  });
+}
+
+function renderGlobalLiveFleet() {
+  const canvas = document.getElementById('glf-canvas');
+  const list = document.getElementById('glf-robots');
+  const connection = document.getElementById('glf-connection');
+  if (!canvas || !list) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, rect.width);
+  const h = Math.max(1, rect.height);
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawWarehouseScene(ctx, w, h, APP_STATE.viewMode);
+
+  const fresh = APP_STATE.isLiveConnected &&
+    APP_STATE.lastTelemetryAt > 0 &&
+    Date.now() - APP_STATE.lastTelemetryAt < 1500;
+  if (connection) connection.textContent = fresh ? 'ROS / TELEMETRY CONNECTED' : 'STANDALONE SIMULATION';
+
+  list.innerHTML = APP_STATE.robots.map(bot => `
+    <div class="glf-robot">
+      <span class="glf-name">
+        <span class="glf-dot" style="background:${escapeHTML(bot.color || '#60a5fa')}"></span>
+        ${escapeHTML(bot.name)}
+      </span>
+      <span class="glf-state">${escapeHTML(bot.state || 'IDLE')} • ${Number(bot.speed || 0).toFixed(1)}m/s</span>
+    </div>
+  `).join('');
 }
 
 function handleRobotArrival(bot) {
@@ -1942,7 +2405,7 @@ function renderStaticHeatmap() {
   const rect = heatmapCanvas.getBoundingClientRect();
   heatCtx.clearRect(0, 0, rect.width, rect.height);
 
-  heatCtx.fillStyle = '#f8fafc';
+  heatCtx.fillStyle =  "#020617";
   heatCtx.fillRect(0, 0, rect.width, rect.height);
 
   for (const s of WAREHOUSE_CONFIG.shelves) {
@@ -2120,16 +2583,21 @@ function animLoop(timestamp) {
   updateSimulationEngine(dt);
 
   if (dashCtx && dashCanvas) {
-    const cWidth = dashCanvas.width / window.devicePixelRatio;
-    const cHeight = dashCanvas.height / window.devicePixelRatio;
+    const dpr = window.devicePixelRatio || 1;
+    const cWidth = dashCanvas.width / dpr;
+    const cHeight = dashCanvas.height / dpr;
     drawWarehouseScene(dashCtx, cWidth, cHeight, APP_STATE.viewMode);
   }
 
   if (fullCtx && fullCanvas && APP_STATE.activeTab === 'map-view') {
-    const cWidth = fullCanvas.width / window.devicePixelRatio;
-    const cHeight = fullCanvas.height / window.devicePixelRatio;
+    const dpr = window.devicePixelRatio || 1;
+    const cWidth = fullCanvas.width / dpr;
+    const cHeight = fullCanvas.height / dpr;
     drawWarehouseScene(fullCtx, cWidth, cHeight, APP_STATE.viewMode);
   }
+
+  // UI refresh is throttled; canvas rendering remains 60 FPS.
+  updateLiveFleetUI();
 
   requestAnimationFrame(animLoop);
 }
@@ -2139,11 +2607,20 @@ window.addEventListener('DOMContentLoaded', () => {
   resizeActiveCanvases();
   setupTaskModal();
 
+  // Persistent live fleet visualization is visible on every navbar page.
+  initGlobalLiveFleetOverlay();
+
   renderTasksTable();
+  renderTaskCards();
   renderLogsTable();
   renderRecentLogsDashboard();
   renderSidebarAmrCards();
   updateTaskSummaryMetrics();
+  updateStatisticsUI();
+
+  // Make the four demo AMRs move immediately while preserving live ROS override.
+  initializeFleetSimulation();
+  updateLiveFleetUI(true);
 
   // Ingest definitive real dataset runs
   loadDatasetTasksAndMetrics();
