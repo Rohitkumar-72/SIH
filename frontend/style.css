@@ -1,4 +1,4 @@
-/* ==============================================================================
+ /* ==============================================================================
    AMR FLEET NAVIGATOR - MINIMALIST LIGHT DESIGN SYSTEM
    Inspired by Uber Navigation Map UI, Pro Logistics Dashboards & Clean Data Tables
    ============================================================================== */
@@ -375,6 +375,8 @@ body {
   left: 16px;
   right: 16px;
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 6px;
   align-items: center;
   justify-content: space-between;
   z-index: 20;
@@ -385,7 +387,31 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
   pointer-events: auto;
+}
+
+.floating-header-right {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.card-floating-header .map-res-tag,
+.card-floating-header .chip-btn,
+.card-floating-header .mode-btn {
+  white-space: nowrap;
+}
+
+.card-floating-header .chip-btn,
+.card-floating-header .mode-btn,
+.card-floating-header .map-res-tag {
+  min-height: 30px;
+}
+
+.card-floating-header .map-res-tag {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* 2D / 3D VIEW TOGGLE */
@@ -3466,4 +3492,1086 @@ body {
     align-items: flex-start;
     gap: 14px;
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   AM-CORD AI — RESPONSIVE / UI POLISH PATCH
+   Designed for 1366x768 → 1920x1080 and 4K displays
+   ========================================================= */
+
+:root {
+  --ui-bg: #080b10;
+  --ui-panel: #0d1219;
+  --ui-panel-2: #111821;
+  --ui-border: #202a36;
+
+  --semantic-success: #22c55e;
+  --semantic-warning: #f59e0b;
+  --semantic-error: #ef4444;
+  --semantic-info: #3b82f6;
+  --semantic-muted: #64748b;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+}
+
+/* ---------- GLOBAL ---------- */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--ui-bg);
+  color: var(--text-primary);
+}
+
+/* Prevent images / canvas from creating horizontal overflow */
+
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+/* ---------- TOP NAVIGATION ---------- */
+
+.app-navbar {
+  width: 100%;
+  max-width: 100vw;
+  min-width: 0;
+}
+
+.navbar,
+.app-navbar,
+.topbar {
+  min-width: 0;
+}
+
+.nav-left,
+.nav-center,
+.nav-right,
+.navbar-left,
+.navbar-center,
+.navbar-right {
+  min-width: 0;
+}
+
+.navbar-center,
+.nav-center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Navigation pill */
+
+.nav-pill,
+.nav-menu,
+.nav-links {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: none;
+}
+
+.nav-pill::-webkit-scrollbar,
+.nav-menu::-webkit-scrollbar,
+.nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-pill > *,
+.nav-menu > *,
+.nav-links > * {
+  flex-shrink: 0;
+}
+
+/* ---------- FLEET ACTIVE ---------- */
+
+.fleet-active,
+.fleet-status,
+.status-dot {
+  min-width: 0;
+}
+
+.fleet-active .dot,
+.fleet-status .dot,
+.fleet-active-dot {
+  width: 8px !important;
+  height: 8px !important;
+
+  min-width: 8px !important;
+  max-width: 8px !important;
+
+  min-height: 8px !important;
+  max-height: 8px !important;
+
+  aspect-ratio: 1 / 1;
+  flex: 0 0 8px;
+
+  border-radius: 50% !important;
+  display: inline-block;
+  background: var(--semantic-success);
+}
+
+/* ---------- PROFILE ---------- */
+
+.profile-avatar,
+.avatar,
+.user-avatar,
+.profile-circle {
+  width: 36px !important;
+  height: 36px !important;
+
+  min-width: 36px !important;
+  min-height: 36px !important;
+
+  max-width: 36px !important;
+  max-height: 36px !important;
+
+  aspect-ratio: 1 / 1;
+  flex: 0 0 36px;
+
+  border-radius: 50% !important;
+
+  display: grid;
+  place-items: center;
+
+  overflow: hidden;
+}
+
+/* ---------- MAP AREA ---------- */
+
+.map-container,
+.map-wrapper,
+#map,
+.warehouse-map {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+}
+
+/* ---------- 2D / 3D CONTROLS ---------- */
+
+.map-toolbar,
+.map-controls,
+.map-view-controls,
+.view-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  min-width: 0;
+}
+
+.map-live-label,
+.live-map-label,
+.view-live-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.map-mode-toggle,
+.view-toggle {
+  flex-shrink: 0;
+}
+
+/* ---------- BUTTONS ---------- */
+
+button {
+  max-width: 100%;
+}
+
+button,
+.nav-item,
+.map-control,
+.action-button {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+button:hover,
+.nav-item:hover,
+.map-control:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------- ACTIVE AMR CARD ---------- */
+
+.amr-card,
+.robot-card,
+.active-amr-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.amr-card.selected,
+.amr-card.active,
+.robot-card.selected,
+.robot-card.active,
+.active-amr-card.selected,
+.active-amr-card.active {
+  background: #162131 !important;
+  color: var(--text-primary) !important;
+  border-color: var(--semantic-info) !important;
+}
+
+.amr-card.selected *,
+.amr-card.active *,
+.robot-card.selected *,
+.robot-card.active *,
+.active-amr-card.selected *,
+.active-amr-card.active * {
+  color: inherit;
+}
+
+/* ---------- DARK TASK TABLE ---------- */
+
+.task-table,
+.tasks-table,
+table {
+  background: var(--ui-panel) !important;
+  color: var(--text-primary);
+}
+
+.task-table thead,
+.tasks-table thead,
+table thead {
+  background: #101720 !important;
+}
+
+.task-table tbody,
+.tasks-table tbody {
+  background: var(--ui-panel) !important;
+}
+
+.task-table tbody tr,
+.tasks-table tbody tr {
+  background: transparent !important;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.task-table tbody tr:hover,
+.tasks-table tbody tr:hover,
+.uber-table tbody tr:hover {
+  background: #151e29 !important;
+}
+
+.task-table td,
+.task-table th,
+.tasks-table td,
+.tasks-table th {
+  color: var(--text-primary);
+}
+
+/* ---------- TASK STATUS ---------- */
+
+.status-badge,
+.task-status {
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-pickup,
+.status-badge.pickup,
+.task-status.pickup {
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+.status-en-route-pickup,
+.status-badge.en_route_pickup,
+.task-status.en_route_pickup {
+  color: #60a5fa !important;
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+.status-complete,
+.status-badge.complete,
+.task-status.complete {
+  color: #4ade80 !important;
+  background: rgba(34, 197, 94, 0.12) !important;
+  border-color: rgba(34, 197, 94, 0.25) !important;
+}
+
+.status-route-dropoff,
+.status-badge.route_dropoff,
+.task-status.route_dropoff {
+  color: #a78bfa !important;
+  background: rgba(139, 92, 246, 0.12) !important;
+  border-color: rgba(139, 92, 246, 0.25) !important;
+}
+
+.status-route-pickup,
+.status-badge.route_pickup,
+.task-status.route_pickup {
+  color: #38bdf8 !important;
+  background: rgba(14, 165, 233, 0.12) !important;
+  border-color: rgba(14, 165, 233, 0.25) !important;
+}
+
+/* ---------- SEMANTIC COLORS ---------- */
+
+.semantic-success,
+.system-online,
+.fleet-online {
+  color: var(--semantic-success) !important;
+}
+
+.semantic-warning {
+  color: var(--semantic-warning) !important;
+}
+
+.semantic-error {
+  color: var(--semantic-error) !important;
+}
+
+.semantic-info {
+  color: var(--semantic-info) !important;
+}
+
+.semantic-muted {
+  color: var(--semantic-muted) !important;
+}
+
+/* ---------- TRAFFIC CONGESTION LEGEND ---------- */
+
+.traffic-legend {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+
+  z-index: 30;
+
+  min-width: 175px;
+
+  padding: 12px;
+
+  background: rgba(8, 11, 16, 0.92);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+
+  backdrop-filter: blur(10px);
+}
+
+.traffic-legend-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.traffic-legend-scale {
+  height: 7px;
+  width: 100%;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    #22c55e 0%,
+    #facc15 45%,
+    #f97316 70%,
+    #ef4444 100%
+  );
+}
+
+.traffic-legend-labels {
+  display: flex;
+  justify-content: space-between;
+
+  margin-top: 5px;
+
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+/* ---------- TRAFFIC TOGGLE ---------- */
+
+.traffic-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 7px 10px;
+
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+
+  background: #101720;
+  color: var(--text-secondary);
+
+  cursor: pointer;
+}
+
+.traffic-toggle.active {
+  color: var(--text-primary);
+  border-color: var(--semantic-info);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+/* ---------- MAP INTERSECTION ---------- */
+
+.traffic-intersection {
+  pointer-events: none;
+  border-radius: 50%;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.traffic-intersection.low {
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+}
+
+.traffic-intersection.medium {
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.45);
+}
+
+.traffic-intersection.high {
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.55);
+}
+
+/* ---------- 3D MAP ---------- */
+
+.map-3d,
+.warehouse-3d {
+  perspective: 1200px;
+  perspective-origin: 50% 45%;
+}
+
+.map-3d canvas,
+.warehouse-3d canvas {
+  transform-origin: center center;
+}
+
+/* ---------- MINI MAP ---------- */
+
+.mini-map,
+#miniMap,
+.minimap {
+  position: fixed;
+
+  right: 18px;
+  bottom: 18px;
+
+  z-index: 40;
+
+  max-width: min(280px, calc(100vw - 36px));
+  max-height: min(190px, 28vh);
+
+  overflow: hidden;
+}
+
+/* Hide mini map while main map is visible */
+
+body.page-dashboard .mini-map,
+body.page-dashboard #miniMap,
+body.page-dashboard .minimap,
+body.page-live-map .mini-map,
+body.page-live-map #miniMap,
+body.page-live-map .minimap {
+  display: none !important;
+}
+
+/* ---------- REPORT / CARD CONSISTENCY ---------- */
+
+.card,
+.panel,
+.metric-card,
+.report-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.card,
+.panel,
+.report-card {
+  background: var(--ui-panel);
+  border-color: var(--ui-border);
+}
+
+/* ---------- TEXT OVERFLOW ---------- */
+
+.nav-item,
+.task-id,
+.robot-name,
+.report-title,
+.card-title,
+.table-cell {
+  min-width: 0;
+}
+
+.task-id,
+.robot-name,
+.report-title,
+.card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   LAPTOP — 1366 / 1440 WIDTH
+   ========================================================= */
+
+@media (max-width: 1500px) {
+
+  .app-navbar {
+    gap: 8px;
+  }
+
+  .nav-pill,
+  .nav-menu,
+  .nav-links {
+    gap: 4px;
+  }
+
+  .nav-item {
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+    font-size: 12px !important;
+  }
+
+  .navbar-brand,
+  .brand {
+    max-width: 210px;
+  }
+
+  .navbar-brand .subtitle,
+  .brand .subtitle {
+    font-size: 9px;
+  }
+
+  .fleet-active {
+    padding: 6px 9px !important;
+  }
+
+  .profile-avatar,
+  .avatar,
+  .user-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+  }
+
+  .map-toolbar,
+  .map-controls {
+    gap: 7px;
+  }
+
+  .panel,
+  .card {
+    border-radius: 10px;
+  }
+}
+
+/* =========================================================
+   1366 x 768
+   ========================================================= */
+
+@media (max-width: 1400px) {
+
+  .app-navbar {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .nav-item {
+    font-size: 11px !important;
+    padding: 7px 8px !important;
+  }
+
+  .nav-item svg,
+  .nav-item i {
+    width: 13px;
+    font-size: 13px;
+  }
+
+  .fleet-active,
+  .speed-controls,
+  .profile {
+    font-size: 11px !important;
+  }
+
+  .map-toolbar {
+    padding: 8px 10px !important;
+  }
+
+  .traffic-legend {
+    right: 12px;
+    bottom: 12px;
+  }
+}
+
+/* =========================================================
+   TABLET / NARROW LAPTOP
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+  .app-navbar {
+    flex-wrap: wrap;
+  }
+
+  .nav-center,
+  .navbar-center {
+    order: 3;
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .nav-pill,
+  .nav-menu,
+  .nav-links {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .map-toolbar,
+  .map-controls {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-grid,
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .dash-map-card,
+  #dash-canvas-container {
+    min-height: 420px;
+  }
+}
+
+/* =========================================================
+   MOBILE / SMALL WINDOW SAFETY
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .app-navbar {
+    padding: 8px !important;
+  }
+
+  .navbar-brand,
+  .brand {
+    max-width: 160px;
+  }
+
+  .nav-pill,
+  .nav-menu,
+  .nav-links {
+    overflow-x: auto;
+  }
+
+  .map-toolbar,
+  .map-controls,
+  .view-controls {
+    width: 100%;
+  }
+
+  .traffic-legend {
+    left: 12px;
+    right: auto;
+    bottom: 12px;
+    min-width: 150px;
+  }
+
+  .mini-map,
+  #miniMap,
+  .minimap {
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100vw - 20px);
+  }
+
+  .task-table-wrapper,
+  .tasks-table-wrapper {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .task-table,
+  .tasks-table {
+    min-width: 760px;
+  }
+}
+
+/* =========================================================
+   REAL THREE.JS 3D WAREHOUSE VIEWER
+   ========================================================= */
+.warehouse-3d-viewer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: none;
+  overflow: hidden;
+  background: #050912;
+  touch-action: none;
+}
+
+.warehouse-3d-viewer.is-active {
+  display: block;
+}
+
+.warehouse-3d-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  outline: none;
+}
+
+.warehouse-3d-canvas:active {
+  cursor: grabbing;
+}
+
+.warehouse-3d-toolbar {
+  position: absolute;
+  top: 76px;
+  right: 16px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+  background: rgba(3, 7, 18, .88);
+  border: 1px solid rgba(96, 165, 250, .28);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(0,0,0,.32);
+  backdrop-filter: blur(10px);
+}
+
+.warehouse-3d-toolbar button {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid rgba(148,163,184,.22);
+  border-radius: 7px;
+  background: #0f172a;
+  color: #cbd5e1;
+  font: 700 10px/1 Inter, sans-serif;
+  cursor: pointer;
+}
+
+.warehouse-3d-toolbar button:hover {
+  background: #172554;
+  border-color: #60a5fa;
+  color: #fff;
+}
+
+.warehouse-3d-toolbar .toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(148,163,184,.2);
+  margin: 0 2px;
+}
+
+.warehouse-3d-hint {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  z-index: 8;
+  padding: 7px 10px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 8px;
+  background: rgba(3,7,18,.78);
+  color: #94a3b8;
+  font: 500 10px/1.2 Inter, sans-serif;
+  pointer-events: none;
+}
+
+.warehouse-3d-traffic-legend {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  z-index: 8;
+  min-width: 132px;
+  padding: 9px 10px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 9px;
+  background: rgba(3,7,18,.82);
+  color: #cbd5e1;
+  font: 600 10px/1.55 Inter, sans-serif;
+  pointer-events: none;
+}
+
+.warehouse-3d-traffic-legend .legend-title {
+  margin-bottom: 3px;
+  color: #f8fafc;
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+
+.warehouse-3d-traffic-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 50%;
+}
+
+.warehouse-3d-traffic-legend .traffic-low { background: #22d3ee; }
+.warehouse-3d-traffic-legend .traffic-medium { background: #facc15; }
+.warehouse-3d-traffic-legend .traffic-high { background: #ef4444; }
+
+/* In 3D, the genuine WebGL scene owns the map surface. */
+.map-canvas-wrapper:has(.warehouse-3d-viewer.is-active) > #dashWarehouseCanvas,
+.map-canvas-wrapper:has(.warehouse-3d-viewer.is-active) > #fullWarehouseCanvas {
+  visibility: hidden;
+}
+
+@media (max-width: 900px) {
+  .dash-map-card,
+  .map-canvas-wrapper {
+    min-height: 420px;
+  }
+
+  .uber-directions-card {
+    top: 126px;
+    max-width: calc(100% - 32px);
+  }
+
+  .warehouse-3d-toolbar {
+    top: 66px;
+    right: 10px;
+    gap: 3px;
+  }
+  .warehouse-3d-toolbar button {
+    min-width: 27px;
+    padding: 0 6px;
+  }
+  .warehouse-3d-hint {
+    left: 10px;
+    bottom: 10px;
+    max-width: 48%;
+  }
+  .warehouse-3d-traffic-legend {
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
+
+.map-live-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  color: #94a3b8;
+  font: 800 9px/1 Inter, sans-serif;
+  letter-spacing: .045em;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .map-live-label { display: none; }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   BABYLON 3D WAREHOUSE
+   ========================================================= */
+
+#dash-canvas-container {
+    position: relative;
+    overflow: hidden;
+}
+
+#dashWarehouseCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+#babylonWarehouse3D {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    overflow: hidden;
+    background: #080b10;
+    z-index: 5;
+}
+
+#babylonWarehouse3D canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+    touch-action: none;
+}
+
+  .babylon-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 25;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 5px;
+    max-width: min(520px, calc(100% - 24px));
+  }
+
+  .babylon-controls button {
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    border-radius: 5px;
+    padding: 6px 8px;
+    background: rgba(8, 11, 16, 0.88);
+    color: #e2e8f0;
+    font: 600 10px/1.1 var(--font-sans);
+    cursor: pointer;
+  }
+
+  .babylon-controls button:hover {
+    border-color: #38bdf8;
+    color: #7dd3fc;
+  }
+
+/* Babylon UI information */
+.babylon-info-panel {
+  position: absolute;
+  top: auto;
+  left: 14px;
+  bottom: 14px;
+    z-index: 20;
+
+    min-width: 210px;
+    padding: 12px 14px;
+
+    background: rgba(8, 11, 16, 0.88);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+
+    color: #fff;
+    font-family: Inter, sans-serif;
+    font-size: 12px;
+
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+}
+
+.babylon-info-title {
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
+.babylon-info-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 4px;
+}
+
+.babylon-info-value {
+    font-family: "JetBrains Mono", monospace;
+}
+
+/* Measurement display */
+.babylon-measure-label {
+    position: absolute;
+    z-index: 30;
+    padding: 5px 8px;
+
+    background: rgba(0,0,0,.85);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 6px;
+
+    color: white;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+
+    pointer-events: none;
+}
+
+#babylonLiveMap3D {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  overflow: hidden;
+  background: #080b10;
+  z-index: 5;
+}
+
+#babylonLiveMap3D canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
 }

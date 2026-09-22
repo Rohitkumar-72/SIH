@@ -100,6 +100,7 @@ function buildWarehouseShelves() {
   }
 }
 buildWarehouseShelves();
+window.WAREHOUSE_CONFIG = WAREHOUSE_CONFIG;
 
 const ROBOT_COLOR_MAP = {
   robot_1: '#06b6d4', // Cyan
@@ -397,6 +398,7 @@ const APP_STATE = {
     }
   ]
 };
+window.APP_STATE = APP_STATE;
 
 // --- DYNAMIC REAL DATASET INGESTION ---
 async function loadDatasetTasksAndMetrics() {
@@ -860,6 +862,22 @@ function parseRawBackendLogLine(line) {
   addStructuredLog('FLEET', 'TASK_LIFECYCLE', line, 'Success');
 }
 
+function syncBabylonMount() {
+  if (!window.Warehouse3D?.initialized || APP_STATE.viewMode !== '3D') {
+    window.Warehouse3D?.setVisible?.(false);
+    return;
+  }
+
+  const hostId = APP_STATE.activeTab === 'map-view'
+    ? 'babylonLiveMap3D'
+    : 'babylonWarehouse3D';
+
+  if (window.Warehouse3D.mount(hostId)) {
+    window.Warehouse3D.setVisible(true);
+    window.Warehouse3D.resetCamera();
+  }
+}
+
 // --- TAB ROUTING ---
 function initNavigation() {
   const tabs = document.querySelectorAll('.nav-tab');
@@ -873,9 +891,11 @@ function initNavigation() {
       const targetPage = document.getElementById(`page-${pageId}`);
       if (targetPage) targetPage.classList.add('active');
       APP_STATE.activeTab = pageId;
+      syncBabylonMount();
 
       setTimeout(() => {
         resizeActiveCanvases();
+        if (APP_STATE.viewMode === '3D') window.Warehouse3D?.resize?.();
       }, 50);
     });
   });
@@ -897,8 +917,18 @@ function initNavigation() {
     [btnDash2D, btnMap2D].forEach(b => b && b.classList.toggle('active', mode === '2D'));
     [btnDash3D, btnMap3D].forEach(b => b && b.classList.toggle('active', mode === '3D'));
 
+    // Keep the legacy canvas available for 2D only; Babylon owns the 3D surface.
+    if (dashCanvas) dashCanvas.style.display = mode === '2D' ? 'block' : 'none';
+    if (fullCanvas) fullCanvas.style.display = mode === '2D' ? 'block' : 'none';
+    if (window.Warehouse3D && typeof window.Warehouse3D.setVisible === 'function') {
+      syncBabylonMount();
+    }
+
     const glf2d = document.getElementById('glf-2d');
     const glf3d = document.getElementById('glf-3d');
+    document.querySelectorAll('#dash-map-mode-label, #map-mode-label').forEach(label => {
+      label.textContent = mode === '3D' ? 'LIVE · 3D WAREHOUSE' : 'LIVE · 2D TOP DOWN';
+    });
     glf2d?.classList.toggle('active', mode === '2D');
     glf3d?.classList.toggle('active', mode === '3D');
   }
@@ -942,8 +972,10 @@ function initNavigation() {
   if (trailBtn) {
     trailBtn.addEventListener('click', () => {
       APP_STATE.showTrails = !APP_STATE.showTrails;
-      trailBtn.classList.toggle('active', APP_STATE.showTrails);
-      trailBtn.textContent = `Trails: ${APP_STATE.showTrails ? 'ON' : 'OFF'}`;
+      document.querySelectorAll('#dash-toggle-trails, #map-toggle-trails').forEach(button => {
+        button.classList.toggle('active', APP_STATE.showTrails);
+        button.textContent = `Trails: ${APP_STATE.showTrails ? 'ON' : 'OFF'}`;
+      });
     });
   }
 
@@ -951,10 +983,69 @@ function initNavigation() {
   if (thoughtBtn) {
     thoughtBtn.addEventListener('click', () => {
       APP_STATE.showThoughts = !APP_STATE.showThoughts;
-      thoughtBtn.classList.toggle('active', APP_STATE.showThoughts);
-      thoughtBtn.textContent = `Thoughts: ${APP_STATE.showThoughts ? 'ON' : 'OFF'}`;
+      document.querySelectorAll('#dash-toggle-bubbles, #map-toggle-thoughts').forEach(button => {
+        button.classList.toggle('active', APP_STATE.showThoughts);
+        button.textContent = `Thoughts: ${APP_STATE.showThoughts ? 'ON' : 'OFF'}`;
+      });
     });
   }
+
+  document.getElementById('map-toggle-trails')?.addEventListener('click', () => trailBtn?.click());
+  document.getElementById('map-toggle-thoughts')?.addEventListener('click', () => thoughtBtn?.click());
+
+  const gridBtn = document.getElementById('dash-toggle-grid');
+  gridBtn?.addEventListener('click', () => {
+    if (window.Warehouse3D?.toggleGrid) {
+      const enabled = window.Warehouse3D.toggleGrid();
+      document.querySelectorAll('#dash-toggle-grid, #map-toggle-grid').forEach(button => {
+        button.classList.toggle('active', enabled);
+        button.textContent = `Grid: ${enabled ? 'ON' : 'OFF'}`;
+      });
+    }
+  });
+
+  const measureBtn = document.getElementById('dash-toggle-measure');
+  measureBtn?.addEventListener('click', () => {
+    if (window.Warehouse3D?.toggleMeasurement) {
+      const active = window.Warehouse3D.toggleMeasurement();
+      document.querySelectorAll('#dash-toggle-measure, #map-toggle-measure').forEach(button => {
+        button.classList.toggle('active', active);
+        button.textContent = active ? 'Measure: ON' : 'Measure';
+      });
+    }
+  });
+
+  const mapGridBtn = document.getElementById('map-toggle-grid');
+  mapGridBtn?.addEventListener('click', () => gridBtn?.click());
+  const mapMeasureBtn = document.getElementById('map-toggle-measure');
+  mapMeasureBtn?.addEventListener('click', () => measureBtn?.click());
+
+  const trafficBtn = document.getElementById('dash-toggle-traffic');
+  trafficBtn?.addEventListener('click', () => {
+    window.toggleTrafficCongestion?.();
+    const enabled = Boolean(window.AM_CORD_TRAFFIC?.enabled);
+    trafficBtn.classList.toggle('active', enabled);
+    trafficBtn.textContent = `Traffic: ${enabled ? 'ON' : 'OFF'}`;
+    window.Warehouse3D?.setTrafficVisible?.(enabled);
+  });
+
+  document.getElementById('dash-btn-recenter')?.addEventListener('click', () => {
+    window.recenterFleetMap?.();
+    window.Warehouse3D?.resetCamera?.();
+  });
+  document.getElementById('map-btn-recenter')?.addEventListener('click', () => {
+    window.Warehouse3D?.resetCamera?.();
+  });
+
+  document.getElementById('map-toggle-traffic')?.addEventListener('click', () => {
+    window.toggleTrafficCongestion?.();
+    const enabled = Boolean(window.AM_CORD_TRAFFIC?.enabled);
+    document.querySelectorAll('#dash-toggle-traffic, #map-toggle-traffic').forEach(button => {
+      button.classList.toggle('active', enabled);
+      button.textContent = `Traffic: ${enabled ? 'ON' : 'OFF'}`;
+    });
+    window.Warehouse3D?.setTrafficVisible?.(enabled);
+  });
 
   const btnTable = document.getElementById('btn-view-table');
   const btnCards = document.getElementById('btn-view-cards');
@@ -1112,6 +1203,7 @@ function drawWarehouseScene(ctx, cWidth, cHeight, mode) {
       projectWorld(-22.5, 30, 0, cWidth, cHeight, mode)
     ];
     drawPoly(ctx, floor, '#111827', '#334155', 1.5);
+        
 
     // Subtle floor grid gives depth/perspective cues.
     ctx.strokeStyle = 'rgba(148,163,184,0.12)';
@@ -2582,19 +2674,27 @@ function animLoop(timestamp) {
 
   updateSimulationEngine(dt);
 
-  if (dashCtx && dashCanvas) {
+  if (APP_STATE.viewMode === '2D' && dashCtx && dashCanvas) {
     const dpr = window.devicePixelRatio || 1;
     const cWidth = dashCanvas.width / dpr;
     const cHeight = dashCanvas.height / dpr;
     drawWarehouseScene(dashCtx, cWidth, cHeight, APP_STATE.viewMode);
   }
 
-  if (fullCtx && fullCanvas && APP_STATE.activeTab === 'map-view') {
+  if (APP_STATE.viewMode === '2D' && fullCtx && fullCanvas && APP_STATE.activeTab === 'map-view') {
     const dpr = window.devicePixelRatio || 1;
     const cWidth = fullCanvas.width / dpr;
     const cHeight = fullCanvas.height / dpr;
     drawWarehouseScene(fullCtx, cWidth, cHeight, APP_STATE.viewMode);
   }
+  // Update real 3D Babylon.js warehouse
+if (
+  window.Warehouse3D &&
+  typeof window.Warehouse3D.updateRobots === 'function' &&
+  APP_STATE.viewMode === '3D'
+) {
+  window.Warehouse3D.updateRobots(APP_STATE.robots);
+}
 
   // UI refresh is throttled; canvas rendering remains 60 FPS.
   updateLiveFleetUI();
@@ -2605,6 +2705,13 @@ function animLoop(timestamp) {
 window.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   resizeActiveCanvases();
+  if (
+  window.Warehouse3D &&
+  typeof window.Warehouse3D.init === 'function'
+) {
+  window.Warehouse3D.init('babylonWarehouse3D');
+  syncBabylonMount();
+}
   setupTaskModal();
 
   // Persistent live fleet visualization is visible on every navbar page.
@@ -2631,3 +2738,654 @@ window.addEventListener('DOMContentLoaded', () => {
   requestAnimationFrame(animLoop);
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   MAP INTERACTION — ZOOM / PAN / RECENTER
+   ========================================================= */
+
+(function initMapInteraction() {
+
+  const mapCanvas =
+    document.getElementById("dashWarehouseCanvas") ||
+    document.querySelector("canvas");
+
+  if (!mapCanvas) return;
+
+  const mapState = {
+    zoom: 1,
+    minZoom: 0.65,
+    maxZoom: 2.4,
+
+    panX: 0,
+    panY: 0,
+
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    startPanX: 0,
+    startPanY: 0
+  };
+
+  window.AM_CORD_MAP_STATE = mapState;
+
+  function applyMapTransform() {
+
+    /*
+     * Keep this state available to the existing renderer.
+     * Existing world -> canvas projection can consume these values.
+     */
+
+    mapCanvas.dataset.zoom = mapState.zoom;
+    mapCanvas.dataset.panX = mapState.panX;
+    mapCanvas.dataset.panY = mapState.panY;
+
+    mapCanvas.style.cursor =
+      mapState.dragging ? "grabbing" : "grab";
+
+    if (typeof window.renderWarehouse === "function") {
+      window.renderWarehouse();
+    }
+  }
+
+  function zoomAt(delta) {
+
+    const oldZoom = mapState.zoom;
+
+    mapState.zoom = Math.min(
+      mapState.maxZoom,
+      Math.max(
+        mapState.minZoom,
+        mapState.zoom + delta
+      )
+    );
+
+    if (oldZoom !== mapState.zoom) {
+      applyMapTransform();
+    }
+  }
+
+  mapCanvas.addEventListener("wheel", function (event) {
+
+    event.preventDefault();
+
+    const direction = event.deltaY < 0 ? 0.1 : -0.1;
+
+    zoomAt(direction);
+
+  }, { passive: false });
+
+  mapCanvas.addEventListener("mousedown", function (event) {
+
+    mapState.dragging = true;
+
+    mapState.startX = event.clientX;
+    mapState.startY = event.clientY;
+
+    mapState.startPanX = mapState.panX;
+    mapState.startPanY = mapState.panY;
+
+    applyMapTransform();
+  });
+
+  window.addEventListener("mousemove", function (event) {
+
+    if (!mapState.dragging) return;
+
+    mapState.panX =
+      mapState.startPanX +
+      (event.clientX - mapState.startX);
+
+    mapState.panY =
+      mapState.startPanY +
+      (event.clientY - mapState.startY);
+
+    applyMapTransform();
+  });
+
+  window.addEventListener("mouseup", function () {
+
+    if (!mapState.dragging) return;
+
+    mapState.dragging = false;
+
+    applyMapTransform();
+  });
+
+  /* Touch support */
+
+  let touchStart = null;
+
+  mapCanvas.addEventListener("touchstart", function (event) {
+
+    if (event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+
+    touchStart = {
+      x: touch.clientX,
+      y: touch.clientY,
+      panX: mapState.panX,
+      panY: mapState.panY
+    };
+
+  }, { passive: true });
+
+  mapCanvas.addEventListener("touchmove", function (event) {
+
+    if (!touchStart || event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+
+    mapState.panX =
+      touchStart.panX +
+      touch.clientX -
+      touchStart.x;
+
+    mapState.panY =
+      touchStart.panY +
+      touch.clientY -
+      touchStart.y;
+
+    applyMapTransform();
+
+  }, { passive: true });
+
+  mapCanvas.addEventListener("touchend", function () {
+    touchStart = null;
+  });
+
+  /* Recenter */
+
+  window.recenterFleetMap = function () {
+
+    mapState.zoom = 1;
+    mapState.panX = 0;
+    mapState.panY = 0;
+
+    applyMapTransform();
+  };
+
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   REAL-TIME TRAFFIC DENSITY
+   Uses current AMR positions
+   ========================================================= */
+
+window.AM_CORD_TRAFFIC = {
+  enabled: false,
+  zones: []
+};
+
+function calculateTrafficDensity() {
+
+  const robots =
+    window.APP_STATE?.robots ||
+    [];
+
+  const zones = [];
+
+  const radius = 5;
+
+  for (let i = 0; i < robots.length; i++) {
+
+    const robot = robots[i];
+
+    if (
+      typeof robot.x !== "number" ||
+      typeof robot.y !== "number"
+    ) {
+      continue;
+    }
+
+    let nearby = 0;
+
+    for (let j = 0; j < robots.length; j++) {
+
+      if (i === j) continue;
+
+      const other = robots[j];
+
+      if (
+        typeof other.x !== "number" ||
+        typeof other.y !== "number"
+      ) {
+        continue;
+      }
+
+      const dx = robot.x - other.x;
+      const dy = robot.y - other.y;
+
+      const distance =
+        Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= radius) {
+        nearby++;
+      }
+    }
+
+    const density =
+      Math.min(1, nearby / 3);
+
+    zones.push({
+      x: robot.x,
+      y: robot.y,
+      density,
+      robotId: robot.id,
+      nearby
+    });
+  }
+
+  window.AM_CORD_TRAFFIC.zones = zones;
+
+  return zones;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function toggleTrafficCongestion() {
+
+  window.AM_CORD_TRAFFIC.enabled =
+    !window.AM_CORD_TRAFFIC.enabled;
+
+  const button =
+    document.querySelector(".traffic-toggle");
+
+  if (button) {
+    button.classList.toggle(
+      "active",
+      window.AM_CORD_TRAFFIC.enabled
+    );
+  }
+
+  if (typeof window.renderWarehouse === "function") {
+    window.renderWarehouse();
+  }
+}
+
+window.toggleTrafficCongestion =
+  toggleTrafficCongestion;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  function drawTrafficHeatmap(
+  ctx,
+  projectFunction,
+  width,
+  height,
+  mode
+) {
+
+  if (
+    !window.AM_CORD_TRAFFIC ||
+    !window.AM_CORD_TRAFFIC.enabled
+  ) {
+    return;
+  }
+
+  const zones =
+    calculateTrafficDensity();
+
+  for (const zone of zones) {
+
+    const point = projectFunction(
+      zone.x,
+      zone.y,
+      0,
+      width,
+      height,
+      mode
+    );
+
+    if (!point) continue;
+
+    const radius =
+      22 + zone.density * 32;
+
+    const gradient =
+      ctx.createRadialGradient(
+        point.x,
+        point.y,
+        0,
+        point.x,
+        point.y,
+        radius
+      );
+
+    if (zone.density >= 0.75) {
+
+      gradient.addColorStop(
+        0,
+        "rgba(239,68,68,0.42)"
+      );
+
+      gradient.addColorStop(
+        1,
+        "rgba(239,68,68,0)"
+      );
+
+    } else if (zone.density >= 0.35) {
+
+      gradient.addColorStop(
+        0,
+        "rgba(245,158,11,0.35)"
+      );
+
+      gradient.addColorStop(
+        1,
+        "rgba(245,158,11,0)"
+      );
+
+    } else {
+
+      gradient.addColorStop(
+        0,
+        "rgba(34,197,94,0.25)"
+      );
+
+      gradient.addColorStop(
+        1,
+        "rgba(34,197,94,0)"
+      );
+    }
+
+    ctx.beginPath();
+
+    ctx.fillStyle = gradient;
+
+    ctx.arc(
+      point.x,
+      point.y,
+      radius,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
+  }
+}
+
+window.drawTrafficHeatmap =
+  drawTrafficHeatmap;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  function updateTaskCount() {
+
+  const tasks =
+    window.APP_STATE?.tasks || [];
+
+  const activeTasks =
+    tasks.filter(task =>
+      task.status !== "COMPLETED" &&
+      task.status !== "FAILED"
+    ).length;
+
+  document
+    .querySelectorAll(".task-count")
+    .forEach(el => {
+      el.textContent = `· ${activeTasks}`;
+    });
+}
+
+window.updateTaskCount =
+  updateTaskCount;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  setInterval(() => {
+
+  try {
+
+    if (
+      window.APP_STATE &&
+      Array.isArray(window.APP_STATE.robots)
+    ) {
+
+      calculateTrafficDensity();
+
+      updateTaskCount();
+
+      if (
+        typeof window.renderWarehouse === "function"
+      ) {
+        window.renderWarehouse();
+      }
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "AM-CORD live visualization update:",
+      error
+    );
+  }
+
+}, 500);
