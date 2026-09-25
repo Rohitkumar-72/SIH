@@ -221,6 +221,19 @@ const SAFE_AISLE_POINTS = (function() {
 let generatedTaskCounter = 4;
 
 // --- APP STATE ---
+const TRAFFIC_ANALYTICS = {
+  hotspots: [],
+  bottlenecks: [],
+  summary: {
+    activeRobots: 0,
+    avgDensity: 0,
+    hotspots: 0,
+    bottlenecks: 0,
+    avgWait: 0
+  }
+};
+window.TRAFFIC_ANALYTICS = TRAFFIC_ANALYTICS;
+
 const APP_STATE = {
   activeTab: 'dashboard',
   viewMode: '2D',
@@ -1614,18 +1627,50 @@ function updateSimulationEngine(dt) {
         if (!bot.speed || bot.speed < 0.15) bot.speed = 0.75 + (bot.id.charCodeAt(6) % 4) * 0.08;
 
         const step = bot.speed * dt * APP_STATE.simSpeed;
+        const prevX = bot.x;
+        const prevY = bot.y;
         bot.x += Math.cos(angle) * Math.min(step, dist);
         bot.y += Math.sin(angle) * Math.min(step, dist);
 
         const hx = Math.min(44, Math.max(0, Math.floor(bot.x + 22.5)));
         const hy = Math.min(59, Math.max(0, Math.floor(bot.y + 30.0)));
-        APP_STATE.heatmapGrid[hy][hx] += dt * 0.4;
+        const pathWeight = Math.max(0.05, Math.min(0.65, (bot.speed || 0) * 0.4));
+        APP_STATE.heatmapGrid[hy][hx] += dt * (0.4 + pathWeight);
+
+        if (Array.isArray(bot.breadcrumbs)) {
+          bot.breadcrumbs.push({ x: bot.x, y: bot.y, t: performance.now() });
+          if (bot.breadcrumbs.length > 22) bot.breadcrumbs.shift();
+          for (const crumb of bot.breadcrumbs) {
+            const bx = Math.max(0, Math.min(59, Math.floor((crumb.x + 22.5) / 0.75)));
+            const by = Math.max(0, Math.min(44, Math.floor((crumb.y + 30.0) / 0.75)));
+            APP_STATE.heatmapGrid[by][bx] += dt * 0.08;
+          }
+        }
+
+        if (Math.hypot(bot.x - prevX, bot.y - prevY) > 0.01) {
+          bot.waitingTime = 0;
+        }
 
         updateTaskProgressFromRobot(bot);
       }
     }
+
+    const localSpeed = bot.speed || 0;
+    if (localSpeed < 0.25) {
+      bot.waitingTime = (bot.waitingTime || 0) + dt;
+    } else {
+      bot.waitingTime = Math.max(0, (bot.waitingTime || 0) - dt * 0.5);
+    }
   }
 
+  for (let y = 0; y < APP_STATE.heatmapGrid.length; y++) {
+    for (let x = 0; x < APP_STATE.heatmapGrid[y].length; x++) {
+      APP_STATE.heatmapGrid[y][x] *= Math.max(0, 1 - dt * 0.18);
+      APP_STATE.heatmapGrid[y][x] = Math.max(0, Math.min(2.5, APP_STATE.heatmapGrid[y][x]));
+    }
+  }
+
+  updateTrafficAnalyticsSummary();
   updateUberDirectionCard();
 }
 
@@ -2492,42 +2537,172 @@ function updateUberDirectionCard() {
   battElem.textContent = `${Math.round(activeBot.battery || 100)}%`;
 }
 
+function updateTrafficAnalyticsSummary() {
+  const robots = APP_STATE.robots.filter(bot => typeof bot.x === 'number' && typeof bot.y === 'number');
+  const grid = APP_STATE.heatmapGrid || [];
+  const cols = grid[0]?.length || 60;
+  const rows = grid.length || 45;
+
+  let totalDensity = 0;
+  let maxDensity = 0;
+  const hotspots = [];
+  const bottlenecks = [];
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const value = Number(grid[y]?.[x] || 0);
+      totalDensity += value;
+      if (value > maxDensity) maxDensity = value;
+
+      if (value > 0.85) {
+        const worldX = -22.5 + (x / cols) * 45;
+        const worldY = -30 + (y / rows) * 60;
+        const nearby = robots.filter(bot => Math.hypot(bot.x - worldX, bot.y - worldY) < 3.2);
+        hotspots.push({ x: worldX, y: worldY, score: Math.min(100, value * 100), robots: nearby.length });
+      }
+    }
+  }
+
+  for (const bot of robots) {
+    const local = robots.filter(other => Math.hypot(other.x - bot.x, other.y - bot.y) < 3.0);
+    if (local.length >= 2 && (bot.speed || 0) < 0.55) {
+      const avgSpeed = local.reduce((sum, item) => sum + (item.speed || 0), 0) / local.length;
+      const avgWait = local.reduce((sum, item) => sum + (item.waitingTime || 0), 0) / local.length;
+      bottlenecks.push({
+        id: bot.id,
+        x: bot.x,
+        y: bot.y,
+        speed: avgSpeed,
+        wait: avgWait,
+        robots: local.length
+      });
+    }
+  }
+
+  const avgDensity = grid.length && grid[0]?.length ? (totalDensity / (grid.length * grid[0].length)) : 0;
+  TRAFFIC_ANALYTICS.hotspots = hotspots.slice(0, 3);
+  TRAFFIC_ANALYTICS.bottlenecks = bottlenecks.slice(0, 3);
+  TRAFFIC_ANALYTICS.summary = {
+    activeRobots: robots.length,
+    avgDensity: Math.max(0, Math.min(100, avgDensity * 100)),
+    hotspots: TRAFFIC_ANALYTICS.hotspots.length,
+    bottlenecks: TRAFFIC_ANALYTICS.bottlenecks.length,
+    avgWait: robots.reduce((sum, bot) => sum + (bot.waitingTime || 0), 0) / Math.max(1, robots.length)
+  };
+
+  const panel = document.getElementById('traffic-analytics-panel');
+  if (!panel) return;
+
+  const hotspotText = TRAFFIC_ANALYTICS.hotspots.length
+    ? `⚠ ${TRAFFIC_ANALYTICS.hotspots[0].score.toFixed(0)}/100 near ${TRAFFIC_ANALYTICS.hotspots[0].x.toFixed(1)}, ${TRAFFIC_ANALYTICS.hotspots[0].y.toFixed(1)}`
+    : 'No active hotspot';
+
+  const bottleneckText = TRAFFIC_ANALYTICS.bottlenecks.length
+    ? `⚠ Detected bottleneck in ${TRAFFIC_ANALYTICS.bottlenecks[0].id}`
+    : 'No active bottleneck';
+
+  panel.innerHTML = `
+    <div class="traffic-summary-item">
+      <span class="traffic-summary-label">Active Robots</span>
+      <span class="traffic-summary-value">${TRAFFIC_ANALYTICS.summary.activeRobots}</span>
+    </div>
+    <div class="traffic-summary-item">
+      <span class="traffic-summary-label">Avg Density</span>
+      <span class="traffic-summary-value">${TRAFFIC_ANALYTICS.summary.avgDensity.toFixed(0)}%</span>
+    </div>
+    <div class="traffic-summary-item">
+      <span class="traffic-summary-label">Hotspots</span>
+      <span class="traffic-summary-value">${TRAFFIC_ANALYTICS.summary.hotspots}</span>
+    </div>
+    <div class="traffic-summary-item">
+      <span class="traffic-summary-label">Bottlenecks</span>
+      <span class="traffic-summary-value">${TRAFFIC_ANALYTICS.summary.bottlenecks}</span>
+    </div>
+    <div class="traffic-summary-item">
+      <span class="traffic-summary-label">Avg Wait</span>
+      <span class="traffic-summary-value">${TRAFFIC_ANALYTICS.summary.avgWait.toFixed(1)}s</span>
+    </div>
+    <div class="traffic-summary-alert">${hotspotText}</div>
+    <div class="traffic-summary-alert" style="border-color: rgba(239,68,68,0.4); color:#fca5a5;">${bottleneckText}</div>
+  `;
+}
+
 function renderStaticHeatmap() {
   if (!heatCtx || !heatmapCanvas) return;
   const rect = heatmapCanvas.getBoundingClientRect();
   heatCtx.clearRect(0, 0, rect.width, rect.height);
-
-  heatCtx.fillStyle =  "#020617";
+  heatCtx.fillStyle = '#020617';
   heatCtx.fillRect(0, 0, rect.width, rect.height);
+
+  updateTrafficAnalyticsSummary();
+
+  const cols = APP_STATE.heatmapGrid[0]?.length || 60;
+  const rows = APP_STATE.heatmapGrid.length || 45;
+  const cellW = rect.width / cols;
+  const cellH = rect.height / rows;
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const intensity = Number(APP_STATE.heatmapGrid[y]?.[x] || 0);
+      const norm = Math.min(1, Math.max(0, intensity / 2.5));
+      let color = 'rgba(20, 184, 166, 0.10)';
+
+      if (norm < 0.2) color = 'rgba(54, 94, 160, 0.07)';
+      else if (norm < 0.45) color = 'rgba(250, 204, 21, 0.20)';
+      else if (norm < 0.7) color = 'rgba(251, 146, 60, 0.38)';
+      else color = 'rgba(239, 68, 68, 0.62)';
+
+      heatCtx.fillStyle = color;
+      heatCtx.fillRect(x * cellW, y * cellH, cellW + 1, cellH + 1);
+    }
+  }
 
   for (const s of WAREHOUSE_CONFIG.shelves) {
     const p = projectWorld(s.x, s.y, 0, rect.width, rect.height, '2D');
-    heatCtx.fillStyle = '#e2e8f0';
+    heatCtx.fillStyle = 'rgba(226, 232, 240, 0.85)';
     heatCtx.fillRect(p.x - 12, p.y - 4, 24, 8);
   }
 
-  const hotPoints = [
-    { x: -9.0, y: -10.0, intensity: 0.9 },
-    { x: 9.0, y: -10.0, intensity: 0.8 },
-    { x: -9.0, y: 10.0, intensity: 0.7 },
-    { x: 9.0, y: 10.0, intensity: 0.85 },
-    { x: 0.0, y: -28.5, intensity: 0.95 },
-    { x: -15.67, y: 0.0, intensity: 0.5 },
-    { x: 15.67, y: 0.0, intensity: 0.6 }
+  const corridorDefs = [
+    { x: -9, y: -10, w: 2.2, h: 22, label: 'Aisle A-03' },
+    { x: 9, y: -10, w: 2.2, h: 22, label: 'Aisle A-07' },
+    { x: 0, y: -10, w: 24, h: 2.2, label: 'North Corridor' },
+    { x: 0, y: 10, w: 24, h: 2.2, label: 'South Corridor' }
   ];
 
-  for (const hp of hotPoints) {
-    const p = projectWorld(hp.x, hp.y, 0, rect.width, rect.height, '2D');
-    const rad = 45 * hp.intensity;
-    const grad = heatCtx.createRadialGradient(p.x, p.y, 4, p.x, p.y, rad);
-    grad.addColorStop(0, 'rgba(239, 68, 68, 0.6)');
-    grad.addColorStop(0.5, 'rgba(251, 146, 60, 0.4)');
-    grad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+  for (const corridor of corridorDefs) {
+    const p1 = projectWorld(corridor.x, corridor.y, 0, rect.width, rect.height, '2D');
+    const widthPx = Math.abs(projectWorld(corridor.x + corridor.w / 2, corridor.y, 0, rect.width, rect.height, '2D').x - projectWorld(corridor.x - corridor.w / 2, corridor.y, 0, rect.width, rect.height, '2D').x);
+    const heightPx = Math.abs(projectWorld(corridor.x, corridor.y + corridor.h / 2, 0, rect.width, rect.height, '2D').y - projectWorld(corridor.x, corridor.y - corridor.h / 2, 0, rect.width, rect.height, '2D').y);
+    heatCtx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+    heatCtx.lineWidth = 1;
+    heatCtx.strokeRect(p1.x - widthPx / 2, p1.y - heightPx / 2, widthPx, heightPx);
+  }
 
+  for (const hotspot of TRAFFIC_ANALYTICS.hotspots) {
+    const p = projectWorld(hotspot.x, hotspot.y, 0, rect.width, rect.height, '2D');
+    const rad = 30 + hotspot.score * 0.45;
+    const grad = heatCtx.createRadialGradient(p.x, p.y, 4, p.x, p.y, rad);
+    grad.addColorStop(0, 'rgba(248, 113, 113, 0.55)');
+    grad.addColorStop(0.5, 'rgba(251, 146, 60, 0.28)');
+    grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
     heatCtx.fillStyle = grad;
     heatCtx.beginPath();
     heatCtx.arc(p.x, p.y, rad, 0, Math.PI * 2);
     heatCtx.fill();
+  }
+
+  const flowLines = APP_STATE.robots.filter(bot => typeof bot.x === 'number' && typeof bot.y === 'number' && (bot.speed || 0) > 0.2);
+  for (const bot of flowLines) {
+    const p = projectWorld(bot.x, bot.y, 0, rect.width, rect.height, '2D');
+    const dx = Math.cos(bot.theta || 0) * 12;
+    const dy = Math.sin(bot.theta || 0) * 12;
+    heatCtx.strokeStyle = 'rgba(125, 211, 252, 0.45)';
+    heatCtx.lineWidth = 1.2;
+    heatCtx.beginPath();
+    heatCtx.moveTo(p.x, p.y);
+    heatCtx.lineTo(p.x + dx, p.y + dy);
+    heatCtx.stroke();
   }
 }
 
