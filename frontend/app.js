@@ -1018,7 +1018,7 @@ function initNavigation() {
   });
 
   const measureBtn = document.getElementById('dash-toggle-measure');
-  measureBtn?.addEventListener('click', () => {
+  const toggleMeasurement = () => {
     if (window.Warehouse3D?.toggleMeasurement) {
       const active = window.Warehouse3D.toggleMeasurement();
       document.querySelectorAll('#dash-toggle-measure, #map-toggle-measure').forEach(button => {
@@ -1026,12 +1026,13 @@ function initNavigation() {
         button.textContent = active ? 'Measure: ON' : 'Measure';
       });
     }
-  });
+  };
+  measureBtn?.addEventListener('click', toggleMeasurement);
 
   const mapGridBtn = document.getElementById('map-toggle-grid');
   mapGridBtn?.addEventListener('click', () => gridBtn?.click());
   const mapMeasureBtn = document.getElementById('map-toggle-measure');
-  mapMeasureBtn?.addEventListener('click', () => measureBtn?.click());
+  mapMeasureBtn?.addEventListener('click', toggleMeasurement);
 
   const trafficBtn = document.getElementById('dash-toggle-traffic');
   trafficBtn?.addEventListener('click', () => {
@@ -1135,6 +1136,15 @@ function resizeActiveCanvases() {
   }
 }
 window.addEventListener('resize', resizeActiveCanvases);
+
+const mapResizeObserver = new ResizeObserver(() => {
+  resizeActiveCanvases();
+  if (APP_STATE.viewMode === '3D') window.Warehouse3D?.resize?.();
+});
+['dash-canvas-container', 'fullmap-canvas-container'].forEach(containerId => {
+  const container = document.getElementById(containerId);
+  if (container) mapResizeObserver.observe(container);
+});
 
 function projectWorld(wx, wy, wz = 0, cWidth, cHeight, mode = '2D') {
   if (mode === '2D') {

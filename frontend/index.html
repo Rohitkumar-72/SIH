@@ -97,7 +97,8 @@
             <div class="floating-header-left">
              <div class="view-mode-toggle">
               <span class="map-live-label" id="dash-map-mode-label">
-    LIVE · 2D TOP DOWN
+                LIVE · 2D TOP DOWN
+     
   </span>
 
   <button class="mode-btn active" id="dash-btn-2d">
@@ -109,7 +110,7 @@
   </button>
 </div> 
    
-              <span class="map-res-tag">Warehouse: 45m × 60m (90×120 cells)</span>
+               
             </div>
             
            <div class="floating-header-right">
@@ -118,9 +119,7 @@
     Grid: ON
   </button>
 
-  <button class="chip-btn" id="dash-toggle-measure">
-    Measure
-  </button>
+   
 
   <button class="chip-btn active" id="dash-toggle-trails">
     Trails: ON
@@ -272,74 +271,42 @@
         <div class="map-floating-bar">
           <div class="bar-group">
             <div class="view-mode-toggle">
-
-  <span class="map-live-label" id="map-mode-label">
-    LIVE · 2D TOP DOWN
-  </span>
-
-  <button class="mode-btn active" id="map-btn-2d">
-    2D
-  </button>
-
-  <button class="mode-btn" id="map-btn-3d">
-    3D
-  </button>
-
-</div>
-
-            <span class="map-res-tag">Warehouse: 45m × 60m (90×120 cells)</span>
-
+              <span class="map-live-label" id="map-mode-label">LIVE · 2D TOP DOWN</span>
+              <button class="mode-btn active" id="map-btn-2d">2D</button>
+              <button class="mode-btn" id="map-btn-3d">3D</button>
+            </div>
             <button class="chip-btn" id="map-toggle-grid">Grid: ON</button>
             <button class="chip-btn" id="map-toggle-measure">Measure</button>
             <button class="chip-btn active" id="map-toggle-trails">Trails: ON</button>
             <button class="chip-btn active" id="map-toggle-thoughts">Thoughts: ON</button>
+            <button class="map-action-pill" id="map-toggle-traffic">🌡 Traffic Heatmap</button>
             <button class="chip-btn" id="map-btn-recenter">⟲ Recenter</button>
-             
           </div>
-
           <div class="bar-group">
-            <button class="map-action-pill" id="map-action-task">📦 Dispatch Task to Location</button>
-            <button class="map-action-pill" id="map-action-obstacle">🚧 Inject Dynamic Obstacle</button>
-            <button class="map-action-pill" id="map-action-clear-obs">🧹 Clear Blockages</button>
-             <button class="map-action-pill" id="map-toggle-traffic">
-    🌡 Traffic Heatmap
-  </button>
-          </div>
-
-          <div class="bar-group">
-            <div class="coords-pill" id="fullmap-coords">X: 0.00m | Y: 0.00m</div>
+            <div class="coords-pill" id="fullmap-coords">x: 0.00m | y: 0.00m</div>
           </div>
         </div>
 
         <div class="map-canvas-wrapper" id="fullmap-canvas-container">
+          <canvas id="fullWarehouseCanvas"></canvas>
+          <div id="babylonLiveMap3D" class="babylon-warehouse-host" aria-label="Interactive 3D live warehouse"></div>
 
-  <canvas id="fullWarehouseCanvas"></canvas>
-        <div id="babylonLiveMap3D" class="babylon-warehouse-host" aria-label="Interactive 3D live warehouse"></div>
-
-  <div class="traffic-legend" id="map-traffic-legend" style="display:none;">
-
-    <div class="traffic-legend-title">
-      TRAFFIC DENSITY
-    </div>
-
-    <div class="traffic-level">
-      <span class="traffic-dot traffic-low"></span>
-      <span>Low</span>
-    </div>
-
-    <div class="traffic-level">
-      <span class="traffic-dot traffic-medium"></span>
-      <span>Medium</span>
-    </div>
-
-    <div class="traffic-level">
-      <span class="traffic-dot traffic-high"></span>
-      <span>High</span>
-    </div>
-
-  </div>
-
-</div>
+          <div class="traffic-legend" id="map-traffic-legend" style="display:none;">
+            <div class="traffic-legend-title">TRAFFIC DENSITY</div>
+            <div class="traffic-level">
+              <span class="traffic-dot traffic-low"></span>
+              <span>Low</span>
+            </div>
+            <div class="traffic-level">
+              <span class="traffic-dot traffic-medium"></span>
+              <span>Medium</span>
+            </div>
+            <div class="traffic-level">
+              <span class="traffic-dot traffic-high"></span>
+              <span>High</span>
+            </div>
+          </div>
+        </div>
 
       </div>
     </section>
@@ -353,7 +320,7 @@
         
         <div class="page-header-row">
           <div>
-            <h2 class="page-heading">Tasks <span class="heading-count" id="task-heading-count">6</span></h2>
+            <h2 class="page-heading">Tasks <span class="heading-count" id="task-heading-count"></span></h2>
             <p class="page-subheading">Real-time CBBA auction allocation, multi-phase lifecycle tracking, dwell countdowns, and coordinate dispatch.</p>
           </div>
           <div class="header-actions">
